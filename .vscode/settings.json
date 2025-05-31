@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "chrono": "cpp",
+        "random": "cpp",
+        "cstdint": "cpp",
+        "format": "cpp",
+        "bitset": "cpp",
+        "memory": "cpp",
+        "future": "cpp",
+        "optional": "cpp"
+    }
+}

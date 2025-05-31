@@ -1,0 +1,9 @@
+nrf24/RF24@^1.4.11
+gyverlibs/GyverOLED@^1.6.4
+gyverlibs/EncButton@^3.7.2
+z3t0/IRremote@^4.4.2
+adafruit/Adafruit SSD1306@^2.5.14
+sui77/rc-switch@^2.6.4
+lsatan/SmartRC-CC1101-Driver-Lib@^2.5.7
+arduino12/rdm6300@^2.0.0
+https://github.com/Seeed-Studio/PN532.git
