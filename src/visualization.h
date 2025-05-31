@@ -1041,8 +1041,6 @@ void ShowSavedSignal_RFID()
 
 void drawRSSISpectrum()
 {
-  oled.clear();
-
   // Заголовок: если есть lock — показываем, если нет — пусто (не печатаем вообще)
   if (lockedFrequency > 0)
   {
