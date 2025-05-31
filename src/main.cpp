@@ -71,7 +71,8 @@ void setup()
   ELECHOUSE_cc1101.setClb(4, 33, 34);
 
   ELECHOUSE_cc1101.Init();
-  // ELECHOUSE_cc1101.setGDO0(TX_PIN_CUSTOM);
+  ELECHOUSE_cc1101.setRxBW(200.00);
+  ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
   ELECHOUSE_cc1101.setMHZ(433.92);
 }
 
@@ -91,12 +92,11 @@ void loop1()
   {
     if (!initialized)
     {
-      initialized = true;
+      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx();
-
       mySwitch.resetAvailable();
+      initialized = true;
     }
 
     changeFreqButtons("RX");
@@ -192,7 +192,7 @@ void loop1()
   {
     if (!initialized)
     {
-      ELECHOUSE_cc1101.SetRx();
+      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -482,9 +482,9 @@ void loop1()
   {
     if (!initialized)
     {
-      ELECHOUSE_cc1101.SetTx();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
+      ELECHOUSE_cc1101.SetTx();
       pinMode(GD0_PIN_CC, OUTPUT);
       initialized = true;
       vibro(255, 50);
@@ -507,14 +507,36 @@ void loop1()
   {
     if (!initialized)
     {
-      mySwitch.resetAvailable();
+      mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx();
       initialized = true;
+    };
+
+    currentScanFreq = (currentScanFreq + 1) % raFreqCount;
+    ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
+    delay(50);
+
+    float currentRssi = ELECHOUSE_cc1101.getRssi();
+    int h = constrain(map(currentRssi, -77, -17, 0, 50), 0, 50);
+
+    if (h > rssiMaxPeak[currentScanFreq])
+    {
+      rssiMaxPeak[currentScanFreq] = h;
+    }
+    else
+    {
+      if (rssiMaxPeak[currentScanFreq] > 0)
+      {
+        rssiMaxPeak[currentScanFreq] -= 5;
+        if (rssiMaxPeak[currentScanFreq] < 0)
+          rssiMaxPeak[currentScanFreq] = 0;
+      }
+    }
+    if (h > rssiAbsoluteMax[currentScanFreq])
+    {
+      rssiAbsoluteMax[currentScanFreq] = h;
     }
 
-    updateRSSIMonitor();
     break;
   }
   /********************************** RF ACTIVITY **************************************/
@@ -524,10 +546,9 @@ void loop1()
 
     if (!initialized)
     {
-      mySwitch.resetAvailable();
+      mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx();
+      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       initialized = true;
     }
 
@@ -983,6 +1004,7 @@ void loop()
       parentMenu = grandParentMenu;
       grandParentMenu = MAIN_MENU;
     }
+    ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
     bruteState = BRUTE_IDLE;
     initialized = false;
     signalCaptured_IR = false;
@@ -992,7 +1014,6 @@ void loop()
     mySwitch.disableReceive();
     mySwitch.disableTransmit();
     IrReceiver.disableIRIn();
-    ELECHOUSE_cc1101.setMHZ(433.92);
     detachInterrupt(GD0_PIN_CC);
     digitalWrite(GD0_PIN_CC, LOW);
     digitalWrite(BLE_PIN, LOW);
@@ -1237,6 +1258,10 @@ void loop()
   }
   case RA_SPECTRUM:
   {
+    if (!locked && ok.click())
+    {
+      resetRFSpectrum();
+    }
     drawRSSISpectrum();
     break;
   }

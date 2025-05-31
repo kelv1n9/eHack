@@ -106,20 +106,10 @@ const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 uint8_t currentFreqIndex = 1;
 
-#define RSSI_HISTORY_SIZE 10
-
-float rssiHistory[raFreqCount][RSSI_HISTORY_SIZE]; // история на каждую частоту
-uint8_t rssiHistoryIndex[raFreqCount] = {0};       // индекс для кольцевого буфера
-
-float rssiBaseline[raFreqCount]; // baseline для каждой частоты
-
-uint8_t detectedChannel = 255; // номер канала где обнаружен сигнал, 0..3; 255 = ничего
-const int rssiThreshold = 8;   // Порог срабатывания (dB выше baseline)
-
-uint32_t lastUpdateTime = 0;
-const uint16_t updateInterval = 10; // каждые 10 мс обновляем одну частоту
-uint8_t currentScanFreq = 0;        // по какой частоте сейчас идём
-float lockedFrequency = -1.0;
+float rssiCurrent[raFreqCount];
+float rssiMaxPeak[raFreqCount] = {0}; // изначально все 0
+float rssiAbsoluteMax[raFreqCount];   // новый массив для "замороженной" линии
+uint8_t currentScanFreq = 0; // по какой частоте сейчас идём
 
 uint8_t rssiBuffer[RSSI_BUFFER_SIZE];
 uint8_t rssiIndex = 0;
@@ -1613,35 +1603,14 @@ void changeFreqButtons(const char *mode)
 
 void updateRSSIMonitor()
 {
-  if (millis() - lastUpdateTime >= updateInterval)
+  
+}
+
+void resetRFSpectrum()
+{
+  for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    lastUpdateTime = millis();
-
-    // переключаемся на следующую частоту
-    ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-    delayMicroseconds(200); // можно немного подождать, чтобы PLL стабилизировался
-
-    int rssi = ELECHOUSE_cc1101.getRssi();
-    // добавляем в историю
-    rssiHistory[currentScanFreq][rssiHistoryIndex[currentScanFreq]] = rssi;
-    rssiHistoryIndex[currentScanFreq] = (rssiHistoryIndex[currentScanFreq] + 1) % RSSI_HISTORY_SIZE;
-
-    // считаем среднее по этой частоте
-    float avg = 0;
-    for (uint8_t i = 0; i < RSSI_HISTORY_SIZE; i++)
-    {
-      avg += rssiHistory[currentScanFreq][i];
-    }
-    avg /= RSSI_HISTORY_SIZE;
-
-    // проверяем на превышение baseline
-    if (avg > (rssiBaseline[currentScanFreq] + rssiThreshold))
-    {
-      detectedChannel = currentScanFreq;
-      lockedFrequency = raFrequencies[currentScanFreq]; // записали частоту
-    }
-
-    // переходим к следующей частоте
-    currentScanFreq = (currentScanFreq + 1) % raFreqCount;
+    rssiMaxPeak[i] = 0;               // сброс инертного пика
+    rssiAbsoluteMax[i] = 0;           // сброс "замороженного" максимума
   }
 }

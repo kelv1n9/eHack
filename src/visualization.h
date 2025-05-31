@@ -1041,37 +1041,14 @@ void ShowSavedSignal_RFID()
 
 void drawRSSISpectrum()
 {
-  // Заголовок: если есть lock — показываем, если нет — пусто (не печатаем вообще)
-  if (lockedFrequency > 0)
-  {
-    char header[20];
-    sprintf(header, "LOCK: %.2f MHz", lockedFrequency);
-    oled.setCursorXY((128 - getTextWidth(header)) / 2, 0);
-    oled.print(header);
-  }
-
-  // Гистограмма
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    float avg = 0;
-    for (uint8_t j = 0; j < RSSI_HISTORY_SIZE; j++)
-    {
-      avg += rssiHistory[i][j];
-    }
-    avg /= RSSI_HISTORY_SIZE;
-
-    // Приводим к высоте
-    int h = map(avg, -100, -30, 0, 50);
-    h = constrain(h, 0, 50);
-
-    // Рисуем столбец
     int x = 10 + i * 30;
-    oled.rect(x, 63 - h, x + 20, 63, OLED_FILL);
 
-    // Подпись частоты (снизу)
-    char label[10];
-    sprintf(label, "%.0f", raFrequencies[i]);
-    oled.setCursorXY(x + (20 - getTextWidth(label)) / 2, 54);
-    oled.print(label);
+    int peakY = 63 - (int)(rssiMaxPeak[i]);
+    oled.rect(x, peakY, x + 20, 63, OLED_FILL);
+
+    int absPeakY = 63 - (int)(rssiAbsoluteMax[i]);
+    oled.line(x, absPeakY, x + 20, absPeakY, 1);
   }
 }
