@@ -27,8 +27,6 @@ void setup()
   analogReadResolution(12);
   EEPROM.begin(512);
 
-  ELECHOUSE_cc1101.setSpiPin(6, 4, 7, CSN_PIN_CC);
-
   digitalWrite(23, HIGH); // PFM to PWM
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
@@ -63,15 +61,20 @@ void setup()
   loadSettings();
   loadAllScores();
 
+  ELECHOUSE_cc1101.setSpiPin(6, 4, 7, CSN_PIN_CC);
+
   ELECHOUSE_cc1101.setClb(1, 11, 13);
   ELECHOUSE_cc1101.setClb(2, 14, 17);
   ELECHOUSE_cc1101.setClb(3, 29, 33);
   ELECHOUSE_cc1101.setClb(4, 33, 34);
 
   ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.setRxBW(250.00);
+  ELECHOUSE_cc1101.setModulation(2);    // ASK
+  ELECHOUSE_cc1101.setDeviation(47.60); // Set the Frequency deviation in kHz. Value from 1.58 to 380.85. Default is 47.60 kHz.
+  ELECHOUSE_cc1101.setRxBW(250.00);     // Value from 58.03 to 812.50. Default is 812.50 kHz.
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
-  ELECHOUSE_cc1101.setMHZ(433.92);
+  ELECHOUSE_cc1101.setPA(12);      // Set TxPower. The following settings are possible depending on the frequency band.  (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
+  ELECHOUSE_cc1101.setMHZ(433.92); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
 }
 
 void setup1()
@@ -512,7 +515,7 @@ void loop1()
 
     currentScanFreq = (currentScanFreq + 1) % raFreqCount;
     ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-    delay(50);
+    delay(60);
 
     float currentRssi = ELECHOUSE_cc1101.getRssi();
     int h = constrain(map(currentRssi, -77, -17, 0, 50), 0, 50);
@@ -895,7 +898,8 @@ void loop1()
   /******************************** RFID *************************************/
   case RFID_SCAN:
   {
-    if (!initialized) {
+    if (!initialized)
+    {
       rdm6300.begin(RFID_RX_PIN);
       initialized = true;
     }
@@ -999,26 +1003,42 @@ void loop()
   {
     if (currentMenu == MAIN_MENU)
     {
-        return;
+      return;
     }
-    if (currentMenu == SETTINGS)
+
+    // Exiting menu
+    if (currentMenu == SETTINGS || currentMenu == HF_MENU || currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
     {
-      saveSettings();
-      vibro(255, 50);
-    }
-    if (currentMenu != MAIN_MENU)
-    {
+      if (currentMenu == SETTINGS)
+      {
+        saveSettings();
+        vibro(255, 50);
+      }
+
       currentMenu = parentMenu;
       parentMenu = grandParentMenu;
       grandParentMenu = MAIN_MENU;
+      vibro(255, 50);
+      return;
     }
+
+    // Menu return
+    currentMenu = parentMenu;
+    parentMenu = grandParentMenu;
+    grandParentMenu = MAIN_MENU;
+
+    // States
     ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
+    delay(60);
     bruteState = BRUTE_IDLE;
     initialized = false;
     signalCaptured_IR = false;
     mySwitchIsAvailable = false;
     attackIsActive = false;
     signalCaptured_433MHZ = false;
+
+    // Disable
+    ELECHOUSE_cc1101.goSleep();
     mySwitch.disableReceive();
     mySwitch.disableTransmit();
     IrReceiver.disableIRIn();
@@ -1029,6 +1049,7 @@ void loop()
     digitalWrite(RFID_COIL_PIN, LOW);
     digitalWrite(BLE_PIN, LOW);
     stopRadioAttack();
+
     vibro(255, 50);
     return;
   }
