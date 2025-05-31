@@ -993,6 +993,10 @@ void loop()
 
   if (!locked && ok.hold())
   {
+    if (currentMenu == MAIN_MENU)
+    {
+        return;
+    }
     if (currentMenu == SETTINGS)
     {
       saveSettings();

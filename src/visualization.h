@@ -656,7 +656,7 @@ void drawRSSIGraph()
 void ShowAttack_RA()
 {
   char Text[20];
-  sprintf(Text, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
+  sprintf(Text, "Freq: %.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
   oled.print(Text);
