@@ -99,6 +99,8 @@ void loop1()
       mySwitch.resetAvailable();
     }
 
+    changeFreqButtons("RX");
+
     if (mySwitch.available())
     {
       // Check if the signal is valid
@@ -196,6 +198,8 @@ void loop1()
       mySwitch.disableTransmit();
       initialized = true;
     }
+
+    changeFreqButtons("RX");
 
     if (anMotorsCaptured || cameCaptured || niceCaptured)
     {
@@ -463,6 +467,8 @@ void loop1()
       initialized = true;
     }
 
+    changeFreqButtons("TX");
+
     if (nowMicros - lastNoise > 500)
     {
       noiseState = !noiseState;
@@ -497,7 +503,22 @@ void loop1()
     break;
   }
   /********************************** RF SPECTRUM **************************************/
-  case RA_SIGNAL:
+  case RA_SPECTRUM:
+  {
+    if (!initialized)
+    {
+      mySwitch.resetAvailable();
+      mySwitch.disableTransmit();
+      mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx();
+      initialized = true;
+    }
+
+    updateRSSIMonitor();
+    break;
+  }
+  /********************************** RF ACTIVITY **************************************/
+  case RA_ACTIVITY:
   {
     static uint32_t lastStepMs = millis();
 
@@ -510,18 +531,7 @@ void loop1()
       initialized = true;
     }
 
-    if (!locked && (down.click()))
-    {
-      currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      vibro(255, 30);
-    }
-    else if (!locked && (up.click()))
-    {
-      currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      vibro(255, 30);
-    }
+    changeFreqButtons("RX");
 
     if (millis() - lastStepMs >= RSSI_STEP_MS)
     {
@@ -962,10 +972,6 @@ void loop()
 
   if (!locked && ok.hold())
   {
-    if (currentMenu != RA_SIGNAL)
-    {
-      signalCaptured_433MHZ = false;
-    }
     if (currentMenu == SETTINGS)
     {
       saveSettings();
@@ -982,6 +988,7 @@ void loop()
     signalCaptured_IR = false;
     mySwitchIsAvailable = false;
     attackIsActive = false;
+    signalCaptured_433MHZ = false;
     mySwitch.disableReceive();
     mySwitch.disableTransmit();
     IrReceiver.disableIRIn();
@@ -1020,7 +1027,7 @@ void loop()
       ok.reset();
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(RA_SIGNAL + HFmenuIndex);
+      currentMenu = static_cast<MenuState>(RA_AIR + HFmenuIndex);
       vibro(255, 50);
     }
     break;
@@ -1164,6 +1171,20 @@ void loop()
     }
     break;
   }
+  case RA_AIR:
+  {
+    menuButtons(RAsignalMenuIndex, RAsignalMenuCount);
+    drawMenu(RAsignalMenuItems, RAsignalMenuCount, RAsignalMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(RA_SPECTRUM + RAsignalMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
   case RA_SCAN:
   {
     if (!signalCaptured_433MHZ)
@@ -1191,6 +1212,7 @@ void loop()
     if (attackIsActive)
     {
       ShowAttack_RA();
+      changeFreqButtons("TX");
     }
     else
     {
@@ -1208,9 +1230,14 @@ void loop()
     ShowSend_Tesla();
     break;
   }
-  case RA_SIGNAL:
+  case RA_ACTIVITY:
   {
     drawRSSIGraph();
+    break;
+  }
+  case RA_SPECTRUM:
+  {
+    drawRSSISpectrum();
     break;
   }
   case BARRIER_SCAN:
@@ -1240,6 +1267,7 @@ void loop()
     if (attackIsActive)
     {
       ShowAttack_RA();
+      changeFreqButtons("TX");
     }
     else
     {

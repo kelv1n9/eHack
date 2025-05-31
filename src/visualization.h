@@ -15,12 +15,14 @@ enum MenuState
   SNAKE,
   FLAPPY,
 
-  RA_SIGNAL,
+  RA_AIR,
   RA_BARRIER,
   RA_SCAN,
   RA_ATTACK,
   RA_NOISE,
   RA_TESLA,
+  RA_SPECTRUM,
+  RA_ACTIVITY,
 
   BARRIER_SCAN,
   BARRIER_REPLAY,
@@ -46,7 +48,7 @@ enum MenuState
 };
 
 const char PROGMEM *mainMenuItems[] = {
-    "433 MHz",
+    "SubGHz",
     "2.4 GHz",
     "IR Tools",
     "RFID",
@@ -101,6 +103,11 @@ const char PROGMEM *barrierMenuItems[] = {
 const char PROGMEM *barrierBruteMenuItems[] = {
     "CAME",
     "NICE",
+};
+
+const char PROGMEM *RAsignalMenuItems[] = {
+    "Spectrum",
+    "Activity",
 };
 
 MenuState currentMenu = MAIN_MENU;
@@ -248,7 +255,7 @@ void ShowScanning_433MHZ()
   oled.print(Text);
 
   char Text1[30];
-  sprintf(Text1, "Frequency: 433 MHz");
+  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
   oled.print(Text1);
 
@@ -295,7 +302,7 @@ void ShowRA_NOISE()
   oled.print(Text);
 
   char Text1[30];
-  sprintf(Text1, "Frequency: 433 MHz");
+  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
   oled.print(Text1);
 
@@ -361,25 +368,6 @@ void ShowSavedSignal_RA()
   sprintf(Text5, "Delay: %d ms", capturedDelay);
   oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
   oled.print(Text5);
-}
-
-void ShowSignalError_433MHZ()
-{
-  char Text[20];
-  sprintf(Text, "Data error:");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "No 433 MHz signal");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "captured");
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 44);
-  oled.print(Text3);
 }
 
 void ShowSend_Tesla()
@@ -667,20 +655,26 @@ void drawRSSIGraph()
 
 void ShowAttack_RA()
 {
+  char Text[20];
+  sprintf(Text, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
   char Text2[20];
   sprintf(Text2, "Click OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 20);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
   oled.print(Text2);
 
   for (int x = 10; x < 118; x++)
   {
-    int y = 45 + sin((x + sineOffset + 12) / (float)8) * 10;
+    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
     oled.dot(x, y);
   }
 
   for (int x = 10; x < 118; x++)
   {
-    int y = 45 + sin((x + sineOffset) / (float)10) * 10;
+    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
     oled.dot(x, y);
   }
 
@@ -1043,4 +1037,43 @@ void ShowSavedSignal_RFID()
   sprintf(Text2, "UID: %lX", tagID_125kHz);
   oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 45);
   oled.print(Text2);
+}
+
+void drawRSSISpectrum()
+{
+  oled.clear();
+
+  // Заголовок: если есть lock — показываем, если нет — пусто (не печатаем вообще)
+  if (lockedFrequency > 0)
+  {
+    char header[20];
+    sprintf(header, "LOCK: %.2f MHz", lockedFrequency);
+    oled.setCursorXY((128 - getTextWidth(header)) / 2, 0);
+    oled.print(header);
+  }
+
+  // Гистограмма
+  for (uint8_t i = 0; i < raFreqCount; i++)
+  {
+    float avg = 0;
+    for (uint8_t j = 0; j < RSSI_HISTORY_SIZE; j++)
+    {
+      avg += rssiHistory[i][j];
+    }
+    avg /= RSSI_HISTORY_SIZE;
+
+    // Приводим к высоте
+    int h = map(avg, -100, -30, 0, 50);
+    h = constrain(h, 0, 50);
+
+    // Рисуем столбец
+    int x = 10 + i * 30;
+    oled.rect(x, 63 - h, x + 20, 63, OLED_FILL);
+
+    // Подпись частоты (снизу)
+    char label[10];
+    sprintf(label, "%.0f", raFrequencies[i]);
+    oled.setCursorXY(x + (20 - getTextWidth(label)) / 2, 54);
+    oled.print(label);
+  }
 }
