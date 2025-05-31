@@ -2,7 +2,7 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos
 .pio
 .vscode
-.unused
+unused
 
 ### macOS ###
 # General
