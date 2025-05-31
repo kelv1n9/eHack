@@ -21,6 +21,7 @@ enum MenuState
   RA_ATTACK,
   RA_NOISE,
   RA_TESLA,
+
   RA_SPECTRUM,
   RA_ACTIVITY,
 
@@ -657,6 +658,34 @@ void ShowAttack_RA()
 {
   char Text[20];
   sprintf(Text, "Freq: %.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text2[20];
+  sprintf(Text2, "Click OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
+  oled.print(Text2);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
+}
+
+void ShowEmulation_RFID()
+{
+  char Text[20];
+  sprintf(Text, "RFID Freq: 125 kHz");
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
   oled.print(Text);

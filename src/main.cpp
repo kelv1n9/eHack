@@ -20,8 +20,6 @@ void setup()
   oled.update();
   ShowSplashScreen();
 
-  rdm6300.begin(RFID_RX_PIN);
-
   nfc.begin();
   nfc.setPassiveActivationRetries(0xFF);
   nfc.SAMConfig();
@@ -71,7 +69,7 @@ void setup()
   ELECHOUSE_cc1101.setClb(4, 33, 34);
 
   ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.setRxBW(200.00);
+  ELECHOUSE_cc1101.setRxBW(250.00);
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
   ELECHOUSE_cc1101.setMHZ(433.92);
 }
@@ -897,6 +895,11 @@ void loop1()
   /******************************** RFID *************************************/
   case RFID_SCAN:
   {
+    if (!initialized) {
+      rdm6300.begin(RFID_RX_PIN);
+      initialized = true;
+    }
+
     static uint32_t lastCheck125kHz = 0;
 
     /********************* 125 kHz *******************/
@@ -908,6 +911,7 @@ void loop1()
       {
         tagID_125kHz = rdm6300.get_tag_id();
         tagDetected = 1;
+        vibro(255, 30);
 
         RFID data;
         data.tagID = tagID_125kHz;
@@ -919,11 +923,11 @@ void loop1()
         }
 
         writeRFIDData(lastUsedSlotRFID, data);
-
         lastUsedSlotRFID = (lastUsedSlotRFID + 1) % MAX_RFID;
-        vibro(255, 30);
       }
     }
+
+    break;
   }
   case RFID_EMULATE:
   {
@@ -967,7 +971,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ATTACK && currentMenu != IR_SENDER && currentMenu != BARRIER_REPLAY)
+  if (up.hold() && down.hold() && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ATTACK && currentMenu != IR_SENDER && currentMenu != BARRIER_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
@@ -1018,8 +1022,11 @@ void loop()
     mySwitch.disableReceive();
     mySwitch.disableTransmit();
     IrReceiver.disableIRIn();
+    rdm6300.end();
+    nfc.powerDownMode();
     detachInterrupt(GD0_PIN_CC);
     digitalWrite(GD0_PIN_CC, LOW);
+    digitalWrite(RFID_COIL_PIN, LOW);
     digitalWrite(BLE_PIN, LOW);
     stopRadioAttack();
     vibro(255, 50);
@@ -1406,7 +1413,7 @@ void loop()
 
     if (attackIsActive)
     {
-      ShowAttack_RA();
+      ShowEmulation_RFID();
     }
     else
     {
