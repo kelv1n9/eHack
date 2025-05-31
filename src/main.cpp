@@ -1,0 +1,1433 @@
+#include "visualization.h"
+#include "barrier.h"
+
+void setup()
+{
+  // I2C
+  Wire.setSDA(0);
+  Wire.setSCL(1);
+  Wire.setClock(400000);
+  Wire.begin();
+
+  // SPI
+  SPI.setSCK(6);
+  SPI.setMOSI(7);
+  SPI.setMISO(4);
+  SPI.begin();
+
+  oled.init();
+  oled.clear();
+  resetBrightness();
+  oled.update();
+  ShowSplashScreen();
+
+  rdm6300.begin(RFID_RX_PIN);
+
+  nfc.begin();
+  nfc.setPassiveActivationRetries(0xFF);
+  nfc.SAMConfig();
+
+  analogReadResolution(12);
+  EEPROM.begin(512);
+
+  ELECHOUSE_cc1101.setSpiPin(6, 4, 7, CSN_PIN_CC);
+
+  digitalWrite(23, HIGH); // PFM to PWM
+
+  IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
+  IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);
+
+  pinMode(BTN_DOWN, INPUT_PULLUP);
+  pinMode(BTN_OK, INPUT_PULLUP);
+  pinMode(BTN_UP, INPUT_PULLUP);
+
+  pinMode(CSN_PIN_NRF, OUTPUT);
+  pinMode(CSN_PIN_CC, OUTPUT);
+  digitalWrite(CSN_PIN_CC, HIGH);
+  digitalWrite(CSN_PIN_NRF, HIGH);
+
+  pinMode(RFID_COIL_PIN, OUTPUT);
+  digitalWrite(RFID_COIL_PIN, LOW);
+
+  pinMode(BLE_PIN, OUTPUT);
+  digitalWrite(BLE_PIN, LOW);
+
+  pinMode(VIBRO, OUTPUT);
+
+  findLastUsedSlotRA();
+  findLastUsedSlotIR();
+  findLastUsedSlotRFID();
+  findLastUsedSlotBarrier();
+
+  vibro(255, 30);
+
+  batVoltage = readBatteryVoltage();
+
+  loadSettings();
+  loadAllScores();
+
+  ELECHOUSE_cc1101.setClb(1, 11, 13);
+  ELECHOUSE_cc1101.setClb(2, 14, 17);
+  ELECHOUSE_cc1101.setClb(3, 29, 33);
+  ELECHOUSE_cc1101.setClb(4, 33, 34);
+
+  ELECHOUSE_cc1101.Init();
+  // ELECHOUSE_cc1101.setGDO0(TX_PIN_CUSTOM);
+  ELECHOUSE_cc1101.setMHZ(433.92);
+}
+
+void setup1()
+{
+}
+
+void loop1()
+{
+  uint32_t now = millis();
+
+  switch (currentMenu)
+  {
+  /*============================= 433 MHz Protocol =================================*/
+  /********************************** SCANNING **************************************/
+  case RA_SCAN:
+  {
+    if (!initialized)
+    {
+      initialized = true;
+      mySwitch.disableTransmit();
+      mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx();
+
+      mySwitch.resetAvailable();
+    }
+
+    if (mySwitch.available())
+    {
+      // Check if the signal is valid
+      if (mySwitch.getReceivedBitlength() < 10)
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      signalCaptured_433MHZ = true;
+
+      capturedCode = mySwitch.getReceivedValue();
+      capturedLength = mySwitch.getReceivedBitlength();
+      capturedProtocol = mySwitch.getReceivedProtocol();
+      capturedDelay = mySwitch.getReceivedDelay();
+
+      SimpleRAData data;
+      data.code = capturedCode;
+      data.length = capturedLength;
+      data.protocol = capturedProtocol;
+      data.delay = capturedDelay;
+
+      // Check for duplicates
+      if (isDuplicateRA(data))
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      if (settings.saveRA)
+      {
+        writeRAData(lastUsedSlotRA, data);
+      }
+
+      lastUsedSlotRA = (lastUsedSlotRA + 1) % MAX_RA_SIGNALS;
+
+      mySwitch.resetAvailable();
+      vibro(255, 200, 3, 80);
+    }
+    break;
+  }
+  /********************************** ATTACK **************************************/
+  case RA_ATTACK:
+  {
+    static uint32_t attackTimer = 0;
+
+    if (!initialized)
+    {
+      mySwitch.disableReceive();
+      mySwitch.enableTransmit(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetTx();
+
+      initialized = true;
+    }
+
+    if (!locked && !attackIsActive && (up.click() || up.step()))
+    {
+      if (selectedSlotRA == 0)
+        selectedSlotRA = MAX_RA_SIGNALS - 1;
+      else
+        selectedSlotRA--;
+      vibro(255, 20);
+    }
+
+    if (!locked && !attackIsActive && (down.click() || down.step()))
+    {
+      selectedSlotRA = (selectedSlotRA + 1) % MAX_RA_SIGNALS;
+      vibro(255, 20);
+    }
+
+    SimpleRAData data = readRAData(selectedSlotRA);
+    capturedCode = data.code;
+    capturedLength = data.length;
+    capturedProtocol = data.protocol;
+    capturedDelay = data.delay;
+
+    mySwitch.setProtocol(capturedProtocol);
+
+    if (attackIsActive && now - attackTimer >= 1000)
+    {
+      mySwitch.send(capturedCode, capturedLength);
+      attackTimer = now;
+    }
+
+    break;
+  }
+  /******************************* BARRIER SCAN **********************************/
+  case BARRIER_SCAN:
+  {
+    if (!initialized)
+    {
+      ELECHOUSE_cc1101.SetRx();
+      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      initialized = true;
+    }
+
+    if (anMotorsCaptured || cameCaptured || niceCaptured)
+    {
+      signalCaptured_433MHZ = true;
+
+      SimpleBarrierData data;
+      data.codeMain = barrierCodeMain;
+      data.codeAdd = barrierCodeAdd;
+      data.protocol = barrierProtocol;
+
+      // Check for duplicates
+      if (isDuplicateBarrier(data))
+      {
+        break;
+      }
+
+      if (settings.saveRA)
+      {
+        writeBarrierData(lastUsedSlotBarrier, data);
+      }
+
+      lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
+
+      vibro(255, 200, 3, 80);
+
+      anMotorsCaptured = false;
+      niceCaptured = false;
+      cameCaptured = false;
+    }
+
+    break;
+  }
+  /********************************** BARRIER REPLAY **************************************/
+  case BARRIER_REPLAY:
+  {
+    static uint32_t attackTimer = 0;
+
+    if (!initialized)
+    {
+      ok.reset();
+      ELECHOUSE_cc1101.SetTx();
+      initialized = true;
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, OUTPUT);
+    }
+
+    if (!locked && !attackIsActive && (up.click() || up.step()))
+    {
+      if (selectedSlotBarrier == 0)
+        selectedSlotBarrier = MAX_BARRIER_SIGNALS - 1;
+      else
+        selectedSlotBarrier--;
+      vibro(255, 20);
+    }
+
+    if (!locked && !attackIsActive && (down.click() || down.step()))
+    {
+      selectedSlotBarrier = (selectedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
+      vibro(255, 20);
+    }
+
+    SimpleBarrierData data = readBarrierData(selectedSlotBarrier);
+    barrierCodeMain = data.codeMain;
+    barrierCodeAdd = data.codeAdd;
+    barrierProtocol = data.protocol;
+
+    if (attackIsActive && now - attackTimer >= 1000)
+    {
+      if (barrierProtocol == 0)
+      {
+        sendANMotors(barrierCodeMain, barrierCodeAdd);
+      }
+      else if (barrierProtocol == 1)
+      {
+        sendNice(barrierCodeMain);
+      }
+      else if (barrierProtocol == 2)
+      {
+        sendCame(barrierCodeMain);
+      }
+      attackTimer = now;
+    }
+
+    break;
+  }
+  /********************************** BRUTE CAME **************************************/
+  case BARRIER_BRUTE_CAME:
+  {
+    static uint32_t lastSendTime = 0;
+
+    if (!initialized)
+    {
+      ok.reset();
+      initialized = true;
+      ELECHOUSE_cc1101.SetTx();
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, OUTPUT);
+    }
+
+    switch (bruteState)
+    {
+    case BRUTE_IDLE:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_RUNNING;
+        barrierBruteIndex = 4095;
+        lastSendTime = now;
+        vibro(255, 50);
+      }
+      break;
+    }
+
+    case BRUTE_RUNNING:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_PAUSED;
+        vibro(255, 50);
+        break;
+      }
+
+      if (now - lastSendTime > 50)
+      {
+        lastSendTime = now;
+
+        if (barrierBruteIndex >= 0)
+        {
+          sendCame(barrierBruteIndex);
+          barrierBruteIndex--;
+        }
+        if (barrierBruteIndex < 0)
+        {
+          bruteState = BRUTE_IDLE;
+          vibro(255, 50);
+        }
+      }
+      break;
+    }
+    case BRUTE_PAUSED:
+    {
+      if (!locked && (up.click() || up.step()))
+      {
+        if (barrierBruteIndex == 4095)
+          barrierBruteIndex = 0;
+        else
+          barrierBruteIndex++;
+        vibro(255, 20);
+      }
+
+      if (!locked && (down.click() || down.step()))
+      {
+        if (barrierBruteIndex == 0)
+          barrierBruteIndex = 4095;
+        else
+          barrierBruteIndex--;
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        sendCame(barrierBruteIndex);
+        vibro(255, 50);
+      }
+      break;
+    }
+    }
+    break;
+  }
+  /********************************** BRUTE NICE **************************************/
+  case BARRIER_BRUTE_NICE:
+  {
+    static uint32_t lastSendTime = 0;
+
+    if (!initialized)
+    {
+      ok.reset();
+      initialized = true;
+      ELECHOUSE_cc1101.SetTx();
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, OUTPUT);
+    }
+
+    switch (bruteState)
+    {
+    case BRUTE_IDLE:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_RUNNING;
+        barrierBruteIndex = 4095;
+        lastSendTime = now;
+        vibro(255, 50);
+      }
+      break;
+    }
+
+    case BRUTE_RUNNING:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_PAUSED;
+        vibro(255, 50);
+        break;
+      }
+
+      if (barrierBruteIndex >= 0)
+      {
+        sendNice(barrierBruteIndex);
+        barrierBruteIndex--;
+      }
+      if (barrierBruteIndex < 0)
+      {
+        bruteState = BRUTE_IDLE;
+        vibro(255, 50);
+      }
+      break;
+    }
+    case BRUTE_PAUSED:
+    {
+      if (!locked && (up.click() || up.step()))
+      {
+        if (barrierBruteIndex == 4095)
+          barrierBruteIndex = 0;
+        else
+          barrierBruteIndex++;
+        vibro(255, 20);
+      }
+
+      if (!locked && (down.click() || down.step()))
+      {
+        if (barrierBruteIndex == 0)
+          barrierBruteIndex = 4095;
+        else
+          barrierBruteIndex--;
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        sendNice(barrierBruteIndex);
+        vibro(255, 50);
+      }
+      break;
+    }
+    }
+    break;
+  }
+  /********************************** NOISE **************************************/
+  case RA_NOISE:
+  {
+    static uint32_t lastNoise = 0;
+    static bool noiseState = false;
+    uint32_t nowMicros = micros();
+
+    if (!initialized)
+    {
+      ELECHOUSE_cc1101.SetTx();
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, OUTPUT);
+      initialized = true;
+    }
+
+    if (nowMicros - lastNoise > 500)
+    {
+      noiseState = !noiseState;
+      digitalWrite(GD0_PIN_CC, noiseState);
+      lastNoise = nowMicros;
+    }
+    break;
+  }
+  /********************************** TESLA **************************************/
+  case RA_TESLA:
+  {
+    if (!initialized)
+    {
+      ELECHOUSE_cc1101.SetTx();
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, OUTPUT);
+      initialized = true;
+      vibro(255, 50);
+    }
+
+    static bool toggleFreq = false;
+    float freq = toggleFreq ? 315.0 : 433.92;
+    ELECHOUSE_cc1101.SetTx(freq);
+    toggleFreq = !toggleFreq;
+
+    sendTeslaSignal_v1();
+    delay(50);
+    sendTeslaSignal_v2();
+    delay(50);
+
+    break;
+  }
+  /********************************** RF SPECTRUM **************************************/
+  case RA_SIGNAL:
+  {
+    static uint32_t lastStepMs = millis();
+
+    if (!initialized)
+    {
+      mySwitch.resetAvailable();
+      mySwitch.disableTransmit();
+      mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx();
+      initialized = true;
+    }
+
+    if (!locked && (down.click()))
+    {
+      currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      vibro(255, 30);
+    }
+    else if (!locked && (up.click()))
+    {
+      currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      vibro(255, 30);
+    }
+
+    if (millis() - lastStepMs >= RSSI_STEP_MS)
+    {
+      int rssiValue = ELECHOUSE_cc1101.getRssi();
+      uint8_t level = constrain(map(rssiValue, -100, -30, 0, 63), 0, 63);
+
+      rssiBuffer[rssiIndex++] = level;
+      if (rssiIndex >= RSSI_BUFFER_SIZE)
+        rssiIndex = 0;
+
+      lastStepMs = millis();
+    }
+    break;
+  }
+  /*============================= InfraRed Protocol =================================*/
+  /********************************** SCANNING **************************************/
+  case IR_RECEIVER:
+  {
+    if (!initialized)
+    {
+      protocol, address, command = 0;
+      IrReceiver.enableIRIn();
+      initialized = true;
+    }
+
+    if (IrReceiver.decode())
+    {
+      auto &data = IrReceiver.decodedIRData;
+
+      if (data.rawDataPtr->rawlen < 4 || data.flags & IRDATA_FLAGS_IS_REPEAT)
+      {
+        IrReceiver.resume();
+        break;
+      }
+
+      signalCaptured_IR = true;
+
+      protocol = data.protocol;
+      address = data.address;
+      command = data.command;
+
+      SimpleIRData ir;
+      ir.protocol = protocol;
+      ir.address = address;
+      ir.command = command;
+
+      // Check for duplicates
+      if (isDuplicateIR(ir))
+      {
+        IrReceiver.resume();
+        break;
+      }
+
+      if (settings.saveIR)
+      {
+        writeIRData(lastUsedSlotIR, ir);
+      }
+
+      lastUsedSlotIR = (lastUsedSlotIR + 1) % MAX_IR_SIGNALS;
+
+      IrReceiver.resume();
+      vibro(255, 200, 3, 80);
+    }
+    break;
+  }
+  /********************************** SENDER **************************************/
+  case IR_SENDER:
+  {
+    if (!initialized)
+    {
+      IrReceiver.disableIRIn();
+      initialized = true;
+    }
+
+    SimpleIRData data = readIRData(selectedSlotIR);
+    protocol = data.protocol;
+    address = data.address;
+    command = data.command;
+
+    if (!locked && (up.click() || up.step()))
+    {
+      if (selectedSlotIR == 0)
+        selectedSlotIR = MAX_IR_SIGNALS - 1;
+      else
+        selectedSlotIR--;
+      vibro(255, 20);
+    }
+
+    if (!locked && (down.click() || down.step()))
+    {
+      selectedSlotIR = (selectedSlotIR + 1) % MAX_IR_SIGNALS;
+      vibro(255, 20);
+    }
+
+    if (!locked && ok.click())
+    {
+      if (protocol == 0 && address == 0 && command == 0)
+        break;
+      IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
+      delay(DELAY_AFTER_SEND);
+      vibro(255, 50);
+    }
+
+    break;
+  }
+  /********************************** BRUTE FORCE TV **************************************/
+  case IR_TV:
+  {
+    static uint32_t lastSendTime = 0;
+
+    if (!initialized)
+    {
+      IrReceiver.disableIRIn();
+      initialized = true;
+    }
+
+    switch (bruteState)
+    {
+    case BRUTE_IDLE:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_RUNNING;
+        currentIndex = 0;
+        lastSendTime = now;
+        vibro(255, 50);
+      }
+      break;
+    }
+
+    case BRUTE_RUNNING:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_PAUSED;
+        vibro(255, 50);
+        break;
+      }
+
+      if (now - lastSendTime > 50 && currentIndex < IR_COMMAND_COUNT_TV)
+      {
+        getIRCommand(irCommandsTV, currentIndex, protocol, address, command);
+        IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
+        delay(DELAY_AFTER_SEND);
+        lastSendTime = now;
+        currentIndex++;
+      }
+
+      if (currentIndex >= IR_COMMAND_COUNT_TV)
+      {
+        bruteState = BRUTE_IDLE;
+        vibro(255, 50);
+      }
+      break;
+    }
+    case BRUTE_PAUSED:
+    {
+      if (!locked && (up.click() || up.step()))
+      {
+        if (currentIndex == 0)
+          currentIndex = IR_COMMAND_COUNT_TV - 1;
+        else
+          currentIndex--;
+
+        getIRCommand(irCommandsTV, currentIndex, protocol, address, command);
+        vibro(255, 20);
+      }
+
+      if (!locked && (down.click() || down.step()))
+      {
+        currentIndex = (currentIndex + 1) % IR_COMMAND_COUNT_TV;
+
+        getIRCommand(irCommandsTV, currentIndex, protocol, address, command);
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
+        delay(DELAY_AFTER_SEND);
+        vibro(255, 50);
+      }
+      break;
+    }
+    }
+    break;
+  }
+  /********************************** BRUTE FORCE PROJECTOR **************************************/
+  case IR_PROJECTOR:
+  {
+    static uint32_t lastSendTime = 0;
+
+    if (!initialized)
+    {
+      IrReceiver.disableIRIn();
+      initialized = true;
+    }
+
+    switch (bruteState)
+    {
+    case BRUTE_IDLE:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_RUNNING;
+        currentIndex = 0;
+        lastSendTime = now;
+        vibro(255, 50);
+      }
+      break;
+    }
+
+    case BRUTE_RUNNING:
+    {
+      if (!locked && ok.click())
+      {
+        bruteState = BRUTE_PAUSED;
+        vibro(255, 50);
+        break;
+      }
+
+      if (now - lastSendTime > 20 && currentIndex < IR_COMMAND_COUNT_PR)
+      {
+        getIRCommand(irCommandsPR, currentIndex, protocol, address, command);
+        IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
+        delay(DELAY_AFTER_SEND);
+        lastSendTime = now;
+        currentIndex++;
+      }
+
+      if (currentIndex >= IR_COMMAND_COUNT_PR)
+      {
+        bruteState = BRUTE_IDLE;
+        vibro(255, 50);
+      }
+      break;
+    }
+    case BRUTE_PAUSED:
+    {
+      if (!locked && (up.click() || up.step()))
+      {
+        if (currentIndex == 0)
+          currentIndex = IR_COMMAND_COUNT_PR - 1;
+        else
+          currentIndex--;
+
+        getIRCommand(irCommandsPR, currentIndex, protocol, address, command);
+        vibro(255, 20);
+      }
+
+      if (!locked && (down.click() || down.step()))
+      {
+        currentIndex = (currentIndex + 1) % IR_COMMAND_COUNT_PR;
+
+        getIRCommand(irCommandsPR, currentIndex, protocol, address, command);
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
+        delay(DELAY_AFTER_SEND);
+        vibro(255, 50);
+      }
+      break;
+    }
+    }
+    break;
+  }
+  /******************************** ENABLE 2.4 GHz **************************************/
+  case UHF_ALL:
+  {
+    if (!initialized)
+    {
+      initRadioAttack();
+      initialized = true;
+    }
+    radioChannel = random(0, 125);
+    radio.setChannel(radioChannel);
+    break;
+  }
+  case UHF_WIFI:
+  {
+    if (!initialized)
+    {
+      initRadioAttack();
+      initialized = true;
+    }
+    radioChannel = random(1, 15);
+    radio.setChannel(radioChannel);
+    break;
+  }
+  case UHF_BLUETOOTH:
+  {
+    if (!initialized)
+    {
+      initRadioAttack();
+      initialized = true;
+    }
+    int randomIndex = random(0, sizeof(bluetooth_channels) / sizeof(bluetooth_channels[0]));
+    radioChannel = bluetooth_channels[randomIndex];
+    radio.setChannel(radioChannel);
+    break;
+  }
+  case UHF_BLE:
+  {
+    if (!initialized)
+    {
+      initRadioAttack();
+      initialized = true;
+    }
+    int randomIndex = random(0, sizeof(ble_channels) / sizeof(ble_channels[0]));
+    radioChannel = ble_channels[randomIndex];
+    radio.setChannel(radioChannel);
+    break;
+  }
+  case UHF_SPECTRUM:
+  {
+    static uint8_t channel = 0;
+    if (!initialized)
+    {
+      initRadioScanner();
+      initialized = true;
+    }
+
+    bool foundSignal = scanChannels(channel);
+    uint8_t strength = stored[channel].push(foundSignal);
+    channelStrength[channel] = strength;
+
+    channel = (channel + 1) % NUM_CHANNELS;
+    break;
+  }
+  /********************************** ENABLE WIFI **************************************/
+  case BLE_SPAM:
+  {
+    if (!initialized)
+    {
+      initialized = true;
+      digitalWrite(BLE_PIN, HIGH);
+    }
+  }
+  /******************************** RFID *************************************/
+  case RFID_SCAN:
+  {
+    static uint32_t lastCheck125kHz = 0;
+
+    /********************* 125 kHz *******************/
+    if (now - lastCheck125kHz >= 10)
+    {
+      lastCheck125kHz = now;
+
+      if (rdm6300.get_new_tag_id())
+      {
+        tagID_125kHz = rdm6300.get_tag_id();
+        tagDetected = 1;
+
+        RFID data;
+        data.tagID = tagID_125kHz;
+
+        // Check for duplicates
+        if (isDuplicateRFID(data))
+        {
+          break;
+        }
+
+        writeRFIDData(lastUsedSlotRFID, data);
+
+        lastUsedSlotRFID = (lastUsedSlotRFID + 1) % MAX_RFID;
+        vibro(255, 30);
+      }
+    }
+  }
+  case RFID_EMULATE:
+  {
+    static uint32_t *card_generated;
+
+    if (!locked && !attackIsActive && (up.click() || up.step()))
+    {
+      if (selectedSlotRFID == 0)
+        selectedSlotRFID = MAX_RFID - 1;
+      else
+        selectedSlotRFID--;
+      vibro(255, 20);
+    }
+
+    if (!locked && !attackIsActive && (down.click() || down.step()))
+    {
+      selectedSlotRFID = (selectedSlotRFID + 1) % MAX_RFID;
+      vibro(255, 20);
+    }
+
+    RFID data = readRFIDData(selectedSlotRFID);
+    tagID_125kHz = data.tagID;
+
+    card_generated = generate_card(tagID_125kHz);
+    emulateCard(card_generated);
+
+    break;
+  }
+  case RFID_WRITE:
+  {
+    break;
+  }
+  }
+}
+
+void loop()
+{
+  up.tick();
+  down.tick();
+  ok.tick();
+
+  oled.clear();
+
+  if (up.hold() && down.hold() && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ATTACK && currentMenu != IR_SENDER && currentMenu != BARRIER_REPLAY)
+  {
+    locked = !locked;
+
+    if (locked)
+    {
+      vibro(255, 30, 2);
+    }
+    else
+    {
+      vibro(255, 30);
+    }
+  }
+
+  if (locked)
+  {
+    showLock();
+  }
+
+  if (!locked && (up.press() || ok.press() || down.press()))
+  {
+    resetBrightness();
+  }
+
+  if (!locked && ok.hold())
+  {
+    if (currentMenu != RA_SIGNAL)
+    {
+      signalCaptured_433MHZ = false;
+    }
+    if (currentMenu == SETTINGS)
+    {
+      saveSettings();
+      vibro(255, 50);
+    }
+    if (currentMenu != MAIN_MENU)
+    {
+      currentMenu = parentMenu;
+      parentMenu = grandParentMenu;
+      grandParentMenu = MAIN_MENU;
+    }
+    bruteState = BRUTE_IDLE;
+    initialized = false;
+    signalCaptured_IR = false;
+    mySwitchIsAvailable = false;
+    attackIsActive = false;
+    mySwitch.disableReceive();
+    mySwitch.disableTransmit();
+    IrReceiver.disableIRIn();
+    ELECHOUSE_cc1101.setMHZ(433.92);
+    detachInterrupt(GD0_PIN_CC);
+    digitalWrite(GD0_PIN_CC, LOW);
+    digitalWrite(BLE_PIN, LOW);
+    stopRadioAttack();
+    vibro(255, 50);
+    return;
+  }
+
+  switch (currentMenu)
+  {
+  case MAIN_MENU:
+  {
+    menuButtons(MAINmenuIndex, mainMenuCount);
+    drawMenu(mainMenuItems, mainMenuCount, MAINmenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(MAINmenuIndex + 1);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case HF_MENU:
+  {
+    menuButtons(HFmenuIndex, hfMenuCount);
+    drawMenu(hfMenuItems, hfMenuCount, HFmenuIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(RA_SIGNAL + HFmenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case IR_TOOLS:
+  {
+    menuButtons(IRmenuIndex, irMenuCount);
+    drawMenu(irMenuItems, irMenuCount, IRmenuIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(IR_RECEIVER + IRmenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case UHF_MENU:
+  {
+    menuButtons(uhfMenuIndex, uhfMenuCount);
+    drawMenu(uhfMenuItems, uhfMenuCount, uhfMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(UHF_SPECTRUM + uhfMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case RFID_MENU:
+  {
+    menuButtons(RFIDMenuIndex, RFIDMenuCount);
+    drawMenu(RFIDMenuItems, RFIDMenuCount, RFIDMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(RFID_SCAN + RFIDMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case GAMES:
+  {
+    menuButtons(gamesMenuIndex, gamesMenuCount);
+    drawMenu(gamesMenuItems, gamesMenuCount, gamesMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(FALLING_DOTS_GAME + gamesMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case SETTINGS:
+  {
+    static uint8_t settingsMenuIndex = 0;
+
+    if (!locked && (down.click() || down.step()))
+    {
+      settingsMenuIndex = (settingsMenuIndex + 1) % settingsMenuCount;
+      vibro(255, 20);
+    }
+    if (!locked && (up.click() || up.step()))
+    {
+      if (settingsMenuIndex == 0)
+        settingsMenuIndex = settingsMenuCount - 1;
+      else
+        settingsMenuIndex--;
+      vibro(255, 20);
+    }
+
+    if (!locked && ok.click())
+    {
+      switch (settingsMenuIndex)
+      {
+      case 0:
+        settings.saveIR = !settings.saveIR;
+        break;
+      case 1:
+        settings.saveRA = !settings.saveRA;
+        break;
+      case 2:
+        clearAllIRData();
+        showClearConfirmation("IR");
+        vibro(255, 80);
+        delay(500);
+        break;
+      case 3:
+        clearAllRAData();
+        showClearConfirmation("RA");
+        vibro(255, 80);
+        delay(500);
+        break;
+      case 4:
+        clearAllRAData();
+        clearAllIRData();
+        showClearConfirmation("All");
+        vibro(255, 80);
+        delay(500);
+        break;
+      }
+    }
+
+    drawSettingsMenu(settingsMenuIndex);
+    break;
+  }
+  case RA_BARRIER:
+  {
+    menuButtons(barrierMenuIndex, barrierMenuCount);
+    drawMenu(barrierMenuItems, barrierMenuCount, barrierMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(BARRIER_SCAN + barrierMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case BARRIER_BRUTE:
+  {
+    menuButtons(barrierBruteMenuIndex, barrierBruteMenuCount);
+    drawMenu(barrierBruteMenuItems, barrierBruteMenuCount, barrierBruteMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(BARRIER_BRUTE_CAME + barrierBruteMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case RA_SCAN:
+  {
+    if (!signalCaptured_433MHZ)
+      ShowScanning_433MHZ();
+    else
+    {
+      ShowCapturedSignal_433MHZ();
+    }
+    break;
+  }
+  case RA_ATTACK:
+  {
+    if (ok.click() && capturedCode != 0)
+    {
+      attackIsActive = !attackIsActive;
+      vibro(255, 50);
+    }
+
+    if (up.hold() && down.hold())
+    {
+      clearRAData(selectedSlotRA);
+      vibro(255, 50);
+    }
+
+    if (attackIsActive)
+    {
+      ShowAttack_RA();
+    }
+    else
+    {
+      ShowSavedSignal_RA();
+    }
+    break;
+  }
+  case RA_NOISE:
+  {
+    ShowRA_NOISE();
+    break;
+  }
+  case RA_TESLA:
+  {
+    ShowSend_Tesla();
+    break;
+  }
+  case RA_SIGNAL:
+  {
+    drawRSSIGraph();
+    break;
+  }
+  case BARRIER_SCAN:
+  {
+    if (!signalCaptured_433MHZ)
+      ShowScanning_433MHZ();
+    else
+    {
+      ShowCapturedBarrier_433MHZ();
+    }
+    break;
+  }
+  case BARRIER_REPLAY:
+  {
+    if (ok.click() && barrierCodeMain != 0)
+    {
+      attackIsActive = !attackIsActive;
+      vibro(255, 50);
+    }
+
+    if (up.hold() && down.hold())
+    {
+      clearBarrierData(selectedSlotBarrier);
+      vibro(255, 50);
+    }
+
+    if (attackIsActive)
+    {
+      ShowAttack_RA();
+    }
+    else
+    {
+      ShowSavedSignal_Barrier();
+    }
+    break;
+  }
+  case BARRIER_BRUTE_CAME:
+  {
+    showBarrier_Brute(2);
+    break;
+  }
+  case BARRIER_BRUTE_NICE:
+  {
+    showBarrier_Brute(1);
+    break;
+  }
+  case IR_RECEIVER:
+  {
+    if (!signalCaptured_IR)
+    {
+      ShowScanning_IR();
+    }
+    else
+    {
+      ShowCapturedSignal_IR();
+    }
+    break;
+  }
+  case IR_SENDER:
+  {
+    if (up.hold() && down.hold())
+    {
+      clearIRData(selectedSlotIR);
+      vibro(255, 50);
+    }
+
+    ShowSavedSignal_IR();
+    break;
+  }
+  case IR_TV:
+  {
+    showIR_Brute();
+    break;
+  }
+  case IR_PROJECTOR:
+  {
+    showIR_Brute();
+    break;
+  }
+  case UHF_ALL:
+  {
+    ShowUHF();
+    break;
+  }
+  case UHF_WIFI:
+  {
+    ShowUHF();
+    break;
+  }
+  case UHF_BLUETOOTH:
+  {
+    ShowUHF();
+    break;
+  }
+  case UHF_BLE:
+  {
+    ShowUHF();
+    break;
+  }
+  case UHF_SPECTRUM:
+  {
+    drawSpectrum();
+    break;
+  }
+  case BLE_SPAM:
+  {
+    ShowBLE();
+    break;
+  }
+  case RFID_SCAN:
+  {
+    // I2C connection should be through the same core.
+    nfcPool();
+
+    if (!tagDetected)
+      ShowScanning_RFID();
+    else
+    {
+      ShowCapturedData_RFID();
+    }
+    break;
+  }
+  case RFID_EMULATE:
+  {
+    if (ok.click() && tagID_125kHz != 0)
+    {
+      attackIsActive = !attackIsActive;
+      vibro(255, 50);
+    }
+
+    if (up.hold() && down.hold())
+    {
+      clearRFIDData(selectedSlotRFID);
+      vibro(255, 50);
+    }
+
+    if (attackIsActive)
+    {
+      ShowAttack_RA();
+    }
+    else
+    {
+      ShowSavedSignal_RFID();
+    }
+
+    break;
+  }
+  case RFID_WRITE:
+  {
+    break;
+  }
+  case FALLING_DOTS_GAME:
+  {
+
+    if (!fallingDots.initialized)
+    {
+      fallingDots.reset();
+      fallingDots.initialized = true;
+    }
+
+    fallingDots.handleInput();
+    fallingDots.update();
+
+    if (!locked && fallingDots.gameOver && ok.click())
+    {
+      fallingDots.reset();
+    }
+
+    break;
+  }
+  case SNAKE:
+  {
+    if (!snake.initialized)
+    {
+      snake.reset();
+      snake.initialized = true;
+    }
+
+    snake.handleInput();
+    snake.update();
+
+    if (!locked && snake.gameOver && ok.click())
+    {
+      snake.reset();
+    }
+    break;
+  }
+  case FLAPPY:
+  {
+    if (!flappy.initialized)
+    {
+      flappy.reset();
+      flappy.initialized = true;
+    }
+
+    flappy.update();
+
+    if (!locked && flappy.gameOver && ok.click())
+    {
+      flappy.reset();
+    }
+    break;
+  }
+  }
+
+  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY)
+  {
+    batVoltage = readBatteryVoltage();
+    batteryTimer = millis();
+  }
+
+  if (currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY)
+  {
+    drawBattery(batVoltage);
+  }
+
+  setMinBrightness();
+  oled.update();
+}
