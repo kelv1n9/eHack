@@ -2,8 +2,11 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
-#include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include <Wire.h>
+#include <SPI.h>
+#include <EEPROM.h>
+
+#include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include <PN532_I2C.h>
 #include <PN532_I2C.cpp>
 #include <PN532.h>
@@ -13,15 +16,8 @@
 #include <IRremote.hpp>
 #include "signal_data.h"
 #include "hardware/adc.h"
-#include <SPI.h>
 #include "RF24.h"
-#include <EEPROM.h>
 #include <rdm6300.h>
-
-PN532_I2C pn532i2c(Wire);
-PN532 nfc(pn532i2c);
-
-GyverOLED<SSD1306_128x64, OLED_BUFFER> oled;
 
 #define APP_NAME "eHack"
 #define APP_VERSION "v3.0.1"
@@ -86,6 +82,8 @@ uint32_t batteryTimer;
 #define SPECTRUM_TOP_LIMIT 10
 #define SCREEN_BOTTOM 63
 
+GyverOLED<SSD1306_128x64, OLED_BUFFER> oled;
+
 bool peaksDynamic = true;
 uint32_t brightnessTimer;
 
@@ -105,12 +103,6 @@ uint32_t brightnessTimer;
 const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 uint8_t currentFreqIndex = 1;
-
-struct Segment
-{
-    uint32_t startUs, endUs;
-    bool state;
-};
 
 uint8_t rssiBuffer[RSSI_BUFFER_SIZE];
 uint8_t rssiIndex = 0;
@@ -215,9 +207,18 @@ GameScores gameScores;
 #define SNAKE_WIDTH 32
 #define SNAKE_HEIGHT 16
 #define SNAKE_PIXEL 4
-
 #define SNAKE_MOVE_DELAY_MS 200
 #define SNAKE_FAST_DELAY_MS 50
+
+// Flappy
+#define FLAPPY_WIDTH 128
+#define FLAPPY_HEIGHT 64
+#define BIRD_SIZE 4
+#define GRAVITY 0.5
+#define JUMP_STRENGTH -2
+#define TUBE_WIDTH 10
+#define GAP_HEIGHT 30
+#define NUM_TUBES 2
 
 struct SnakeSegment
 {
@@ -230,16 +231,6 @@ struct Position
 };
 
 const Position snakeDirs[4] = {{1, 0}, {0, 1}, {-1, 0}, {0, -1}};
-
-// Flappy
-#define FLAPPY_WIDTH 128
-#define FLAPPY_HEIGHT 64
-#define BIRD_SIZE 4
-#define GRAVITY 0.5
-#define JUMP_STRENGTH -2
-#define TUBE_WIDTH 10
-#define GAP_HEIGHT 30
-#define NUM_TUBES 2
 
 struct Tube
 {
@@ -315,7 +306,13 @@ ChannelHistory stored[126];
 
 uint8_t radioChannel = 0;
 /*========================== RFID ==============================*/
+#define RFID_COIL_PIN 14
+#define RFID_RX_PIN 15
+
 Rdm6300 rdm6300;
+
+PN532_I2C pn532i2c(Wire);
+PN532 nfc(pn532i2c);
 
 struct RFID
 {
@@ -323,22 +320,18 @@ struct RFID
 };
 RFID rfid_mem;
 
-#define RFID_COIL_PIN 14
-#define RFID_RX_PIN 15
-
 uint8_t lastUsedSlotRFID = 0;
 uint8_t selectedSlotRFID = 0;
 
-uint8_t tagDetected = 0; // 0 = none, 1 = 125 kHz, 2 = 13.56 MHz
-
 uint32_t tagID_125kHz;
+uint8_t tagDetected = 0; // 0 = none, 1 = 125 kHz, 2 = 13.56 MHz
 uint8_t nfcCardType = 0;  // 0 = none, 1 = Mifare Classic, 2 = Mifare Ultralight
 
 uint8_t nfcData[32];      
 uint8_t nfcDataLength = 0;
-bool nfcDataValid = false;
 uint8_t tagID_NFC[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
 uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+bool nfcDataValid = false;
 /*======================= FUNCTIONS ============================*/
 
 int getTextWidth(const char *text)

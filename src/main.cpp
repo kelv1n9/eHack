@@ -1,5 +1,4 @@
 #include "visualization.h"
-#include "barrier.h"
 
 void setup()
 {
