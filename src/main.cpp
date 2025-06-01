@@ -71,7 +71,7 @@ void setup()
   ELECHOUSE_cc1101.setModulation(2); // ASK
   ELECHOUSE_cc1101.setRxBW(812.50);  // Value from 58.03 to 812.50. Default is 812.50 kHz.
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
-  ELECHOUSE_cc1101.setPA(12);      // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
+  ELECHOUSE_cc1101.setPA(12);                // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
   ELECHOUSE_cc1101.setMHZ(raFrequencies[1]); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
   ELECHOUSE_cc1101.goSleep();
 }
@@ -92,6 +92,7 @@ void loop1()
   {
     if (!initialized)
     {
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
@@ -194,10 +195,11 @@ void loop1()
   {
     if (!initialized)
     {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
-      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
+      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
+      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
       initialized = true;
     }
 
@@ -247,7 +249,7 @@ void loop1()
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
-      initialized = true; 
+      initialized = true;
     }
 
     if (!locked && !attackIsActive && (up.click() || up.step()))
@@ -511,6 +513,7 @@ void loop1()
   {
     if (!initialized)
     {
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       initialized = true;
@@ -549,6 +552,7 @@ void loop1()
 
     if (!initialized)
     {
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
