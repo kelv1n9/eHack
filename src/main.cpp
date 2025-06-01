@@ -40,11 +40,6 @@ void setup()
   pinMode(BTN_OK, INPUT_PULLUP);
   pinMode(BTN_UP, INPUT_PULLUP);
 
-  pinMode(CSN_PIN_NRF, OUTPUT);
-  pinMode(CSN_PIN_CC, OUTPUT);
-  digitalWrite(CSN_PIN_CC, HIGH);
-  digitalWrite(CSN_PIN_NRF, HIGH);
-
   pinMode(RFID_COIL_PIN, OUTPUT);
   digitalWrite(RFID_COIL_PIN, LOW);
 
@@ -77,7 +72,7 @@ void setup()
   ELECHOUSE_cc1101.setRxBW(812.50);  // Value from 58.03 to 812.50. Default is 812.50 kHz.
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
   ELECHOUSE_cc1101.setPA(12);      // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
-  ELECHOUSE_cc1101.setMHZ(433.92); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
+  ELECHOUSE_cc1101.setMHZ(raFrequencies[1]); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
   ELECHOUSE_cc1101.goSleep();
 }
 
@@ -156,10 +151,10 @@ void loop1()
 
     if (!initialized)
     {
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.enableTransmit(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetTx();
-
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
     }
 
@@ -248,11 +243,11 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      ELECHOUSE_cc1101.SetTx();
-      initialized = true;
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      initialized = true; 
     }
 
     if (!locked && !attackIsActive && (up.click() || up.step()))
@@ -302,11 +297,11 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      initialized = true;
-      ELECHOUSE_cc1101.SetTx();
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      initialized = true;
     }
 
     switch (bruteState)
@@ -387,11 +382,11 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      initialized = true;
-      ELECHOUSE_cc1101.SetTx();
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      initialized = true;
     }
 
     switch (bruteState)
@@ -468,10 +463,10 @@ void loop1()
 
     if (!initialized)
     {
-      ELECHOUSE_cc1101.SetTx();
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
     }
 
@@ -490,12 +485,13 @@ void loop1()
   {
     if (!initialized)
     {
+      ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      ELECHOUSE_cc1101.SetTx();
       pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
-      vibro(255, 50);
+      // vibro(255, 50);
     }
 
     static bool toggleFreq = false;
@@ -1034,14 +1030,13 @@ void loop()
     grandParentMenu = MAIN_MENU;
 
     // States
-    ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
-    delay(60);
     bruteState = BRUTE_IDLE;
     initialized = false;
     signalCaptured_IR = false;
     mySwitchIsAvailable = false;
     attackIsActive = false;
     signalCaptured_433MHZ = false;
+    ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
 
     // Disable
     ELECHOUSE_cc1101.goSleep();
