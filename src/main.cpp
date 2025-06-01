@@ -23,14 +23,18 @@ void setup()
   nfc.begin();
   nfc.setPassiveActivationRetries(0xFF);
   nfc.SAMConfig();
+  nfc.powerDownMode();
 
   analogReadResolution(12);
   EEPROM.begin(512);
+
+  radio.powerDown();
 
   digitalWrite(23, HIGH); // PFM to PWM
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
   IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);
+  IrReceiver.disableIRIn();
 
   pinMode(BTN_DOWN, INPUT_PULLUP);
   pinMode(BTN_OK, INPUT_PULLUP);
@@ -69,12 +73,12 @@ void setup()
   ELECHOUSE_cc1101.setClb(4, 33, 34);
 
   ELECHOUSE_cc1101.Init();
-  ELECHOUSE_cc1101.setModulation(2);    // ASK
-  ELECHOUSE_cc1101.setDeviation(47.60); // Set the Frequency deviation in kHz. Value from 1.58 to 380.85. Default is 47.60 kHz.
-  ELECHOUSE_cc1101.setRxBW(250.00);     // Value from 58.03 to 812.50. Default is 812.50 kHz.
+  ELECHOUSE_cc1101.setModulation(2); // ASK
+  ELECHOUSE_cc1101.setRxBW(812.50);  // Value from 58.03 to 812.50. Default is 812.50 kHz.
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
-  ELECHOUSE_cc1101.setPA(12);      // Set TxPower. The following settings are possible depending on the frequency band.  (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
+  ELECHOUSE_cc1101.setPA(12);      // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
   ELECHOUSE_cc1101.setMHZ(433.92); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
+  ELECHOUSE_cc1101.goSleep();
 }
 
 void setup1()
@@ -93,9 +97,9 @@ void loop1()
   {
     if (!initialized)
     {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       mySwitch.resetAvailable();
       initialized = true;
     }
@@ -113,6 +117,8 @@ void loop1()
 
       signalCaptured_433MHZ = true;
 
+      currentRssi = ELECHOUSE_cc1101.getRssi();
+
       capturedCode = mySwitch.getReceivedValue();
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
@@ -123,6 +129,8 @@ void loop1()
       data.length = capturedLength;
       data.protocol = capturedProtocol;
       data.delay = capturedDelay;
+
+      vibro(255, 200, 3, 80);
 
       // Check for duplicates
       if (isDuplicateRA(data))
@@ -137,9 +145,7 @@ void loop1()
       }
 
       lastUsedSlotRA = (lastUsedSlotRA + 1) % MAX_RA_SIGNALS;
-
       mySwitch.resetAvailable();
-      vibro(255, 200, 3, 80);
     }
     break;
   }
@@ -205,6 +211,7 @@ void loop1()
     if (anMotorsCaptured || cameCaptured || niceCaptured)
     {
       signalCaptured_433MHZ = true;
+      currentRssi = ELECHOUSE_cc1101.getRssi();
 
       SimpleBarrierData data;
       data.codeMain = barrierCodeMain;
@@ -515,27 +522,26 @@ void loop1()
 
     currentScanFreq = (currentScanFreq + 1) % raFreqCount;
     ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-    delay(60);
+    delay(2);
 
-    float currentRssi = ELECHOUSE_cc1101.getRssi();
-    int h = constrain(map(currentRssi, -77, -17, 0, 50), 0, 50);
+    int currentRssi = ELECHOUSE_cc1101.getRssi();
 
-    if (h > rssiMaxPeak[currentScanFreq])
+    if (currentRssi > rssiMaxPeak[currentScanFreq])
     {
-      rssiMaxPeak[currentScanFreq] = h;
+      rssiMaxPeak[currentScanFreq] = currentRssi;
     }
     else
     {
-      if (rssiMaxPeak[currentScanFreq] > 0)
+      if (rssiMaxPeak[currentScanFreq] > -100)
       {
-        rssiMaxPeak[currentScanFreq] -= 5;
-        if (rssiMaxPeak[currentScanFreq] < 0)
-          rssiMaxPeak[currentScanFreq] = 0;
+        rssiMaxPeak[currentScanFreq] -= 0.2;
+        if (rssiMaxPeak[currentScanFreq] < -100)
+          rssiMaxPeak[currentScanFreq] = -100;
       }
     }
-    if (h > rssiAbsoluteMax[currentScanFreq])
+    if (currentRssi > rssiAbsoluteMax[currentScanFreq])
     {
-      rssiAbsoluteMax[currentScanFreq] = h;
+      rssiAbsoluteMax[currentScanFreq] = currentRssi;
     }
 
     break;
@@ -558,7 +564,7 @@ void loop1()
     if (millis() - lastStepMs >= RSSI_STEP_MS)
     {
       int rssiValue = ELECHOUSE_cc1101.getRssi();
-      uint8_t level = constrain(map(rssiValue, -100, -30, 0, 63), 0, 63);
+      uint8_t level = constrain(map(rssiValue, -100, -35, 0, 50), 0, 50);
 
       rssiBuffer[rssiIndex++] = level;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
@@ -1007,19 +1013,19 @@ void loop()
     }
 
     // Exiting menu
-    if (currentMenu == SETTINGS || currentMenu == HF_MENU || currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
+    if (currentMenu == HF_MENU || currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
     {
-      if (currentMenu == SETTINGS)
-      {
-        saveSettings();
-        vibro(255, 50);
-      }
-
       currentMenu = parentMenu;
       parentMenu = grandParentMenu;
       grandParentMenu = MAIN_MENU;
       vibro(255, 50);
       return;
+    }
+
+    if (currentMenu == SETTINGS)
+    {
+      saveSettings();
+      vibro(255, 50);
     }
 
     // Menu return

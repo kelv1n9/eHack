@@ -99,17 +99,17 @@ uint32_t brightnessTimer;
 #define CSN_PIN_CC 17
 #define RSSI_WINDOW_MS 100
 #define RSSI_STEP_MS 50
-#define RSSI_BUFFER_SIZE 115
+#define RSSI_BUFFER_SIZE 90
 #define MAX_SEGMENTS 64
 
 const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 uint8_t currentFreqIndex = 1;
 
-float rssiCurrent[raFreqCount];
-float rssiMaxPeak[raFreqCount] = {0}; // изначально все 0
-float rssiAbsoluteMax[raFreqCount];   // новый массив для "замороженной" линии
-uint8_t currentScanFreq = 0; // по какой частоте сейчас идём
+int currentRssi = -100;
+float rssiMaxPeak[raFreqCount] = {-100, -100, -100, -100};
+float rssiAbsoluteMax[raFreqCount] = {-100, -100, -100, -100};
+uint8_t currentScanFreq = 0; 
 
 uint8_t rssiBuffer[RSSI_BUFFER_SIZE];
 uint8_t rssiIndex = 0;
@@ -1180,6 +1180,7 @@ void initRadioAttack()
 {
   if (radio.begin())
   {
+    radio.powerUp();
     radio.setAutoAck(false);
     radio.stopListening();
     radio.setRetries(0, 0);
@@ -1211,6 +1212,7 @@ void initRadioScanner()
 void stopRadioAttack()
 {
   radio.stopConstCarrier();
+  radio.powerDown();
 }
 
 bool scanChannels(uint8_t channel)
@@ -1601,16 +1603,11 @@ void changeFreqButtons(const char *mode)
   }
 }
 
-void updateRSSIMonitor()
-{
-  
-}
-
 void resetRFSpectrum()
 {
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    rssiMaxPeak[i] = 0;               // сброс инертного пика
-    rssiAbsoluteMax[i] = 0;           // сброс "замороженного" максимума
+    rssiMaxPeak[i] = -100;               // сброс инертного пика
+    rssiAbsoluteMax[i] = -100;           // сброс "замороженного" максимума
   }
 }

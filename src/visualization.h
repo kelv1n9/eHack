@@ -316,7 +316,7 @@ void ShowRA_NOISE()
 void ShowCapturedSignal_433MHZ()
 {
   char Text[25];
-  sprintf(Text, "RF Signal captured");
+  sprintf(Text, "RF Signal: %d dBm", currentRssi);
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
   oled.print(Text);
@@ -640,7 +640,7 @@ void drawRSSIGraph()
 
   for (int i = 0; i < RSSI_BUFFER_SIZE; i++)
   {
-    int x = i;
+    int x = i + 25;
     int h = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
     h = constrain(h, 0, 50);
     oled.line(x, 63, x, 63 - h, 1);
@@ -652,6 +652,13 @@ void drawRSSIGraph()
     char ch[2] = {label[i], '\0'};
     oled.print(ch);
   }
+
+  oled.setCursorXY(0, 55);
+  oled.print("80 -");
+  oled.setCursorXY(0, 35);
+  oled.print("60 -");
+  oled.setCursorXY(0, 15);
+  oled.print("35 -");
 }
 
 void ShowAttack_RA()
@@ -766,7 +773,7 @@ void ShowCapturedBarrier_433MHZ()
   if (barrierProtocol == 0)
   {
     char Text[25];
-    sprintf(Text, "RF Signal captured");
+    sprintf(Text, "RF Signal: %d dBm", currentRssi);
     oled.setScale(1);
     oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
     oled.print(Text);
@@ -794,7 +801,7 @@ void ShowCapturedBarrier_433MHZ()
   else
   {
     char Text[25];
-    sprintf(Text, "RF Signal captured");
+    sprintf(Text, "RF Signal: %d dBm", currentRssi);
     oled.setScale(1);
     oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
     oled.print(Text);
@@ -1072,12 +1079,28 @@ void drawRSSISpectrum()
 {
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    int x = 10 + i * 30;
+    int x = 20 + i * 25;
 
-    int peakY = 63 - (int)(rssiMaxPeak[i]);
-    oled.rect(x, peakY, x + 20, 63, OLED_FILL);
+    int peakY = 63 - (uint8_t)constrain(map(rssiMaxPeak[i], -80, -35, 0, 50), 0, 50);
+    oled.rect(x, peakY, x + 18, 63, OLED_FILL);
 
-    int absPeakY = 63 - (int)(rssiAbsoluteMax[i]);
-    oled.line(x, absPeakY, x + 20, absPeakY, 1);
+    int absPeakY = 63 - (uint8_t)constrain(map(rssiAbsoluteMax[i], -80, -35, 0, 50), 0, 50);
+    oled.line(x, absPeakY, x + 18, absPeakY, 1);
   }
+
+  const char *label = "RSSI";
+
+  for (int i = 0; label[i] != '\0'; i++)
+  {
+    oled.setCursorXY(120, 25 + (i * 8));
+    char ch[2] = {label[i], '\0'};
+    oled.print(ch);
+  }
+
+  oled.setCursorXY(0, 55);
+  oled.print("80 -");
+  oled.setCursorXY(0, 35);
+  oled.print("60 -");
+  oled.setCursorXY(0, 15);
+  oled.print("35 -");
 }
