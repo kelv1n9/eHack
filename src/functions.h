@@ -20,7 +20,7 @@
 #include <rdm6300.h>
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v3.1.0"
+#define APP_VERSION "v3.1.1"
 
 #define BLE_PIN 18
 
@@ -70,7 +70,7 @@ uint8_t barrierBruteMenuIndex = 0;
 #define BATTERY_CHECK_INTERVAL 10000
 #define BATTERY_MIN_VOLTAGE 3.5
 #define BATTERY_MAX_VOLTAGE 4.2
-#define BATTERY_READ_ITERATIONS 20
+#define BATTERY_READ_ITERATIONS 10
 
 float batVoltage;
 uint32_t batteryTimer;
@@ -102,14 +102,13 @@ uint32_t brightnessTimer;
 #define RSSI_BUFFER_SIZE 90
 #define MAX_SEGMENTS 64
 
+int currentRssi = -100;
+uint8_t currentFreqIndex = 1;
+uint8_t currentScanFreq = 0; 
 const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
-uint8_t currentFreqIndex = 1;
-
-int currentRssi = -100;
 float rssiMaxPeak[raFreqCount] = {-100, -100, -100, -100};
 float rssiAbsoluteMax[raFreqCount] = {-100, -100, -100, -100};
-uint8_t currentScanFreq = 0; 
 
 uint8_t rssiBuffer[RSSI_BUFFER_SIZE];
 uint8_t rssiIndex = 0;
@@ -149,8 +148,8 @@ struct SimpleBarrierData
   uint8_t protocol;
 };
 
-volatile uint32_t barrierCodeMain, barrierCodeAdd;
 int16_t barrierBruteIndex = 4095;
+volatile uint32_t barrierCodeMain, barrierCodeAdd;
 volatile uint8_t barrierProtocol;
 volatile uint8_t barrierBit;
 
@@ -366,7 +365,7 @@ float readBatteryVoltage()
   for (int i = 0; i < BATTERY_READ_ITERATIONS; i++)
   {
     total += analogRead(A3);
-    delayMicroseconds(200);
+    delayMicroseconds(500);
   }
 
   return (float)BATTERY_COEFFICIENT * (total / (float)BATTERY_READ_ITERATIONS) * (float)BATTERY_RESISTANCE_COEFFICIENT * (float)V_REF / 4095.0;
@@ -1540,7 +1539,7 @@ void nfcPool()
     if (success)
     {
       tagDetected = 2;
-      nfcDataValid = false; // Сначала сбрасываем
+      nfcDataValid = false; 
 
       if (tagIDLength_NFC == 4)
       {
@@ -1607,7 +1606,7 @@ void resetRFSpectrum()
 {
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    rssiMaxPeak[i] = -100;               // сброс инертного пика
-    rssiAbsoluteMax[i] = -100;           // сброс "замороженного" максимума
+    rssiMaxPeak[i] = -100;               
+    rssiAbsoluteMax[i] = -100;       
   }
 }

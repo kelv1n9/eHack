@@ -490,25 +490,6 @@ void showIR_Brute()
   oled.print(Text4);
 }
 
-void ShowSignalError_IR()
-{
-  char Text[20];
-  sprintf(Text, "Data error:");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 10);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "No IR signal");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "captured");
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 40);
-  oled.print(Text3);
-}
-
 void ShowUHF()
 {
   char Text[20];
@@ -568,7 +549,6 @@ void showGamePaused()
   oled.setScale(2);
   oled.setCursorXY((128 - getTextWidth("PAUSED") * 2) / 2, 28);
   oled.print("PAUSED");
-  oled.update();
 }
 
 void drawSpectrum()
@@ -823,8 +803,6 @@ void ShowCapturedBarrier_433MHZ()
   }
 }
 
-// int bits =
-
 void ShowSavedSignal_Barrier()
 {
   const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
@@ -971,7 +949,7 @@ void ShowCapturedData_RFID()
     oled.print(Text1);
 
     // ----- UID -----
-    if (nfcCardType == 2) // Ultralight → UID в 2 строки без пробелов
+    if (nfcCardType == 2) // Ultralight 
     {
       char Text2_line1[40] = "UID: ";
       char Text2_line2[40] = "";
@@ -993,7 +971,7 @@ void ShowCapturedData_RFID()
       oled.setCursorXY((128 - getTextWidth(Text2_line2)) / 2, 40);
       oled.print(Text2_line2);
     }
-    else // Classic → UID в одну строку с пробелами
+    else // Classic 
     {
       char Text2[50] = "UID: ";
       for (uint8_t i = 0; i < tagIDLength_NFC; i++)
@@ -1010,7 +988,7 @@ void ShowCapturedData_RFID()
     // ----- DATA -----
     if (nfcDataValid)
     {
-      if (nfcCardType == 2) // Ultralight → DATA в одну строку с пробелами
+      if (nfcCardType == 2) // Ultralight 
       {
         char Text3[70] = "DATA: ";
         for (uint8_t i = 0; i < nfcDataLength; i++)
@@ -1023,7 +1001,7 @@ void ShowCapturedData_RFID()
         oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 52);
         oled.print(Text3);
       }
-      else // Classic → DATA в две строки без пробелов (как у тебя было)
+      else // Classic
       {
         char Text3_line1[40] = "";
         char Text3_line2[40] = "";

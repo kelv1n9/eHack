@@ -26,6 +26,7 @@ void setup()
   nfc.powerDownMode();
 
   analogReadResolution(12);
+  batVoltage = readBatteryVoltage();
   EEPROM.begin(512);
 
   radio.powerDown();
@@ -53,10 +54,6 @@ void setup()
   findLastUsedSlotRFID();
   findLastUsedSlotBarrier();
 
-  vibro(255, 30);
-
-  batVoltage = readBatteryVoltage();
-
   loadSettings();
   loadAllScores();
 
@@ -74,6 +71,8 @@ void setup()
   ELECHOUSE_cc1101.setPA(12);                // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
   ELECHOUSE_cc1101.setMHZ(raFrequencies[1]); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
   ELECHOUSE_cc1101.goSleep();
+
+  vibro(255, 30);
 }
 
 void setup1()
