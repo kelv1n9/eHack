@@ -22,7 +22,6 @@ void setup()
 
   nfc.begin();
   nfc.setPassiveActivationRetries(0xFF);
-  nfc.SAMConfig();
   nfc.powerDownMode();
 
   analogReadResolution(12);
@@ -228,6 +227,10 @@ void loop1()
       // Check for duplicates
       if (isDuplicateBarrier(data))
       {
+        anMotorsCaptured = false;
+        niceCaptured = false;
+        cameCaptured = false;
+
         break;
       }
 
@@ -917,6 +920,7 @@ void loop1()
     if (!initialized)
     {
       rdm6300.begin(RFID_RX_PIN);
+      nfc.SAMConfig();
       initialized = true;
     }
 
@@ -1058,6 +1062,7 @@ void loop()
     mySwitch.disableTransmit();
     IrReceiver.disableIRIn();
     rdm6300.end();
+    nfc.setRFField(0, 0);
     nfc.powerDownMode();
     detachInterrupt(GD0_PIN_CC);
     digitalWrite(GD0_PIN_CC, LOW);
