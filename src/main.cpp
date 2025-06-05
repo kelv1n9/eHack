@@ -42,7 +42,7 @@ void setup()
 
   pinMode(RFID_COIL_PIN, OUTPUT);
   digitalWrite(RFID_COIL_PIN, LOW);
-
+ 
   pinMode(BLE_PIN, OUTPUT);
   digitalWrite(BLE_PIN, LOW);
 
@@ -540,7 +540,7 @@ void loop1()
     ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
     delay(50);
 
-    int currentRssi = ELECHOUSE_cc1101.getRssi();
+    currentRssi = ELECHOUSE_cc1101.getRssi();
 
     if (currentRssi > rssiMaxPeak[currentScanFreq])
     {
@@ -580,8 +580,8 @@ void loop1()
 
     if (millis() - lastStepMs >= RSSI_STEP_MS)
     {
-      int rssiValue = ELECHOUSE_cc1101.getRssi();
-      rssiBuffer[rssiIndex++] = rssiValue;
+      currentRssi = ELECHOUSE_cc1101.getRssi();
+      rssiBuffer[rssiIndex++] = currentRssi;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
 
@@ -1531,13 +1531,13 @@ void loop()
   }
   }
 
-  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY)
+  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ACTIVITY)
   {
     batVoltage = readBatteryVoltage();
     batteryTimer = millis();
   }
 
-  if (currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY)
+  if (currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ACTIVITY)
   {
     drawBattery(batVoltage);
   }

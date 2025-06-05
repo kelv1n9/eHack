@@ -614,8 +614,9 @@ void drawRSSIGraph()
   const char *label = "RSSI";
 
   char freq[10];
-  sprintf(freq, "%.2f M", raFrequencies[currentFreqIndex]);
-  oled.setCursorXY((128 - getTextWidth(freq)) / 2 + 6, 0);
+  sprintf(freq, "%.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setScale(1);
+  oled.setCursorXY(0, 0);
   oled.print(freq);
 
   for (int i = 0; i < RSSI_BUFFER_SIZE; i++)
@@ -639,6 +640,13 @@ void drawRSSIGraph()
   oled.print("70 -");
   oled.setCursorXY(0, 15);
   oled.print("35 -");
+
+  char Text[10];
+  sprintf(Text, "%d", currentRssi);
+  oled.setCursorXY(102 - getTextWidth(Text), 0);
+  oled.print(Text);
+  oled.setCursorXY(102, 0);
+  oled.print(" dBm");
 }
 
 void ShowAttack_RA()
@@ -1081,6 +1089,12 @@ void drawRSSISpectrum()
   oled.print("70 -");
   oled.setCursorXY(0, 15);
   oled.print("35 -");
+
+  char Text[25];
+  sprintf(Text, "%d dBm", currentRssi);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
+  oled.print(Text);
 }
 
 void ShowReboot()
