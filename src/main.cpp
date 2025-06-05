@@ -82,6 +82,10 @@ void setup()
   /************************/      
   ELECHOUSE_cc1101.goSleep();
 
+  for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++) {
+    rssiBuffer[i] = -100;
+}
+
   vibro(255, 30);
 }
 
@@ -534,7 +538,7 @@ void loop1()
 
     currentScanFreq = (currentScanFreq + 1) % raFreqCount;
     ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-    delay(2);
+    delay(50);
 
     int currentRssi = ELECHOUSE_cc1101.getRssi();
 
@@ -577,9 +581,7 @@ void loop1()
     if (millis() - lastStepMs >= RSSI_STEP_MS)
     {
       int rssiValue = ELECHOUSE_cc1101.getRssi();
-      uint8_t level = constrain(map(rssiValue, -100, -35, 0, 50), 0, 50);
-
-      rssiBuffer[rssiIndex++] = level;
+      rssiBuffer[rssiIndex++] = rssiValue;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
 
@@ -1040,6 +1042,14 @@ void loop()
     {
       saveSettings();
       vibro(255, 50);
+    }
+
+    if (currentMenu == RFID_SCAN)
+    {
+      ShowReboot();
+      while (1)
+      {
+      }
     }
 
     // Menu return
@@ -1532,6 +1542,10 @@ void loop()
     drawBattery(batVoltage);
   }
 
-  setMinBrightness();
+  if (currentMenu != RA_ACTIVITY && currentMenu != RA_SPECTRUM && currentMenu != BARRIER_SCAN && currentMenu != RA_SCAN)
+  {
+    setMinBrightness();
+  }
+
   oled.update();
 }

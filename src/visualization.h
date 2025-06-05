@@ -621,8 +621,8 @@ void drawRSSIGraph()
   for (int i = 0; i < RSSI_BUFFER_SIZE; i++)
   {
     int x = i + 25;
-    int h = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
-    h = constrain(h, 0, 50);
+    int rssiValue = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
+    uint8_t h = constrain(map(rssiValue, -100, -35, 0, 50), 0, 50);
     oled.line(x, 63, x, 63 - h, 1);
   }
 
@@ -634,9 +634,9 @@ void drawRSSIGraph()
   }
 
   oled.setCursorXY(0, 55);
-  oled.print("80 -");
+  oled.print("90 -");
   oled.setCursorXY(0, 35);
-  oled.print("60 -");
+  oled.print("70 -");
   oled.setCursorXY(0, 15);
   oled.print("35 -");
 }
@@ -1055,18 +1055,18 @@ void ShowSavedSignal_RFID()
 
 void drawRSSISpectrum()
 {
+  const char *label = "RSSI";
+
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
     int x = 20 + i * 25;
 
-    int peakY = 63 - (uint8_t)constrain(map(rssiMaxPeak[i], -80, -35, 0, 50), 0, 50);
-    oled.rect(x, peakY, x + 18, 63, OLED_FILL);
+    uint8_t peakY = constrain(mapFloat(rssiMaxPeak[i], -100, -35, 0, 50), 0, 50);
+    oled.rect(x, 63 - peakY, x + 18, 63, OLED_FILL);
 
-    int absPeakY = 63 - (uint8_t)constrain(map(rssiAbsoluteMax[i], -80, -35, 0, 50), 0, 50);
-    oled.line(x, absPeakY, x + 18, absPeakY, 1);
+    uint8_t absPeakY =constrain(mapFloat(rssiAbsoluteMax[i], -100, -35, 0, 50), 0, 50);
+    oled.line(x, 63 - absPeakY, x + 18, 63 - absPeakY, 1);
   }
-
-  const char *label = "RSSI";
 
   for (int i = 0; label[i] != '\0'; i++)
   {
@@ -1076,9 +1076,26 @@ void drawRSSISpectrum()
   }
 
   oled.setCursorXY(0, 55);
-  oled.print("80 -");
+  oled.print("90 -");
   oled.setCursorXY(0, 35);
-  oled.print("60 -");
+  oled.print("70 -");
   oled.setCursorXY(0, 15);
   oled.print("35 -");
+}
+
+void ShowReboot()
+{
+  oled.clear();
+  oled.setScale(2);
+
+  oled.setCursorXY((128 - 2 * getTextWidth("Please,")) / 2, 10);
+  oled.print("Please,");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("reboot")) / 2, 25);
+  oled.print("reboot");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("the device")) / 2, 40);
+  oled.print("the device");
+
+  oled.update();
 }

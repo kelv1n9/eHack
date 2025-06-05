@@ -20,7 +20,7 @@
 #include <rdm6300.h>
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v3.1.1"
+#define APP_VERSION "v3.1.2"
 
 #define BLE_PIN 18
 
@@ -110,8 +110,8 @@ const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 float rssiMaxPeak[raFreqCount] = {-100, -100, -100, -100};
 float rssiAbsoluteMax[raFreqCount] = {-100, -100, -100, -100};
 
-uint8_t rssiBuffer[RSSI_BUFFER_SIZE];
 uint8_t rssiIndex = 0;
+int rssiBuffer[RSSI_BUFFER_SIZE];
 
 RCSwitch mySwitch = RCSwitch();
 
@@ -339,6 +339,10 @@ uint8_t tagID_NFC[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
 uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 bool nfcDataValid = false;
 /*======================= FUNCTIONS ============================*/
+float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
+{
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
 
 int getTextWidth(const char *text)
 {
@@ -789,7 +793,8 @@ struct FallingDotsGame
   uint8_t lives = 3;
   uint16_t score = 0;
   uint32_t lastFallTime = 0;
-  uint16_t fallDelay = 400;
+  uint16_t fallDelay = 20;
+  uint8_t deltaY = 3;
   bool gameOver = false;
 
   void reset()
@@ -799,7 +804,7 @@ struct FallingDotsGame
     playerX = (128 - playerWidth) / 2;
     score = 0;
     lives = 3;
-    fallDelay = 400;
+    fallDelay = 20;
     gameOver = false;
     lastFallTime = millis();
     maxScore = gameScores.dotsMax;
@@ -837,7 +842,7 @@ struct FallingDotsGame
 
     if (millis() - lastFallTime > fallDelay)
     {
-      dotY += 8;
+      dotY += deltaY;
       lastFallTime = millis();
 
       if (dotY >= playerY)
@@ -845,8 +850,8 @@ struct FallingDotsGame
         if (dotX + 6 >= playerX && dotX <= playerX + playerWidth)
         {
           score++;
-          if (fallDelay > 150)
-            fallDelay -= 10;
+          if (fallDelay > 10)
+            fallDelay -= 2;
         }
         else
         {
