@@ -205,7 +205,7 @@ bool signalCaptured_IR = false;
 #define SNAKE_WIDTH 32
 #define SNAKE_HEIGHT 16
 #define SNAKE_PIXEL 4
-#define SNAKE_MOVE_DELAY_MS 200
+#define SNAKE_MOVE_DELAY_MS 100
 #define SNAKE_FAST_DELAY_MS 50
 
 // Flappy
