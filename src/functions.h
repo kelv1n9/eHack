@@ -104,7 +104,7 @@ uint32_t brightnessTimer;
 
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
-uint8_t currentScanFreq = 0; 
+uint8_t currentScanFreq = 0;
 const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 float rssiMaxPeak[raFreqCount] = {-100, -100, -100, -100};
@@ -339,9 +339,22 @@ uint8_t tagID_NFC[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
 uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 bool nfcDataValid = false;
 /*======================= FUNCTIONS ============================*/
+float findMaxValue(const float *array, size_t length)
+{
+  float maxVal = array[0];
+  for (size_t i = 1; i < length; i++)
+  {
+    if (array[i] > maxVal)
+    {
+      maxVal = array[i];
+    }
+  }
+  return maxVal;
+}
+
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
 {
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 int getTextWidth(const char *text)
@@ -1544,7 +1557,7 @@ void nfcPool()
     if (success)
     {
       tagDetected = 2;
-      nfcDataValid = false; 
+      nfcDataValid = false;
 
       if (tagIDLength_NFC == 4)
       {
@@ -1611,7 +1624,7 @@ void resetRFSpectrum()
 {
   for (uint8_t i = 0; i < raFreqCount; i++)
   {
-    rssiMaxPeak[i] = -100;               
-    rssiAbsoluteMax[i] = -100;       
+    rssiMaxPeak[i] = -100;
+    rssiAbsoluteMax[i] = -100;
   }
 }

@@ -623,7 +623,7 @@ void drawRSSIGraph()
   {
     int x = i + 25;
     int rssiValue = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
-    uint8_t h = constrain(map(rssiValue, -100, -35, 0, 50), 0, 50);
+    uint8_t h = constrain(map(rssiValue, -100, -20, 0, 50), 0, 50);
     oled.line(x, 63, x, 63 - h, 1);
   }
 
@@ -637,9 +637,9 @@ void drawRSSIGraph()
   oled.setCursorXY(0, 55);
   oled.print("90 -");
   oled.setCursorXY(0, 35);
-  oled.print("70 -");
+  oled.print("60 -");
   oled.setCursorXY(0, 15);
-  oled.print("35 -");
+  oled.print("30 -");
 
   char Text[10];
   sprintf(Text, "%d", currentRssi);
@@ -957,7 +957,7 @@ void ShowCapturedData_RFID()
     oled.print(Text1);
 
     // ----- UID -----
-    if (nfcCardType == 2) // Ultralight 
+    if (nfcCardType == 2) // Ultralight
     {
       char Text2_line1[40] = "UID: ";
       char Text2_line2[40] = "";
@@ -979,7 +979,7 @@ void ShowCapturedData_RFID()
       oled.setCursorXY((128 - getTextWidth(Text2_line2)) / 2, 40);
       oled.print(Text2_line2);
     }
-    else // Classic 
+    else // Classic
     {
       char Text2[50] = "UID: ";
       for (uint8_t i = 0; i < tagIDLength_NFC; i++)
@@ -996,7 +996,7 @@ void ShowCapturedData_RFID()
     // ----- DATA -----
     if (nfcDataValid)
     {
-      if (nfcCardType == 2) // Ultralight 
+      if (nfcCardType == 2) // Ultralight
       {
         char Text3[70] = "DATA: ";
         for (uint8_t i = 0; i < nfcDataLength; i++)
@@ -1069,10 +1069,10 @@ void drawRSSISpectrum()
   {
     int x = 20 + i * 25;
 
-    uint8_t peakY = constrain(mapFloat(rssiMaxPeak[i], -100, -35, 0, 50), 0, 50);
+    uint8_t peakY = constrain(mapFloat(rssiMaxPeak[i], -100, -20, 0, 50), 0, 50);
     oled.rect(x, 63 - peakY, x + 18, 63, OLED_FILL);
 
-    uint8_t absPeakY =constrain(mapFloat(rssiAbsoluteMax[i], -100, -35, 0, 50), 0, 50);
+    uint8_t absPeakY = constrain(mapFloat(rssiAbsoluteMax[i], -100, -20, 0, 50), 0, 50);
     oled.line(x, 63 - absPeakY, x + 18, 63 - absPeakY, 1);
   }
 
@@ -1086,12 +1086,12 @@ void drawRSSISpectrum()
   oled.setCursorXY(0, 55);
   oled.print("90 -");
   oled.setCursorXY(0, 35);
-  oled.print("70 -");
+  oled.print("60 -");
   oled.setCursorXY(0, 15);
-  oled.print("35 -");
+  oled.print("30 -");
 
   char Text[25];
-  sprintf(Text, "%d dBm", currentRssi);
+  sprintf(Text, "%.0f dBm", findMaxValue(rssiAbsoluteMax, raFreqCount));
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
   oled.print(Text);
