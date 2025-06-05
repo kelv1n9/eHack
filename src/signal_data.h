@@ -141,6 +141,8 @@ const uint16_t irCommandsTV[] PROGMEM = {
 // Projectors
 const uint16_t irCommandsPR[] PROGMEM = {
     // {protocol, address, command}
+    20, 0x0007, 0x00E6,
+    24, 0x0054, 0x0015,
     8, 0x0000, 0x008A,
     10, 0x5583, 0x6F90,
     10, 0x0381, 0x0FF0,

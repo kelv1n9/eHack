@@ -44,7 +44,7 @@ protocol_mapping = {
 }
 
 # Путь к файлу
-filename = 'irdb'
+filename = 'irdb_proj'
 
 # Читаем файл
 with open(filename, 'r', encoding='utf-8') as file:
