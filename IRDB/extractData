@@ -1,0 +1,98 @@
+import re
+
+# Таблица enum'ов
+protocol_enum = {
+    'UNKNOWN': 0,
+    'PULSE_WIDTH': 1,
+    'PULSE_DISTANCE': 2,
+    'APPLE': 3,
+    'DENON': 4,
+    'JVC': 5,
+    'LG': 6,
+    'LG2': 7,
+    'NEC': 8,
+    'NEC2': 9,
+    'ONKYO': 10,
+    'PANASONIC': 11,
+    'KASEIKYO': 12,
+    'KASEIKYO_DENON': 13,
+    'KASEIKYO_SHARP': 14,
+    'KASEIKYO_JVC': 15,
+    'KASEIKYO_MITSUBISHI': 16,
+    'RC5': 17,
+    'RC6': 18,
+    'RC6A': 19,
+    'SAMSUNG': 20,
+    'SAMSUNGLG': 21,
+    'SAMSUNG48': 22,
+    'SHARP': 23,
+    'SONY': 24,
+    'BANG_OLUFSEN': 25,
+    'BOSEWAVE': 26,
+    'LEGO_PF': 27,
+    'MAGIQUEST': 28,
+    'WHYNTER': 29,
+    'FAST': 30
+}
+
+# Маппинг для входных протоколов
+protocol_mapping = {
+    'Samsung32': 'SAMSUNG',
+    'NEC': 'NEC',
+    'NECext': 'ONKYO',
+    'SIRC' : 'SONY',
+}
+
+# Путь к файлу
+filename = 'irdb'
+
+# Читаем файл
+with open(filename, 'r', encoding='utf-8') as file:
+    content = file.read()
+
+# Разбиваем на блоки
+blocks = content.split('#')
+
+# Регулярные выражения
+name_pattern = re.compile(r'name:\s*(.*)', re.IGNORECASE)
+protocol_pattern = re.compile(r'protocol:\s*(.*)', re.IGNORECASE)
+address_pattern = re.compile(r'address:\s*(.*)', re.IGNORECASE)
+command_pattern = re.compile(r'command:\s*(.*)', re.IGNORECASE)
+
+# Список для результата
+output_commands = []
+
+# Проход по блокам
+for block in blocks:
+    name_match = name_pattern.search(block)
+    if name_match:
+        name_value = name_match.group(1).strip()
+        if name_value.lower() == 'power':  # Без учёта регистра
+            protocol_match = protocol_pattern.search(block)
+            address_match = address_pattern.search(block)
+            command_match = command_pattern.search(block)
+
+            # Проверяем, что все данные есть
+            if protocol_match and address_match and command_match:
+                raw_protocol = protocol_match.group(1).strip()
+                raw_address = address_match.group(1).strip()
+                raw_command = command_match.group(1).strip()
+
+                # Преобразуем протокол
+                mapped_protocol = protocol_mapping.get(raw_protocol, raw_protocol.upper())
+                protocol_num = protocol_enum.get(mapped_protocol, 0)
+
+                # Конвертируем адрес и команду в hex
+                address_bytes = raw_address.split()
+                command_bytes = raw_command.split()
+
+                address_int = int(''.join(reversed(address_bytes)), 16)
+                command_int = int(''.join(reversed(command_bytes)), 16)
+
+                # Добавляем в результат
+                output_commands.append((protocol_num, address_int, command_int))
+
+# Печатаем результат
+print("// {protocol, address, command}")
+for cmd in output_commands:
+    print(f"{cmd[0]}, 0x{cmd[1]:04X}, 0x{cmd[2]:04X},")
