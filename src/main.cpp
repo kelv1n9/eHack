@@ -30,7 +30,7 @@ void setup()
 
   radio.powerDown();
 
-  digitalWrite(23, HIGH); // PFM to PWM
+  // digitalWrite(23, HIGH); // PFM to PWM
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
   IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);
