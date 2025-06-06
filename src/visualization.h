@@ -144,6 +144,19 @@ void drawBattery(float batVoltage)
   oled.drawByte(0b11111111);
 }
 
+void drawDashedLine(int y, int startX, int endX, int dashLength = 3, int gapLength = 3)
+{
+  int x = startX;
+  while (x < endX)
+  {
+    for (int i = 0; i < dashLength && (x + i) < endX; i++)
+    {
+      oled.dot(x + i, y);
+    }
+    x += dashLength + gapLength;
+  }
+}
+
 void drawMenu(const char *items[], uint8_t itemCount, uint8_t selectedIndex)
 {
   oled.textMode(BUF_ADD);
@@ -641,8 +654,12 @@ void drawRSSIGraph()
   oled.setCursorXY(0, 15);
   oled.print("30 -");
 
+  drawDashedLine(58, 25, 115, 1, 5);
+  drawDashedLine(38, 25, 115, 1, 5);
+  drawDashedLine(18, 25, 115, 1, 5);
+
   char Text[10];
-  sprintf(Text, "%d", currentRssi);
+  sprintf(Text, "%d", findMaxValue(rssiBuffer, RSSI_BUFFER_SIZE));
   oled.setCursorXY(102 - getTextWidth(Text), 0);
   oled.print(Text);
   oled.setCursorXY(102, 0);
@@ -1089,6 +1106,10 @@ void drawRSSISpectrum()
   oled.print("60 -");
   oled.setCursorXY(0, 15);
   oled.print("30 -");
+
+  drawDashedLine(58, 25, 115, 1, 5);
+  drawDashedLine(38, 25, 115, 1, 5);
+  drawDashedLine(18, 25, 115, 1, 5);
 
   char Text[25];
   sprintf(Text, "%.0f dBm", findMaxValue(rssiAbsoluteMax, raFreqCount));

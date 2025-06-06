@@ -339,17 +339,18 @@ uint8_t tagID_NFC[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
 uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 bool nfcDataValid = false;
 /*======================= FUNCTIONS ============================*/
-float findMaxValue(const float *array, size_t length)
+template <typename T>
+T findMaxValue(const T *array, size_t length)
 {
-  float maxVal = array[0];
-  for (size_t i = 1; i < length; i++)
-  {
-    if (array[i] > maxVal)
+    T maxVal = array[0];
+    for (size_t i = 1; i < length; i++)
     {
-      maxVal = array[i];
+        if (array[i] > maxVal)
+        {
+            maxVal = array[i];
+        }
     }
-  }
-  return maxVal;
+    return maxVal;
 }
 
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
