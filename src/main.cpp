@@ -103,6 +103,7 @@ void loop1()
   {
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, INPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
@@ -163,6 +164,7 @@ void loop1()
 
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.enableTransmit(GD0_PIN_CC);
@@ -206,6 +208,7 @@ void loop1()
   {
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, INPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -260,6 +263,7 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -314,6 +318,7 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -399,6 +404,7 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -480,6 +486,7 @@ void loop1()
 
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -502,10 +509,10 @@ void loop1()
   {
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
-      mySwitch.disableTransmit();
-      pinMode(GD0_PIN_CC, OUTPUT);
+      mySwitch.disableTransmit();    
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
       // vibro(255, 50);
@@ -531,6 +538,7 @@ void loop1()
 
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, INPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -583,6 +591,7 @@ void loop1()
 
     if (!initialized)
     {
+      pinMode(GD0_PIN_CC, INPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
@@ -1089,7 +1098,6 @@ void loop()
     nfc.setRFField(0, 0);
     nfc.powerDownMode();
     detachInterrupt(GD0_PIN_CC);
-    pinMode(GD0_PIN_CC, INPUT);
     digitalWrite(GD0_PIN_CC, LOW);
     digitalWrite(RFID_COIL_PIN, LOW);
     digitalWrite(BLE_PIN, LOW);

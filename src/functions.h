@@ -20,7 +20,7 @@
 #include <rdm6300.h>
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v3.1.2"
+#define APP_VERSION "v3.1.3"
 
 #define BLE_PIN 18
 
