@@ -226,6 +226,8 @@ void loop1()
       data.codeAdd = barrierCodeAdd;
       data.protocol = barrierProtocol;
 
+      vibro(255, 200, 3, 80);
+
       // Check for duplicates
       if (isDuplicateBarrier(data))
       {
@@ -242,8 +244,6 @@ void loop1()
       }
 
       lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
-
-      vibro(255, 200, 3, 80);
 
       anMotorsCaptured = false;
       niceCaptured = false;
@@ -1043,7 +1043,7 @@ void loop()
     }
 
     // Exiting menu
-    if (currentMenu == HF_MENU || currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
+    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
     {
       currentMenu = parentMenu;
       parentMenu = grandParentMenu;
@@ -1089,6 +1089,7 @@ void loop()
     nfc.setRFField(0, 0);
     nfc.powerDownMode();
     detachInterrupt(GD0_PIN_CC);
+    pinMode(GD0_PIN_CC, INPUT);
     digitalWrite(GD0_PIN_CC, LOW);
     digitalWrite(RFID_COIL_PIN, LOW);
     digitalWrite(BLE_PIN, LOW);
