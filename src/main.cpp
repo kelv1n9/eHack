@@ -69,14 +69,14 @@ void setup()
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
   ELECHOUSE_cc1101.setPA(12);                // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
   ELECHOUSE_cc1101.setMHZ(raFrequencies[1]); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
-  ELECHOUSE_cc1101.setDcFilterOff(0); // Disable digital DC blocking filter before demodulator. Only for data rates ≤ 250 kBaud The recommended IF frequency changes when the DC blocking is disabled. 1 = Disable (current optimized). 0 = Enable (better sensitivity). (leave at 0 → better sensitivity)
-  ELECHOUSE_cc1101.setPQT(0);         // Preamble quality estimator threshold. The preamble quality estimator increases an internal counter by one each time a bit is received that is different from the previous bit, and decreases the counter by 8 each time a bit is received that is the same as the last bit. A threshold of 4∙PQT for this counter is used to gate sync word detection. When PQT=0 a sync word is always accepted. (PQT=1 is safe for ASK)
-  ELECHOUSE_cc1101.setPRE(0);         // Sets the minimum number of preamble bytes to be transmitted. Values: 0 : 2, 1 : 3, 2 : 4, 3 : 6, 4 : 8, 5 : 12, 6 : 16, 7 : 24 (6 or higher helps detect ASK bursts)
-  ELECHOUSE_cc1101.setSyncMode(0);    // Combined sync-word qualifier mode. 0 = No preamble/sync. 1 = 16 sync word bits detected. 2 = 16/16 sync word bits detected. 3 = 30/32 sync word bits detected. (2 is optimal for ASK + RCSwitch)
-  ELECHOUSE_cc1101.setFEC(0);         // Enable Forward Error Correction (FEC). 0 = Disable, 1 = Enable. (leave at 0 for RCSwitch ASK)
-  ELECHOUSE_cc1101.setCCMode(0);           // set config for internal transmission mode.
-  ELECHOUSE_cc1101.setPktFormat(0);        // Format of RX and TX data. 0 = Normal mode, use FIFOs for RX and TX. (needed for RCSwitch, leave at 0)
-  ELECHOUSE_cc1101.setAdrChk(0);           // Controls address check configuration of received packages. 0 = No address check. (leave at 0 for RCSwitch ASK)
+  ELECHOUSE_cc1101.setDcFilterOff(0);        // Disable digital DC blocking filter before demodulator. Only for data rates ≤ 250 kBaud The recommended IF frequency changes when the DC blocking is disabled. 1 = Disable (current optimized). 0 = Enable (better sensitivity). (leave at 0 → better sensitivity)
+  ELECHOUSE_cc1101.setPQT(0);                // Preamble quality estimator threshold. The preamble quality estimator increases an internal counter by one each time a bit is received that is different from the previous bit, and decreases the counter by 8 each time a bit is received that is the same as the last bit. A threshold of 4∙PQT for this counter is used to gate sync word detection. When PQT=0 a sync word is always accepted. (PQT=1 is safe for ASK)
+  ELECHOUSE_cc1101.setPRE(0);                // Sets the minimum number of preamble bytes to be transmitted. Values: 0 : 2, 1 : 3, 2 : 4, 3 : 6, 4 : 8, 5 : 12, 6 : 16, 7 : 24 (6 or higher helps detect ASK bursts)
+  ELECHOUSE_cc1101.setSyncMode(0);           // Combined sync-word qualifier mode. 0 = No preamble/sync. 1 = 16 sync word bits detected. 2 = 16/16 sync word bits detected. 3 = 30/32 sync word bits detected. (2 is optimal for ASK + RCSwitch)
+  ELECHOUSE_cc1101.setFEC(0);                // Enable Forward Error Correction (FEC). 0 = Disable, 1 = Enable. (leave at 0 for RCSwitch ASK)
+  ELECHOUSE_cc1101.setCCMode(0);             // set config for internal transmission mode.
+  ELECHOUSE_cc1101.setPktFormat(0);          // Format of RX and TX data. 0 = Normal mode, use FIFOs for RX and TX. (needed for RCSwitch, leave at 0)
+  ELECHOUSE_cc1101.setAdrChk(0);             // Controls address check configuration of received packages. 0 = No address check. (leave at 0 for RCSwitch ASK)
   ELECHOUSE_cc1101.goSleep();
 
   for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++)
@@ -99,7 +99,7 @@ void loop1()
   {
   /*============================= 433 MHz Protocol =================================*/
   /********************************** SCANNING **************************************/
-  case RA_SCAN:
+  case HF_SCAN:
   {
     if (!initialized)
     {
@@ -158,7 +158,7 @@ void loop1()
     break;
   }
   /********************************** ATTACK **************************************/
-  case RA_ATTACK:
+  case HF_REPLAY:
   {
     static uint32_t attackTimer = 0;
 
@@ -204,7 +204,7 @@ void loop1()
     break;
   }
   /******************************* BARRIER SCAN **********************************/
-  case BARRIER_SCAN:
+  case HF_BARRIER_SCAN:
   {
     if (!initialized)
     {
@@ -256,7 +256,7 @@ void loop1()
     break;
   }
   /********************************** BARRIER REPLAY **************************************/
-  case BARRIER_REPLAY:
+  case HF_BARRIER_REPLAY:
   {
     static uint32_t attackTimer = 0;
 
@@ -311,7 +311,7 @@ void loop1()
     break;
   }
   /********************************** BRUTE CAME **************************************/
-  case BARRIER_BRUTE_CAME:
+  case HF_BARRIER_BRUTE_CAME:
   {
     static uint32_t lastSendTime = 0;
 
@@ -397,7 +397,7 @@ void loop1()
     break;
   }
   /********************************** BRUTE NICE **************************************/
-  case BARRIER_BRUTE_NICE:
+  case HF_BARRIER_BRUTE_NICE:
   {
     static uint32_t lastSendTime = 0;
 
@@ -478,7 +478,7 @@ void loop1()
     break;
   }
   /********************************** NOISE **************************************/
-  case RA_NOISE:
+  case HF_NOISE:
   {
     static uint32_t lastNoise = 0;
     static bool noiseState = false;
@@ -505,14 +505,14 @@ void loop1()
     break;
   }
   /********************************** TESLA **************************************/
-  case RA_TESLA:
+  case HF_TESLA:
   {
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       ELECHOUSE_cc1101.Init();
       mySwitch.disableReceive();
-      mySwitch.disableTransmit();    
+      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
       // vibro(255, 50);
@@ -531,7 +531,7 @@ void loop1()
     break;
   }
   /********************************** RF SPECTRUM **************************************/
-  case RA_SPECTRUM:
+  case HF_SPECTRUM:
   {
     static uint32_t spectrumTimer = 0;
     static bool waitingForSettle = false;
@@ -585,7 +585,7 @@ void loop1()
     break;
   }
   /********************************** RF ACTIVITY **************************************/
-  case RA_ACTIVITY:
+  case HF_ACTIVITY:
   {
     static uint32_t lastStepMs = millis();
 
@@ -614,7 +614,7 @@ void loop1()
   }
   /*============================= InfraRed Protocol =================================*/
   /********************************** SCANNING **************************************/
-  case IR_RECEIVER:
+  case IR_SCAN:
   {
     if (!initialized)
     {
@@ -664,7 +664,7 @@ void loop1()
     break;
   }
   /********************************** SENDER **************************************/
-  case IR_SENDER:
+  case IR_REPLAY:
   {
     if (!initialized)
     {
@@ -704,7 +704,7 @@ void loop1()
     break;
   }
   /********************************** BRUTE FORCE TV **************************************/
-  case IR_TV:
+  case IR_BRUTE_TV:
   {
     static uint32_t lastSendTime = 0;
 
@@ -786,7 +786,7 @@ void loop1()
     break;
   }
   /********************************** BRUTE FORCE PROJECTOR **************************************/
-  case IR_PROJECTOR:
+  case IR_BRUTE_PROJECTOR:
   {
     static uint32_t lastSendTime = 0;
 
@@ -868,7 +868,7 @@ void loop1()
     break;
   }
   /******************************** ENABLE 2.4 GHz **************************************/
-  case UHF_ALL:
+  case UHF_ALL_JAMMER:
   {
     if (!initialized)
     {
@@ -879,7 +879,7 @@ void loop1()
     radio.setChannel(radioChannel);
     break;
   }
-  case UHF_WIFI:
+  case UHF_WIFI_JAMMER:
   {
     if (!initialized)
     {
@@ -890,7 +890,7 @@ void loop1()
     radio.setChannel(radioChannel);
     break;
   }
-  case UHF_BLUETOOTH:
+  case UHF_BT_JAMMER:
   {
     if (!initialized)
     {
@@ -902,7 +902,7 @@ void loop1()
     radio.setChannel(radioChannel);
     break;
   }
-  case UHF_BLE:
+  case UHF_BLE_JAMMER:
   {
     if (!initialized)
     {
@@ -931,7 +931,7 @@ void loop1()
     break;
   }
   /********************************** ENABLE WIFI **************************************/
-  case BLE_SPAM:
+  case UHF_BLE_SPAM:
   {
     if (!initialized)
     {
@@ -1020,7 +1020,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ATTACK && currentMenu != IR_SENDER && currentMenu != BARRIER_REPLAY && currentMenu != RFID_EMULATE)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != IR_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
@@ -1039,7 +1039,8 @@ void loop()
     showLock();
   }
 
-  if (isCharging) {
+  if (isCharging)
+  {
     showCharging();
   }
 
@@ -1056,7 +1057,7 @@ void loop()
     }
 
     // Exiting menu
-    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_TOOLS || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == RA_AIR || currentMenu == RA_BARRIER || currentMenu == BARRIER_BRUTE)
+    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_MENU || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == HF_AIR_MENU || currentMenu == HF_BARRIER_MENU || currentMenu == HF_BARRIER_BRUTE_MENU)
     {
       currentMenu = parentMenu;
       parentMenu = grandParentMenu;
@@ -1137,12 +1138,12 @@ void loop()
       ok.reset();
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(RA_AIR + HFmenuIndex);
+      currentMenu = static_cast<MenuState>(HF_AIR_MENU + HFmenuIndex);
       vibro(255, 50);
     }
     break;
   }
-  case IR_TOOLS:
+  case IR_MENU:
   {
     menuButtons(IRmenuIndex, irMenuCount);
     drawMenu(irMenuItems, irMenuCount, IRmenuIndex);
@@ -1152,7 +1153,7 @@ void loop()
       ok.reset();
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(IR_RECEIVER + IRmenuIndex);
+      currentMenu = static_cast<MenuState>(IR_SCAN + IRmenuIndex);
       vibro(255, 50);
     }
     break;
@@ -1194,7 +1195,7 @@ void loop()
     {
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(FALLING_DOTS_GAME + gamesMenuIndex);
+      currentMenu = static_cast<MenuState>(DOTS_GAME + gamesMenuIndex);
       vibro(255, 50);
     }
     break;
@@ -1252,7 +1253,7 @@ void loop()
     drawSettingsMenu(settingsMenuIndex);
     break;
   }
-  case RA_BARRIER:
+  case HF_BARRIER_MENU:
   {
     menuButtons(barrierMenuIndex, barrierMenuCount);
     drawMenu(barrierMenuItems, barrierMenuCount, barrierMenuIndex);
@@ -1262,12 +1263,12 @@ void loop()
       ok.reset();
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(BARRIER_SCAN + barrierMenuIndex);
+      currentMenu = static_cast<MenuState>(HF_BARRIER_SCAN + barrierMenuIndex);
       vibro(255, 50);
     }
     break;
   }
-  case BARRIER_BRUTE:
+  case HF_BARRIER_BRUTE_MENU:
   {
     menuButtons(barrierBruteMenuIndex, barrierBruteMenuCount);
     drawMenu(barrierBruteMenuItems, barrierBruteMenuCount, barrierBruteMenuIndex);
@@ -1276,12 +1277,12 @@ void loop()
     {
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(BARRIER_BRUTE_CAME + barrierBruteMenuIndex);
+      currentMenu = static_cast<MenuState>(HF_BARRIER_BRUTE_CAME + barrierBruteMenuIndex);
       vibro(255, 50);
     }
     break;
   }
-  case RA_AIR:
+  case HF_AIR_MENU:
   {
     menuButtons(RAsignalMenuIndex, RAsignalMenuCount);
     drawMenu(RAsignalMenuItems, RAsignalMenuCount, RAsignalMenuIndex);
@@ -1290,22 +1291,22 @@ void loop()
     {
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(RA_SPECTRUM + RAsignalMenuIndex);
+      currentMenu = static_cast<MenuState>(HF_SPECTRUM + RAsignalMenuIndex);
       vibro(255, 50);
     }
     break;
   }
-  case RA_SCAN:
+  case HF_SCAN:
   {
     if (!signalCaptured_433MHZ)
-      ShowScanning_433MHZ();
+      ShowScanning_HF();
     else
     {
-      ShowCapturedSignal_433MHZ();
+      ShowCapturedSignal_HF();
     }
     break;
   }
-  case RA_ATTACK:
+  case HF_REPLAY:
   {
     if (ok.click() && capturedCode != 0)
     {
@@ -1321,50 +1322,50 @@ void loop()
 
     if (attackIsActive)
     {
-      ShowAttack_RA();
+      ShowAttack_HF();
       changeFreqButtons("TX");
     }
     else
     {
-      ShowSavedSignal_RA();
+      ShowSavedSignal_HF();
     }
     break;
   }
-  case RA_NOISE:
+  case HF_NOISE:
   {
-    ShowRA_NOISE();
+    ShowJamming_HF();
     break;
   }
-  case RA_TESLA:
+  case HF_TESLA:
   {
-    ShowSend_Tesla();
+    ShowSendingTesla_HF();
     break;
   }
-  case RA_ACTIVITY:
+  case HF_ACTIVITY:
   {
-    drawRSSIGraph();
+    DrawRSSIPlot_HF();
     break;
   }
-  case RA_SPECTRUM:
+  case HF_SPECTRUM:
   {
     if (!locked && ok.click())
     {
-      resetRFSpectrum();
+      resetSpectrum_HF();
     }
-    drawRSSISpectrum();
+    DrawRSSISpectrum_HF();
     break;
   }
-  case BARRIER_SCAN:
+  case HF_BARRIER_SCAN:
   {
     if (!signalCaptured_433MHZ)
-      ShowScanning_433MHZ();
+      ShowScanning_HF();
     else
     {
-      ShowCapturedBarrier_433MHZ();
+      ShowCapturedBarrier_HF();
     }
     break;
   }
-  case BARRIER_REPLAY:
+  case HF_BARRIER_REPLAY:
   {
     if (ok.click() && barrierCodeMain != 0)
     {
@@ -1380,26 +1381,26 @@ void loop()
 
     if (attackIsActive)
     {
-      ShowAttack_RA();
+      ShowAttack_HF();
       changeFreqButtons("TX");
     }
     else
     {
-      ShowSavedSignal_Barrier();
+      ShowSavedSignalBarrier_HF();
     }
     break;
   }
-  case BARRIER_BRUTE_CAME:
+  case HF_BARRIER_BRUTE_CAME:
   {
-    showBarrier_Brute(2);
+    ShowBarrierBrute_HF(2);
     break;
   }
-  case BARRIER_BRUTE_NICE:
+  case HF_BARRIER_BRUTE_NICE:
   {
-    showBarrier_Brute(1);
+    ShowBarrierBrute_HF(1);
     break;
   }
-  case IR_RECEIVER:
+  case IR_SCAN:
   {
     if (!signalCaptured_IR)
     {
@@ -1411,7 +1412,7 @@ void loop()
     }
     break;
   }
-  case IR_SENDER:
+  case IR_REPLAY:
   {
     if (up.hold() && down.hold())
     {
@@ -1422,44 +1423,44 @@ void loop()
     ShowSavedSignal_IR();
     break;
   }
-  case IR_TV:
+  case IR_BRUTE_TV:
   {
-    showIR_Brute();
+    ShowBrute_IR();
     break;
   }
-  case IR_PROJECTOR:
+  case IR_BRUTE_PROJECTOR:
   {
-    showIR_Brute();
+    ShowBrute_IR();
     break;
   }
-  case UHF_ALL:
+  case UHF_ALL_JAMMER:
   {
-    ShowUHF();
+    ShowJamming_UHF();
     break;
   }
-  case UHF_WIFI:
+  case UHF_WIFI_JAMMER:
   {
-    ShowUHF();
+    ShowJamming_UHF();
     break;
   }
-  case UHF_BLUETOOTH:
+  case UHF_BT_JAMMER:
   {
-    ShowUHF();
+    ShowJamming_UHF();
     break;
   }
-  case UHF_BLE:
+  case UHF_BLE_JAMMER:
   {
-    ShowUHF();
+    ShowJamming_UHF();
     break;
   }
   case UHF_SPECTRUM:
   {
-    drawSpectrum();
+    DrawSpectrum_UHF();
     break;
   }
-  case BLE_SPAM:
+  case UHF_BLE_SPAM:
   {
-    ShowBLE();
+    ShowBLESpam_UHF();
     break;
   }
   case RFID_SCAN:
@@ -1504,7 +1505,7 @@ void loop()
   {
     break;
   }
-  case FALLING_DOTS_GAME:
+  case DOTS_GAME:
   {
 
     if (!fallingDots.initialized)
@@ -1523,7 +1524,7 @@ void loop()
 
     break;
   }
-  case SNAKE:
+  case SNAKE_GAME:
   {
     if (!snake.initialized)
     {
@@ -1540,7 +1541,7 @@ void loop()
     }
     break;
   }
-  case FLAPPY:
+  case FLAPPY_GAME:
   {
     if (!flappy.initialized)
     {
@@ -1558,19 +1559,19 @@ void loop()
   }
   }
 
-  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ACTIVITY)
+  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
   {
     batVoltage = readBatteryVoltage();
     cheсkCharging(batVoltage);
     batteryTimer = millis();
   }
 
-  if (currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ACTIVITY)
+  if (currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
   {
     drawBattery(batVoltage);
   }
 
-  if (currentMenu != RA_ACTIVITY && currentMenu != RA_SPECTRUM && currentMenu != BARRIER_SCAN && currentMenu != RA_SCAN)
+  if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_BARRIER_SCAN && currentMenu != HF_SCAN)
   {
     setMinBrightness();
   }

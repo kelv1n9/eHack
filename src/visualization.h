@@ -6,42 +6,43 @@ enum MenuState
 
   HF_MENU,
   UHF_MENU,
-  IR_TOOLS,
+  IR_MENU,
   RFID_MENU,
   GAMES,
   SETTINGS,
 
-  FALLING_DOTS_GAME,
-  SNAKE,
-  FLAPPY,
+  DOTS_GAME,
+  SNAKE_GAME,
+  FLAPPY_GAME,
 
-  RA_AIR,
-  RA_BARRIER,
-  RA_SCAN,
-  RA_ATTACK,
-  RA_NOISE,
-  RA_TESLA,
+  HF_AIR_MENU,
+  HF_BARRIER_MENU,
 
-  RA_SPECTRUM,
-  RA_ACTIVITY,
+  HF_SCAN,
+  HF_REPLAY,
+  HF_NOISE,
+  HF_TESLA,
 
-  BARRIER_SCAN,
-  BARRIER_REPLAY,
-  BARRIER_BRUTE,
-  BARRIER_BRUTE_CAME,
-  BARRIER_BRUTE_NICE,
+  HF_SPECTRUM,
+  HF_ACTIVITY,
 
-  IR_RECEIVER,
-  IR_SENDER,
-  IR_TV,
-  IR_PROJECTOR,
+  HF_BARRIER_SCAN,
+  HF_BARRIER_REPLAY,
+  HF_BARRIER_BRUTE_MENU,
+  HF_BARRIER_BRUTE_CAME,
+  HF_BARRIER_BRUTE_NICE,
+
+  IR_SCAN,
+  IR_REPLAY,
+  IR_BRUTE_TV,
+  IR_BRUTE_PROJECTOR,
 
   UHF_SPECTRUM,
-  UHF_ALL,
-  UHF_WIFI,
-  UHF_BLUETOOTH,
-  UHF_BLE,
-  BLE_SPAM,
+  UHF_ALL_JAMMER,
+  UHF_WIFI_JAMMER,
+  UHF_BT_JAMMER,
+  UHF_BLE_JAMMER,
+  UHF_BLE_SPAM,
 
   RFID_SCAN,
   RFID_EMULATE,
@@ -114,8 +115,9 @@ const char PROGMEM *RAsignalMenuItems[] = {
 MenuState currentMenu = MAIN_MENU;
 MenuState parentMenu = MAIN_MENU;
 MenuState grandParentMenu = MAIN_MENU;
-
 uint16_t sineOffset = 0;
+
+/*============================= MAIN APPEARANCE ============================================*/
 
 void drawBattery(float batVoltage)
 {
@@ -260,268 +262,6 @@ void drawMenu(const char *items[], uint8_t itemCount, uint8_t selectedIndex)
   }
 }
 
-void ShowScanning_433MHZ()
-{
-  char Text[20];
-  sprintf(Text, "Capturing...");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  char Text2[20];
-  sprintf(Text2, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
-  oled.print(Text2);
-}
-
-void ShowBLE()
-{
-  char Text[20];
-  sprintf(Text, "BLE Spam");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[20];
-  sprintf(Text1, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
-    oled.dot(x, y);
-  }
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
-    oled.dot(x, y);
-  }
-
-  sineOffset += 2;
-}
-
-void ShowRA_NOISE()
-{
-  char Text[20];
-  sprintf(Text, "Jamming...");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  char Text2[20];
-  sprintf(Text2, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
-  oled.print(Text2);
-}
-
-void ShowCapturedSignal_433MHZ()
-{
-  char Text[25];
-  sprintf(Text, "RF Signal: %d dBm", currentRssi);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Code: %d", capturedCode);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "Length: %d Bit", capturedLength);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-  oled.print(Text3);
-
-  char Text4[20];
-  sprintf(Text4, "Protocol: %d", capturedProtocol);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
-  oled.print(Text4);
-
-  char Text5[20];
-  sprintf(Text5, "Delay: %d ms", capturedDelay);
-  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
-  oled.print(Text5);
-}
-
-void ShowSavedSignal_RA()
-{
-  char Text[25];
-  sprintf(Text, "Saved RF, slot: %d", selectedSlotRA);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Code: %d", capturedCode);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "Length: %d Bit", capturedLength);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-  oled.print(Text3);
-
-  char Text4[20];
-  sprintf(Text4, "Protocol: %d", capturedProtocol);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
-  oled.print(Text4);
-
-  char Text5[20];
-  sprintf(Text5, "Delay: %d ms", capturedDelay);
-  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
-  oled.print(Text5);
-}
-
-void ShowSend_Tesla()
-{
-  char Text[20];
-  sprintf(Text, "Tesla Charge Door");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[20];
-  sprintf(Text1, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
-    oled.dot(x, y);
-  }
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
-    oled.dot(x, y);
-  }
-
-  sineOffset += 2;
-}
-
-void ShowScanning_IR()
-{
-  char Text[20];
-  sprintf(Text, "Capturing...");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Type: InfraRed");
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  char Text2[20];
-  sprintf(Text2, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
-  oled.print(Text2);
-}
-
-void ShowCapturedSignal_IR()
-{
-  char Text[20];
-  sprintf(Text, "IR Signal captured");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[30];
-  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "Address: 0x%04X", address);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-  oled.print(Text3);
-
-  char Text4[20];
-  sprintf(Text4, "Command: 0x%04X", command);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
-  oled.print(Text4);
-}
-
-void ShowSavedSignal_IR()
-{
-  char Text[20];
-  sprintf(Text, "Saved IR, slot: %d", selectedSlotIR);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[30];
-  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "Address: 0x%04X", address);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-  oled.print(Text3);
-
-  char Text4[20];
-  sprintf(Text4, "Command: 0x%04X", command);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
-  oled.print(Text4);
-}
-
-void showIR_Brute()
-{
-  char Text[20];
-  sprintf(Text, "Index: %d", currentIndex);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[30];
-  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text3[20];
-  sprintf(Text3, "Address: 0x%04X", address);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-  oled.print(Text3);
-
-  char Text4[20];
-  sprintf(Text4, "Command: 0x%04X", command);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
-  oled.print(Text4);
-}
-
-void ShowUHF()
-{
-  char Text[20];
-  sprintf(Text, "Jamming...");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Frequency: 2.4 GHz");
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
-  oled.print(Text1);
-
-  char Text2[20];
-  sprintf(Text2, "Channel: %d", radioChannel);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
-  oled.print(Text2);
-}
-
 void ShowSplashScreen()
 {
   oled.clear();
@@ -564,55 +304,6 @@ void showGamePaused()
   oled.print("PAUSED");
 }
 
-void drawSpectrum()
-{
-  oled.textMode(BUF_ADD);
-
-  if (!locked && ok.click())
-  {
-    peaksDynamic = !peaksDynamic;
-    vibro(250, 100);
-  }
-
-  if (!peaksDynamic)
-  {
-    oled.setCursorXY((SCREEN_WIDTH - 3 * 6) / 2, SPECTRUM_TOP_LIMIT - 8);
-    oled.setScale(1);
-    oled.print("MAX");
-  }
-
-  for (uint8_t channel = 0; channel < NUM_CHANNELS; ++channel)
-  {
-    uint8_t x = (barWidth * channel) + margin;
-    oled.line(x, SPECTRUM_TOP_LIMIT, x, SCREEN_BOTTOM, 0);
-
-    uint8_t cacheSum = channelStrength[channel];
-
-    if (stored[channel].maxPeak > cacheSum * 2)
-    {
-      uint8_t peakHeight = SCREEN_BOTTOM - ((SCREEN_BOTTOM - SPECTRUM_TOP_LIMIT) * stored[channel].maxPeak) / (cacheMax * 2);
-      oled.line(x, peakHeight, x, peakHeight, 1);
-
-      if (peaksDynamic && stored[channel].maxPeak > 0)
-      {
-        stored[channel].maxPeak--;
-      }
-    }
-
-    if (cacheSum > 0)
-    {
-      uint8_t barHeight = ((SCREEN_BOTTOM - SPECTRUM_TOP_LIMIT) * cacheSum) / cacheMax;
-      oled.line(x, SCREEN_BOTTOM, x, SCREEN_BOTTOM - barHeight, 1);
-    }
-  }
-}
-
-void resetBrightness()
-{
-  brightnessTimer = millis();
-  oled.setContrast(MAX_BRIGHTNESS);
-}
-
 void setMinBrightness()
 {
   if (millis() - brightnessTimer > BRIGHTNESS_TIME)
@@ -620,106 +311,6 @@ void setMinBrightness()
     brightnessTimer = millis();
     oled.setContrast(MIN_BRIGHTNESS);
   }
-}
-
-void drawRSSIGraph()
-{
-  const char *label = "RSSI";
-
-  char freq[10];
-  sprintf(freq, "%.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setScale(1);
-  oled.setCursorXY(0, 0);
-  oled.print(freq);
-
-  for (int i = 0; i < RSSI_BUFFER_SIZE; i++)
-  {
-    int x = i + 25;
-    int rssiValue = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
-    uint8_t h = constrain(map(rssiValue, -100, -20, 0, 50), 0, 50);
-    oled.line(x, 63, x, 63 - h, 1);
-  }
-
-  for (int i = 0; label[i] != '\0'; i++)
-  {
-    oled.setCursorXY(120, 25 + (i * 8));
-    char ch[2] = {label[i], '\0'};
-    oled.print(ch);
-  }
-
-  oled.setCursorXY(0, 55);
-  oled.print("90 -");
-  oled.setCursorXY(0, 35);
-  oled.print("60 -");
-  oled.setCursorXY(0, 15);
-  oled.print("30 -");
-
-  drawDashedLine(58, 25, 115, 1, 5);
-  drawDashedLine(38, 25, 115, 1, 5);
-  drawDashedLine(18, 25, 115, 1, 5);
-
-  char Text[10];
-  sprintf(Text, "%d", findMaxValue(rssiBuffer, RSSI_BUFFER_SIZE));
-  oled.setCursorXY(102 - getTextWidth(Text), 0);
-  oled.print(Text);
-  oled.setCursorXY(102, 0);
-  oled.print(" dBm");
-}
-
-void ShowAttack_RA()
-{
-  char Text[20];
-  sprintf(Text, "Freq: %.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Click OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
-  oled.print(Text2);
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
-    oled.dot(x, y);
-  }
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
-    oled.dot(x, y);
-  }
-
-  sineOffset += 2;
-}
-
-void ShowEmulation_RFID()
-{
-  char Text[20];
-  sprintf(Text, "RFID Freq: 125 kHz");
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Click OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
-  oled.print(Text2);
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
-    oled.dot(x, y);
-  }
-
-  for (int x = 10; x < 118; x++)
-  {
-    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
-    oled.dot(x, y);
-  }
-
-  sineOffset += 2;
 }
 
 void drawSettingsMenu(uint8_t selectedIndex)
@@ -777,7 +368,178 @@ void showCharging()
   oled.print("*");
 }
 
-void ShowCapturedBarrier_433MHZ()
+void ShowReboot()
+{
+  oled.clear();
+  oled.setScale(2);
+
+  oled.setCursorXY((128 - 2 * getTextWidth("Please,")) / 2, 10);
+  oled.print("Please,");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("reboot")) / 2, 25);
+  oled.print("reboot");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("the device")) / 2, 40);
+  oled.print("the device");
+
+  oled.update();
+}
+
+/*============================= HF VISUALIZATION ============================================*/
+
+void ShowScanning_HF()
+{
+  char Text[20];
+  sprintf(Text, "Capturing...");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[30];
+  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  char Text2[20];
+  sprintf(Text2, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  oled.print(Text2);
+}
+
+void ShowJamming_HF()
+{
+  char Text[20];
+  sprintf(Text, "Jamming...");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[30];
+  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  char Text2[20];
+  sprintf(Text2, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  oled.print(Text2);
+}
+
+void ShowCapturedSignal_HF()
+{
+  char Text[25];
+  sprintf(Text, "RF Signal: %d dBm", currentRssi);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+  oled.print(Text);
+
+  char Text2[20];
+  sprintf(Text2, "Code: %d", capturedCode);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Length: %d Bit", capturedLength);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.print(Text3);
+
+  char Text4[20];
+  sprintf(Text4, "Protocol: %d", capturedProtocol);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.print(Text4);
+
+  char Text5[20];
+  sprintf(Text5, "Delay: %d ms", capturedDelay);
+  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
+  oled.print(Text5);
+}
+
+void ShowSavedSignal_HF()
+{
+  char Text[25];
+  sprintf(Text, "Saved RF, slot: %d", selectedSlotRA);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+  oled.print(Text);
+
+  char Text2[20];
+  sprintf(Text2, "Code: %d", capturedCode);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Length: %d Bit", capturedLength);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.print(Text3);
+
+  char Text4[20];
+  sprintf(Text4, "Protocol: %d", capturedProtocol);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.print(Text4);
+
+  char Text5[20];
+  sprintf(Text5, "Delay: %d ms", capturedDelay);
+  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
+  oled.print(Text5);
+}
+
+void ShowSendingTesla_HF()
+{
+  char Text[20];
+  sprintf(Text, "Tesla Charge Door");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[20];
+  sprintf(Text1, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
+}
+
+void ShowAttack_HF()
+{
+  char Text[20];
+  sprintf(Text, "Freq: %.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text2[20];
+  sprintf(Text2, "Click OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
+  oled.print(Text2);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
+}
+
+void ShowCapturedBarrier_HF()
 {
   const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
 
@@ -834,7 +596,7 @@ void ShowCapturedBarrier_433MHZ()
   }
 }
 
-void ShowSavedSignal_Barrier()
+void ShowSavedSignalBarrier_HF()
 {
   const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
   const char *protocol_ = protocols[barrierProtocol];
@@ -904,7 +666,7 @@ void ShowSavedSignal_Barrier()
   }
 }
 
-void showBarrier_Brute(uint8_t protocol)
+void ShowBarrierBrute_HF(uint8_t protocol)
 {
   const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
 
@@ -917,6 +679,305 @@ void showBarrier_Brute(uint8_t protocol)
   sprintf(Text2, "Command: %d", barrierBruteIndex);
   oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
   oled.print(Text2);
+}
+
+void DrawRSSIPlot_HF()
+{
+  const char *label = "RSSI";
+
+  char freq[10];
+  sprintf(freq, "%.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setScale(1);
+  oled.setCursorXY(0, 0);
+  oled.print(freq);
+
+  for (int i = 0; i < RSSI_BUFFER_SIZE; i++)
+  {
+    int x = i + 25;
+    int rssiValue = rssiBuffer[(rssiIndex + i) % RSSI_BUFFER_SIZE];
+    uint8_t h = constrain(map(rssiValue, -100, -20, 0, 50), 0, 50);
+    oled.line(x, 63, x, 63 - h, 1);
+  }
+
+  for (int i = 0; label[i] != '\0'; i++)
+  {
+    oled.setCursorXY(120, 25 + (i * 8));
+    char ch[2] = {label[i], '\0'};
+    oled.print(ch);
+  }
+
+  oled.setCursorXY(0, 55);
+  oled.print("90 -");
+  oled.setCursorXY(0, 35);
+  oled.print("60 -");
+  oled.setCursorXY(0, 15);
+  oled.print("30 -");
+
+  drawDashedLine(58, 25, 115, 1, 5);
+  drawDashedLine(38, 25, 115, 1, 5);
+  drawDashedLine(18, 25, 115, 1, 5);
+
+  char Text[10];
+  sprintf(Text, "%d", findMaxValue(rssiBuffer, RSSI_BUFFER_SIZE));
+  oled.setCursorXY(102 - getTextWidth(Text), 0);
+  oled.print(Text);
+  oled.setCursorXY(102, 0);
+  oled.print(" dBm");
+}
+
+void DrawRSSISpectrum_HF()
+{
+  const char *label = "RSSI";
+
+  for (uint8_t i = 0; i < raFreqCount; i++)
+  {
+    int x = 20 + i * 25;
+
+    uint8_t peakY = constrain(mapFloat(rssiMaxPeak[i], -100, -20, 0, 50), 0, 50);
+    oled.rect(x, 63 - peakY, x + 18, 63, OLED_FILL);
+
+    uint8_t absPeakY = constrain(mapFloat(rssiAbsoluteMax[i], -100, -20, 0, 50), 0, 50);
+    oled.line(x, 63 - absPeakY, x + 18, 63 - absPeakY, 1);
+  }
+
+  for (int i = 0; label[i] != '\0'; i++)
+  {
+    oled.setCursorXY(120, 25 + (i * 8));
+    char ch[2] = {label[i], '\0'};
+    oled.print(ch);
+  }
+
+  oled.setCursorXY(0, 55);
+  oled.print("90 -");
+  oled.setCursorXY(0, 35);
+  oled.print("60 -");
+  oled.setCursorXY(0, 15);
+  oled.print("30 -");
+
+  drawDashedLine(58, 25, 115, 1, 5);
+  drawDashedLine(38, 25, 115, 1, 5);
+  drawDashedLine(18, 25, 115, 1, 5);
+
+  char Text[25];
+  sprintf(Text, "%.0f dBm", findMaxValue(rssiAbsoluteMax, raFreqCount));
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
+  oled.print(Text);
+}
+
+/*============================= UHF VISUALIZATION ============================================*/
+
+void ShowJamming_UHF()
+{
+  char Text[20];
+  sprintf(Text, "Jamming...");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[30];
+  sprintf(Text1, "Frequency: 2.4 GHz");
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  char Text2[20];
+  sprintf(Text2, "Channel: %d", radioChannel);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  oled.print(Text2);
+}
+
+void ShowBLESpam_UHF()
+{
+  char Text[20];
+  sprintf(Text, "BLE Spam");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[20];
+  sprintf(Text1, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
+}
+
+void DrawSpectrum_UHF()
+{
+  oled.textMode(BUF_ADD);
+
+  if (!locked && ok.click())
+  {
+    peaksDynamic = !peaksDynamic;
+    vibro(250, 100);
+  }
+
+  if (!peaksDynamic)
+  {
+    oled.setCursorXY((SCREEN_WIDTH - 3 * 6) / 2, SPECTRUM_TOP_LIMIT - 8);
+    oled.setScale(1);
+    oled.print("MAX");
+  }
+
+  for (uint8_t channel = 0; channel < NUM_CHANNELS; ++channel)
+  {
+    uint8_t x = (barWidth * channel) + margin;
+    oled.line(x, SPECTRUM_TOP_LIMIT, x, SCREEN_BOTTOM, 0);
+
+    uint8_t cacheSum = channelStrength[channel];
+
+    if (stored[channel].maxPeak > cacheSum * 2)
+    {
+      uint8_t peakHeight = SCREEN_BOTTOM - ((SCREEN_BOTTOM - SPECTRUM_TOP_LIMIT) * stored[channel].maxPeak) / (cacheMax * 2);
+      oled.line(x, peakHeight, x, peakHeight, 1);
+
+      if (peaksDynamic && stored[channel].maxPeak > 0)
+      {
+        stored[channel].maxPeak--;
+      }
+    }
+
+    if (cacheSum > 0)
+    {
+      uint8_t barHeight = ((SCREEN_BOTTOM - SPECTRUM_TOP_LIMIT) * cacheSum) / cacheMax;
+      oled.line(x, SCREEN_BOTTOM, x, SCREEN_BOTTOM - barHeight, 1);
+    }
+  }
+}
+
+/*============================= IR VISUALIZATION ============================================*/
+
+void ShowScanning_IR()
+{
+  char Text[20];
+  sprintf(Text, "Capturing...");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text1[30];
+  sprintf(Text1, "Type: InfraRed");
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.print(Text1);
+
+  char Text2[20];
+  sprintf(Text2, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  oled.print(Text2);
+}
+
+void ShowCapturedSignal_IR()
+{
+  char Text[20];
+  sprintf(Text, "IR Signal captured");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+  oled.print(Text);
+
+  char Text2[30];
+  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Address: 0x%04X", address);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.print(Text3);
+
+  char Text4[20];
+  sprintf(Text4, "Command: 0x%04X", command);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.print(Text4);
+}
+
+void ShowSavedSignal_IR()
+{
+  char Text[20];
+  sprintf(Text, "Saved IR, slot: %d", selectedSlotIR);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+  oled.print(Text);
+
+  char Text2[30];
+  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Address: 0x%04X", address);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.print(Text3);
+
+  char Text4[20];
+  sprintf(Text4, "Command: 0x%04X", command);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.print(Text4);
+}
+
+void ShowBrute_IR()
+{
+  char Text[20];
+  sprintf(Text, "Index: %d", currentIndex);
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+  oled.print(Text);
+
+  char Text2[30];
+  sprintf(Text2, "Protocol: %s", getProtocolString((decode_type_t)protocol));
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Address: 0x%04X", address);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.print(Text3);
+
+  char Text4[20];
+  sprintf(Text4, "Command: 0x%04X", command);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.print(Text4);
+}
+
+/*============================= RFID VISUALIZATION ============================================*/
+
+void ShowEmulation_RFID()
+{
+  char Text[20];
+  sprintf(Text, "RFID Freq: 125 kHz");
+  oled.setScale(1);
+  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
+  oled.print(Text);
+
+  char Text2[20];
+  sprintf(Text2, "Click OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
+  oled.print(Text2);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)8) * 10;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 10;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
 }
 
 void ShowScanning_RFID()
@@ -1082,61 +1143,4 @@ void ShowSavedSignal_RFID()
   sprintf(Text2, "UID: %lX", tagID_125kHz);
   oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 45);
   oled.print(Text2);
-}
-
-void drawRSSISpectrum()
-{
-  const char *label = "RSSI";
-
-  for (uint8_t i = 0; i < raFreqCount; i++)
-  {
-    int x = 20 + i * 25;
-
-    uint8_t peakY = constrain(mapFloat(rssiMaxPeak[i], -100, -20, 0, 50), 0, 50);
-    oled.rect(x, 63 - peakY, x + 18, 63, OLED_FILL);
-
-    uint8_t absPeakY = constrain(mapFloat(rssiAbsoluteMax[i], -100, -20, 0, 50), 0, 50);
-    oled.line(x, 63 - absPeakY, x + 18, 63 - absPeakY, 1);
-  }
-
-  for (int i = 0; label[i] != '\0'; i++)
-  {
-    oled.setCursorXY(120, 25 + (i * 8));
-    char ch[2] = {label[i], '\0'};
-    oled.print(ch);
-  }
-
-  oled.setCursorXY(0, 55);
-  oled.print("90 -");
-  oled.setCursorXY(0, 35);
-  oled.print("60 -");
-  oled.setCursorXY(0, 15);
-  oled.print("30 -");
-
-  drawDashedLine(58, 25, 115, 1, 5);
-  drawDashedLine(38, 25, 115, 1, 5);
-  drawDashedLine(18, 25, 115, 1, 5);
-
-  char Text[25];
-  sprintf(Text, "%.0f dBm", findMaxValue(rssiAbsoluteMax, raFreqCount));
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
-  oled.print(Text);
-}
-
-void ShowReboot()
-{
-  oled.clear();
-  oled.setScale(2);
-
-  oled.setCursorXY((128 - 2 * getTextWidth("Please,")) / 2, 10);
-  oled.print("Please,");
-
-  oled.setCursorXY((128 - 2 * getTextWidth("reboot")) / 2, 25);
-  oled.print("reboot");
-
-  oled.setCursorXY((128 - 2 * getTextWidth("the device")) / 2, 40);
-  oled.print("the device");
-
-  oled.update();
 }

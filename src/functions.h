@@ -344,7 +344,16 @@ uint8_t nfcDataLength = 0;
 uint8_t tagID_NFC[] = {0, 0, 0, 0, 0, 0, 0}; // Buffer to store the returned UID
 uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 bool nfcDataValid = false;
+
 /*======================= FUNCTIONS ============================*/
+
+/*======================== COMMON ==============================*/
+void resetBrightness()
+{
+  brightnessTimer = millis();
+  oled.setContrast(MAX_BRIGHTNESS);
+}
+
 template <typename T>
 T findMaxValue(const T *array, size_t length)
 {
@@ -443,6 +452,43 @@ void getIRCommand(const uint16_t *data, uint8_t index, uint16_t &protocol, uint1
   protocol = pgm_read_word(&data[index * 3]);
   address = pgm_read_word(&data[index * 3 + 1]);
   command = pgm_read_word(&data[index * 3 + 2]);
+}
+
+//================================== HF ======================================*/
+
+void changeFreqButtons(const char *mode)
+{
+  if (!locked && (down.click()))
+  {
+    currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
+
+    if (strcmp(mode, "RX") == 0)
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+    else if (strcmp(mode, "TX") == 0)
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+
+    vibro(255, 30);
+  }
+  else if (!locked && (up.click()))
+  {
+    currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
+
+    if (strcmp(mode, "RX") == 0)
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+    else if (strcmp(mode, "TX") == 0)
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+
+    vibro(255, 30);
+  }
+}
+
+void resetSpectrum_HF()
+{
+  for (uint8_t i = 0; i < raFreqCount; i++)
+  {
+    rssiMaxPeak[i] = -100;
+    rssiAbsoluteMax[i] = -100;
+  }
 }
 
 //================================== TESLA ======================================*/
@@ -555,50 +601,7 @@ void sendTeslaSignal_v2()
 }
 
 //======================= EEPROM ============================*/
-void writeIRData(uint8_t slot, const SimpleIRData &data)
-{
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
-  EEPROM.put(addr, data);
-  EEPROM.commit();
-}
-
-SimpleIRData readIRData(uint8_t slot)
-{
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
-  SimpleIRData data;
-  EEPROM.get(addr, data);
-  return data;
-}
-
-void clearAllIRData()
-{
-  for (uint8_t slot = 0; slot < MAX_IR_SIGNALS; slot++)
-  {
-    SimpleIRData empty = {0, 0, 0};
-    int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
-    EEPROM.put(addr, empty);
-  }
-  EEPROM.commit();
-
-  lastUsedSlotIR = 0;
-}
-
-void clearIRData(uint8_t slot)
-{
-  SimpleRAData empty = {0, 0, 0};
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
-  EEPROM.put(addr, empty);
-  EEPROM.commit();
-
-  lastUsedSlotIR = slot;
-}
-
-void writeRAData(uint8_t slot, const SimpleRAData &data)
-{
-  int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
-  EEPROM.put(addr, data);
-  EEPROM.commit();
-}
+/************************** HF *******************************/
 
 void writeBarrierData(uint8_t slot, const SimpleBarrierData &data)
 {
@@ -664,6 +667,142 @@ void clearBarrierData(uint8_t slot)
   lastUsedSlotBarrier = slot;
 }
 
+void findLastUsedSlotRA()
+{
+  for (uint8_t slot = 0; slot < MAX_RA_SIGNALS; slot++)
+  {
+    SimpleRAData data = readRAData(slot);
+    if (data.code == 0)
+    {
+      lastUsedSlotRA = slot;
+      return;
+    }
+  }
+  lastUsedSlotRA = 0;
+}
+
+void findLastUsedSlotBarrier()
+{
+  for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
+  {
+    SimpleBarrierData data = readBarrierData(slot);
+    if (data.protocol == 0 && data.codeMain == 0 && data.codeAdd == 0)
+    {
+      lastUsedSlotBarrier = slot;
+      return;
+    }
+  }
+  lastUsedSlotBarrier = 0;
+}
+
+bool isDuplicateRA(const SimpleRAData &newData)
+{
+  for (uint8_t i = 0; i < lastUsedSlotRA; i++)
+  {
+    SimpleRAData existingData = readRAData(i);
+    if (newData.code == existingData.code &&
+        newData.length == existingData.length &&
+        newData.protocol == existingData.protocol)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool isDuplicateBarrier(const SimpleBarrierData &newData)
+{
+  for (uint8_t i = 0; i < lastUsedSlotBarrier; i++)
+  {
+    SimpleBarrierData existingData = readBarrierData(i);
+    if (newData.codeMain == existingData.codeMain &&
+        newData.codeAdd == existingData.codeAdd &&
+        newData.protocol == existingData.protocol)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+/************************** IR *******************************/
+
+void writeIRData(uint8_t slot, const SimpleIRData &data)
+{
+  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  EEPROM.put(addr, data);
+  EEPROM.commit();
+}
+
+SimpleIRData readIRData(uint8_t slot)
+{
+  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  SimpleIRData data;
+  EEPROM.get(addr, data);
+  return data;
+}
+
+void clearAllIRData()
+{
+  for (uint8_t slot = 0; slot < MAX_IR_SIGNALS; slot++)
+  {
+    SimpleIRData empty = {0, 0, 0};
+    int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+    EEPROM.put(addr, empty);
+  }
+  EEPROM.commit();
+
+  lastUsedSlotIR = 0;
+}
+
+void clearIRData(uint8_t slot)
+{
+  SimpleRAData empty = {0, 0, 0};
+  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  EEPROM.put(addr, empty);
+  EEPROM.commit();
+
+  lastUsedSlotIR = slot;
+}
+
+void writeRAData(uint8_t slot, const SimpleRAData &data)
+{
+  int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
+  EEPROM.put(addr, data);
+  EEPROM.commit();
+}
+
+void findLastUsedSlotIR()
+{
+  for (uint8_t slot = 0; slot < MAX_IR_SIGNALS; slot++)
+  {
+    SimpleIRData data = readIRData(slot);
+    if (data.protocol == 0 && data.address == 0 && data.command == 0)
+    {
+      lastUsedSlotIR = slot;
+      return;
+    }
+  }
+  lastUsedSlotIR = 0;
+}
+
+bool isDuplicateIR(const SimpleIRData &newData)
+{
+  for (uint8_t i = 0; i < lastUsedSlotRA; i++)
+  {
+    SimpleIRData existingData = readIRData(i);
+    if (newData.protocol == existingData.protocol &&
+        newData.address == existingData.address &&
+        newData.command == existingData.command)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+/************************** RFID *******************************/
+
 void writeRFIDData(uint8_t slot, const RFID &data)
 {
   int addr = EEPROM_RFID_START + slot * SLOT_RFID_SIZE;
@@ -716,92 +855,7 @@ bool isDuplicateRFID(const RFID &newData)
   return false;
 }
 
-void findLastUsedSlotRA()
-{
-  for (uint8_t slot = 0; slot < MAX_RA_SIGNALS; slot++)
-  {
-    SimpleRAData data = readRAData(slot);
-    if (data.code == 0)
-    {
-      lastUsedSlotRA = slot;
-      return;
-    }
-  }
-  lastUsedSlotRA = 0;
-}
-
-void findLastUsedSlotIR()
-{
-  for (uint8_t slot = 0; slot < MAX_IR_SIGNALS; slot++)
-  {
-    SimpleIRData data = readIRData(slot);
-    if (data.protocol == 0 && data.address == 0 && data.command == 0)
-    {
-      lastUsedSlotIR = slot;
-      return;
-    }
-  }
-  lastUsedSlotIR = 0;
-}
-
-void findLastUsedSlotBarrier()
-{
-  for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
-  {
-    SimpleBarrierData data = readBarrierData(slot);
-    if (data.protocol == 0 && data.codeMain == 0 && data.codeAdd == 0)
-    {
-      lastUsedSlotBarrier = slot;
-      return;
-    }
-  }
-  lastUsedSlotBarrier = 0;
-}
-
-bool isDuplicateRA(const SimpleRAData &newData)
-{
-  for (uint8_t i = 0; i < lastUsedSlotRA; i++)
-  {
-    SimpleRAData existingData = readRAData(i);
-    if (newData.code == existingData.code &&
-        newData.length == existingData.length &&
-        newData.protocol == existingData.protocol)
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool isDuplicateBarrier(const SimpleBarrierData &newData)
-{
-  for (uint8_t i = 0; i < lastUsedSlotBarrier; i++)
-  {
-    SimpleBarrierData existingData = readBarrierData(i);
-    if (newData.codeMain == existingData.codeMain &&
-        newData.codeAdd == existingData.codeAdd &&
-        newData.protocol == existingData.protocol)
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool isDuplicateIR(const SimpleIRData &newData)
-{
-  for (uint8_t i = 0; i < lastUsedSlotRA; i++)
-  {
-    SimpleIRData existingData = readIRData(i);
-    if (newData.protocol == existingData.protocol &&
-        newData.address == existingData.address &&
-        newData.command == existingData.command)
-    {
-      return true;
-    }
-  }
-  return false;
-}
+/************************** COMMON *******************************/
 
 void saveSettings()
 {
@@ -826,7 +880,7 @@ void saveAllScores()
 }
 
 /*================================== GAMES ======================================*/
-// Dots
+/*********************************** DOTS ***************************************/
 struct FallingDotsGame
 {
   int16_t playerX = 44;
@@ -949,7 +1003,8 @@ struct FallingDotsGame
 };
 FallingDotsGame fallingDots;
 
-// Snake
+/*********************************** SNAKE ***************************************/
+
 struct SnakeGame
 {
   SnakeSegment body[64];
@@ -1111,7 +1166,8 @@ struct SnakeGame
 };
 SnakeGame snake;
 
-// Flappy bird
+/*********************************** FLAPPY BIRD ***************************************/
+
 struct FlappyGame
 {
   float birdY = FLAPPY_HEIGHT / 2.0;
@@ -1228,7 +1284,7 @@ struct FlappyGame
 };
 FlappyGame flappy;
 
-//*================================== RADIO ======================================*/
+//*================================== UHF ======================================*/
 void initRadioAttack()
 {
   if (radio.begin())
@@ -1284,7 +1340,7 @@ bool scanChannels(uint8_t channel)
   return false;
 }
 
-/********************************** Barrier trancieve ************************************* */
+/********************************** BARRIER TRANSMISSION (HF) **************************************/
 
 void SendBit(byte b, int pulse)
 {
@@ -1405,7 +1461,7 @@ void sendNice(uint32_t Code)
   }
 }
 
-/********************************** Barrier capture ************************************* */
+/********************************** BARRIER SIGNAL RECEIVE (HF) ***************************************/
 
 boolean CheckValue(uint16_t base, uint16_t value)
 {
@@ -1523,7 +1579,8 @@ void captureBarrierCode()
   }
 }
 
-/* ============================= 125 kHz Emulating =============================== */
+/* ============================= 125 kHz RFID EMULATION =============================== */
+
 void set_pin_manchester(int clock_half, int signal)
 {
   int man_encoded = clock_half ^ signal;
@@ -1579,6 +1636,7 @@ void emulateCard(uint32_t *data)
   }
 }
 
+/* =========================================== NFC RFID ================================================= */
 void nfcPool()
 {
   static uint32_t lastCheckNFC = 0;
@@ -1627,40 +1685,5 @@ void nfcPool()
 
       vibro(255, 30);
     }
-  }
-}
-
-void changeFreqButtons(const char *mode)
-{
-  if (!locked && (down.click()))
-  {
-    currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
-
-    if (strcmp(mode, "RX") == 0)
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-    else if (strcmp(mode, "TX") == 0)
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-
-    vibro(255, 30);
-  }
-  else if (!locked && (up.click()))
-  {
-    currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
-
-    if (strcmp(mode, "RX") == 0)
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-    else if (strcmp(mode, "TX") == 0)
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-
-    vibro(255, 30);
-  }
-}
-
-void resetRFSpectrum()
-{
-  for (uint8_t i = 0; i < raFreqCount; i++)
-  {
-    rssiMaxPeak[i] = -100;
-    rssiAbsoluteMax[i] = -100;
   }
 }
