@@ -72,8 +72,14 @@ uint8_t barrierBruteMenuIndex = 0;
 #define BATTERY_MAX_VOLTAGE 4.2
 #define BATTERY_READ_ITERATIONS 10
 
+#define HISTORY_SIZE 5
+#define CHARGE_THRESHOLD 0.002
+
 float batVoltage;
+float voltageHistory[HISTORY_SIZE] = {0};
 uint32_t batteryTimer;
+uint8_t historyIndex = 0;
+bool isCharging = false;
 
 /* ==================== OLED ================== */
 #define SCREEN_WIDTH 128
@@ -342,15 +348,15 @@ bool nfcDataValid = false;
 template <typename T>
 T findMaxValue(const T *array, size_t length)
 {
-    T maxVal = array[0];
-    for (size_t i = 1; i < length; i++)
+  T maxVal = array[0];
+  for (size_t i = 1; i < length; i++)
+  {
+    if (array[i] > maxVal)
     {
-        if (array[i] > maxVal)
-        {
-            maxVal = array[i];
-        }
+      maxVal = array[i];
     }
-    return maxVal;
+  }
+  return maxVal;
 }
 
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
@@ -375,6 +381,35 @@ void vibro(uint8_t intensity = 120, uint16_t duration = 100, uint8_t repeat = 1,
   }
   delay(10);
   IrReceiver.restartTimer();
+}
+
+void cheсkCharging(float newVoltage)
+{
+  uint8_t growthCount = 0;
+
+  voltageHistory[historyIndex] = newVoltage;
+  historyIndex = (historyIndex + 1) % HISTORY_SIZE;
+  
+  for (uint8_t i = 0; i < HISTORY_SIZE - 1; i++)
+  {
+    uint8_t idx1 = (historyIndex + i) % HISTORY_SIZE;
+    uint8_t idx2 = (historyIndex + i + 1) % HISTORY_SIZE;
+
+    float delta = voltageHistory[idx2] - voltageHistory[idx1];
+    if (delta >= CHARGE_THRESHOLD)
+    {
+      growthCount++;
+    }
+  }
+
+  if (growthCount >= 3)
+  {
+    isCharging = true;
+  }
+  else
+  {
+    isCharging = false;
+  }
 }
 
 float readBatteryVoltage()

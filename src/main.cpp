@@ -1039,6 +1039,10 @@ void loop()
     showLock();
   }
 
+  if (isCharging) {
+    showCharging();
+  }
+
   if (!locked && (up.press() || ok.press() || down.press()))
   {
     resetBrightness();
@@ -1557,6 +1561,7 @@ void loop()
   if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != FALLING_DOTS_GAME && currentMenu != SNAKE && currentMenu != FLAPPY && currentMenu != RA_ACTIVITY)
   {
     batVoltage = readBatteryVoltage();
+    cheсkCharging(batVoltage);
     batteryTimer = millis();
   }
 

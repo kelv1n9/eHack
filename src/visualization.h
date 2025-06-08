@@ -771,6 +771,12 @@ void showLock()
   oled.print("L");
 }
 
+void showCharging()
+{
+  oled.setCursorXY(98, 0);
+  oled.print("*");
+}
+
 void ShowCapturedBarrier_433MHZ()
 {
   const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
