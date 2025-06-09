@@ -20,7 +20,7 @@ enum MenuState
 
   HF_SCAN,
   HF_REPLAY,
-  HF_NOISE,
+  HF_JAMMER,
   HF_TESLA,
 
   HF_SPECTRUM,

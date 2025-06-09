@@ -398,7 +398,7 @@ void cheсkCharging(float newVoltage)
 
   voltageHistory[historyIndex] = newVoltage;
   historyIndex = (historyIndex + 1) % HISTORY_SIZE;
-  
+
   for (uint8_t i = 0; i < HISTORY_SIZE - 1; i++)
   {
     uint8_t idx1 = (historyIndex + i) % HISTORY_SIZE;

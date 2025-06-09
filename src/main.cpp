@@ -478,7 +478,7 @@ void loop1()
     break;
   }
   /********************************** NOISE **************************************/
-  case HF_NOISE:
+  case HF_JAMMER:
   {
     static uint32_t lastNoise = 0;
     static bool noiseState = false;
@@ -1331,7 +1331,7 @@ void loop()
     }
     break;
   }
-  case HF_NOISE:
+  case HF_JAMMER:
   {
     ShowJamming_HF();
     break;
