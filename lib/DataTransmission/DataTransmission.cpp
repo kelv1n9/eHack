@@ -16,7 +16,57 @@ void DataTransmission::setRadioNRF24()
     currentRadio = RADIO_NRF24;
 }
 
-uint8_t DataTransmission::buildCommandPacket(uint8_t type, uint8_t mode, uint8_t action, const uint8_t *payload, uint8_t payloadLen, uint8_t *packetOut)
+void DataTransmission::setSlaveMode()
+{
+    currentMode = Slave;
+}
+
+void DataTransmission::setMasterMode()
+{
+    currentMode = Master;
+}
+
+void DataTransmission::_initRadio()
+{
+    if (currentRadio == RADIO_CC1101)
+    {
+        radioCC1101->SetTx(433.92);
+        radioCC1101->setModulation(0);
+        radioCC1101->setDeviation(150);
+        radioCC1101->setDRate(600);
+        radioCC1101->setLengthConfig(1);
+        radioCC1101->setCrc(1);
+        radioCC1101->setDcFilterOff(0);
+        radioCC1101->setManchester(0);
+        radioCC1101->setSyncWord(211, 145);
+    }
+    else if (currentRadio == RADIO_NRF24)
+    {
+        if (currentMode == Master)
+        {
+            radioNRF24->powerUp();
+            radioNRF24->stopListening();
+            radioNRF24->setDataRate(RF24_2MBPS);
+            radioNRF24->setPayloadSize(32);
+            radioNRF24->setCRCLength(RF24_CRC_16);
+            radioNRF24->openWritingPipe(0x000000000001);
+            radioNRF24->setChannel(125);
+        }
+        else if (currentMode == Slave)
+        {
+            radioNRF24->powerUp();
+            radioNRF24->stopListening();
+            radioNRF24->setDataRate(RF24_2MBPS);
+            radioNRF24->setPayloadSize(32);
+            radioNRF24->setCRCLength(RF24_CRC_16);
+            radioNRF24->openReadingPipe(0, 0x000000000001);
+            radioNRF24->setChannel(125);
+            radioNRF24->startListening();
+        }
+    }
+}
+
+uint8_t DataTransmission::buildPacket(uint8_t type, uint8_t mode, uint8_t action, const uint8_t *payload, uint8_t payloadLen, uint8_t *packetOut)
 {
     uint8_t index = 0;
     packetOut[index++] = PROTOCOL_HEADER; // Header
@@ -32,32 +82,70 @@ uint8_t DataTransmission::buildCommandPacket(uint8_t type, uint8_t mode, uint8_t
     return index;
 }
 
-void DataTransmission::sendPacket(uint8_t *data, uint8_t len)
+bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
 {
+    _initRadio();
     if (currentRadio == RADIO_CC1101)
     {
-        radioCC1101->SetTx(433.92);
-        radioCC1101->setModulation(0);
-        radioCC1101->setDeviation(150);
-        radioCC1101->setDRate(600);
-        radioCC1101->setLengthConfig(1);
-        radioCC1101->setCrc(1);
-        radioCC1101->setDcFilterOff(0);
-        radioCC1101->setManchester(0);
-        radioCC1101->setSyncWord(211, 145);
         radioCC1101->SendData(data, len);
-        radioCC1101->goSleep();
     }
     else if (currentRadio == RADIO_NRF24)
     {
-        radioNRF24->powerUp();
-        radioNRF24->stopListening();
-        radioNRF24->setDataRate(RF24_2MBPS);
-        radioNRF24->setPayloadSize(32);
-        radioNRF24->setCRCLength(RF24_CRC_16);
-        radioNRF24->openWritingPipe(0x000000000001);
-        radioNRF24->setChannel(125);
         radioNRF24->write(data, len);
-        radioNRF24->powerDown();
     }
+
+    return true;
+}
+
+bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
+{
+    _initRadio();
+    if (currentRadio == RADIO_CC1101 && radioCC1101->CheckReceiveFlag())
+    {
+        *len = radioCC1101->ReceiveData(data);
+        radioCC1101->goSleep();
+        return radioCC1101->CheckCRC();
+    }
+    else if (currentRadio == RADIO_NRF24 && radioNRF24->available())
+    {
+        radioNRF24->read(data, 32);
+        *len = 32;
+        return true;
+    }
+    return false;
+}
+
+bool DataTransmission::checkConnection(uint16_t timeoutMs)
+{
+    uint8_t buf[32];
+    uint8_t len = 0;
+    uint32_t t0 = millis();
+
+    if (currentMode == Master)
+    {
+        static const uint8_t ping[4] = {'P', 'I', 'N', 'G'};
+
+        sendPacket((uint8_t *)ping, 4);
+        while (millis() - t0 < timeoutMs)
+        {
+            if (receivePacket(buf, &len) && len == 4 &&
+                buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
+            {
+                return true; 
+            }
+        }
+        return false;
+    }
+
+    if (currentMode == Slave)
+    {
+        if (receivePacket(buf, &len) && len == 4 &&
+            buf[0] == 'P' && buf[1] == 'I' && buf[2] == 'N' && buf[3] == 'G')
+        {
+            static const uint8_t pong[4] = {'P', 'O', 'N', 'G'};
+            sendPacket((uint8_t *)pong, 4);
+            return true;
+        }
+    }
+    return false;
 }
