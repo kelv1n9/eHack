@@ -106,7 +106,6 @@ uint32_t brightnessTimer;
 #define RSSI_WINDOW_MS 100
 #define RSSI_STEP_MS 50
 #define RSSI_BUFFER_SIZE 90
-#define MAX_SEGMENTS 64
 
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
@@ -136,9 +135,6 @@ uint32_t capturedCode;
 uint16_t capturedLength;
 uint16_t capturedProtocol;
 uint16_t capturedDelay;
-
-bool mySwitchIsAvailable = false;
-uint16_t mySwitchSetTime = 0;
 
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
@@ -489,6 +485,32 @@ void resetSpectrum_HF()
     rssiMaxPeak[i] = -100;
     rssiAbsoluteMax[i] = -100;
   }
+}
+
+void cc1101Init()
+{
+  ELECHOUSE_cc1101.setSpiPin(6, 4, 7, CSN_PIN_CC);
+
+  ELECHOUSE_cc1101.setClb(1, 11, 13);
+  ELECHOUSE_cc1101.setClb(2, 14, 17);
+  ELECHOUSE_cc1101.setClb(3, 29, 33);
+  ELECHOUSE_cc1101.setClb(4, 33, 34);
+
+  ELECHOUSE_cc1101.Init();
+  ELECHOUSE_cc1101.setModulation(2); // ASK
+  ELECHOUSE_cc1101.setRxBW(135);     // 58, 68, 81, 102, 116, 135, 162, 203, 232, 270, 325, 406, 464, 541, 650 and 812 kHz
+  ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
+  ELECHOUSE_cc1101.setPA(12);                // TxPower: (-30  -20  -15  -10  -6    0    5    7    10   11   12) Default is max!
+  ELECHOUSE_cc1101.setMHZ(raFrequencies[1]); // 300-348 MHZ, 387-464MHZ and 779-928MHZ
+  ELECHOUSE_cc1101.setDcFilterOff(0);        // Disable digital DC blocking filter before demodulator. Only for data rates ≤ 250 kBaud The recommended IF frequency changes when the DC blocking is disabled. 1 = Disable (current optimized). 0 = Enable (better sensitivity). (leave at 0 → better sensitivity)
+  ELECHOUSE_cc1101.setPQT(0);                // Preamble quality estimator threshold. The preamble quality estimator increases an internal counter by one each time a bit is received that is different from the previous bit, and decreases the counter by 8 each time a bit is received that is the same as the last bit. A threshold of 4∙PQT for this counter is used to gate sync word detection. When PQT=0 a sync word is always accepted. (PQT=1 is safe for ASK)
+  ELECHOUSE_cc1101.setPRE(0);                // Sets the minimum number of preamble bytes to be transmitted. Values: 0 : 2, 1 : 3, 2 : 4, 3 : 6, 4 : 8, 5 : 12, 6 : 16, 7 : 24 (6 or higher helps detect ASK bursts)
+  ELECHOUSE_cc1101.setSyncMode(0);           // Combined sync-word qualifier mode. 0 = No preamble/sync. 1 = 16 sync word bits detected. 2 = 16/16 sync word bits detected. 3 = 30/32 sync word bits detected. (2 is optimal for ASK + RCSwitch)
+  ELECHOUSE_cc1101.setFEC(0);                // Enable Forward Error Correction (FEC). 0 = Disable, 1 = Enable. (leave at 0 for RCSwitch ASK)
+  ELECHOUSE_cc1101.setCCMode(0);             // set config for internal transmission mode.
+  ELECHOUSE_cc1101.setPktFormat(0);          // Format of RX and TX data. 0 = Normal mode, use FIFOs for RX and TX. (needed for RCSwitch, leave at 0)
+  ELECHOUSE_cc1101.setAdrChk(0);             // Controls address check configuration of received packages. 0 = No address check. (leave at 0 for RCSwitch ASK)
+  ELECHOUSE_cc1101.goSleep();
 }
 
 //================================== TESLA ======================================*/
