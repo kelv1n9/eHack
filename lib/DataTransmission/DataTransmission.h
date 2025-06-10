@@ -58,8 +58,6 @@ private:
     ELECHOUSE_CC1101 *radioCC1101;
     /**
      * @brief Initializes the radio module based on the current settings.
-     * @note This function checks the current radio type and mode, and initializes the corresponding radio module.
-     * It is called before sending or receiving packets to ensure the radio is properly configured.
      * @param None
      * @return None
      */
@@ -76,9 +74,6 @@ public:
 
     /**
      * @brief Initializes the CC1101 radio module for communication.
-     * @note This function sets up the radio module for either CC1101 or NRF24 based on the current settings.
-     * It configures the radio for either master or slave mode, sets the data rate, payload size, and CRC length.
-     * It also opens the appropriate reading or writing pipes for communication.
      * @param None
      * @return None
      * @note This function is called internally to ensure the radio is properly configured before sending or receiving packets.
@@ -88,24 +83,18 @@ public:
 
     /**
      * @brief Initializes the NRF24 radio module for communication.
-     * @note This function sets up the NRF24 radio module for either master or slave mode, configures the data rate,
-     * payload size, and CRC length, and opens the appropriate reading or writing pipes for communication.
      * @param None
      * @return None
      */
     void setRadioNRF24();
     /**
-     * @brief Initializes the radio module based on the current settings.
-     * @note This function checks the current radio type and mode, and initializes the corresponding radio module.
-     * It is called before sending or receiving packets to ensure the radio is properly configured.
+     * @brief Sets the radio module to slave mode.
      * @param None
      * @return None
      */
     void setSlaveMode();
     /**
      * @brief Sets the radio module to master mode.
-     * @note This function configures the radio module to operate in master mode, allowing it to initiate communication.
-     * It is typically used when the device needs to control the communication flow.
      * @param None
      * @return None
      */

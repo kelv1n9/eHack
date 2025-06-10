@@ -103,7 +103,6 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
     if (currentRadio == RADIO_CC1101 && radioCC1101->CheckReceiveFlag())
     {
         *len = radioCC1101->ReceiveData(data);
-        radioCC1101->goSleep();
         return radioCC1101->CheckCRC();
     }
     else if (currentRadio == RADIO_NRF24 && radioNRF24->available())
