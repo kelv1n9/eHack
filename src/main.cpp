@@ -2,6 +2,9 @@
 
 void setup()
 {
+  Serial.begin(115200);
+  Serial.printf("Starting %s %s\n", APP_NAME, APP_VERSION);
+  
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);

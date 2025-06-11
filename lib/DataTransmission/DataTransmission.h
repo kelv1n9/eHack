@@ -1,5 +1,13 @@
 #pragma once
 
+#define DEBUG 
+
+#ifdef DEBUG
+  #define DBG(...)  do { Serial.printf(__VA_ARGS__); } while (0)
+#else
+  #define DBG(...)  do { } while (0)
+#endif
+
 #include <Arduino.h>
 #include "RF24.h"
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
@@ -25,17 +33,6 @@
 
 #define COMMAND_DISABLE 0x00
 #define COMMAND_ENABLE 0x01
-
-/*
-Protocol:
-Header - 0xA5
-Type - HF/UHF - 0x01/0x02
-Mode -> HF - 0x1 -> 0x09
-     -> UHF - 0x1 -> 0x05
-Action - Enable/Disable - 0x01/0x02
-Payload - []
-CRC - CRC
-*/
 
 enum RadioType
 {
