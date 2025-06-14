@@ -47,6 +47,8 @@ enum MenuState
   RFID_SCAN,
   RFID_EMULATE,
   RFID_WRITE,
+
+  CONNECTTION,
 };
 
 const char PROGMEM *mainMenuItems[] = {
@@ -56,6 +58,7 @@ const char PROGMEM *mainMenuItems[] = {
     "RFID",
     "Games",
     "Settings",
+    "Connect",
 };
 
 const char PROGMEM *hfMenuItems[] = {
@@ -119,7 +122,7 @@ uint16_t sineOffset = 0;
 
 /*============================= MAIN APPEARANCE ============================================*/
 
-void drawBattery(float batVoltage)
+void drawBattery(float batVoltage, const char* suffix = "")
 {
   uint8_t percentage = round((batVoltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100.0);
 
@@ -131,6 +134,7 @@ void drawBattery(float batVoltage)
 
   oled.setCursorXY(5 + getTextWidth(voltageText), 0);
   oled.print("V");
+  oled.print(suffix);
 
   oled.setCursorXY(106, 0);
   oled.drawByte(0b00111100);
@@ -1143,4 +1147,23 @@ void ShowSavedSignal_RFID()
   sprintf(Text2, "UID: %lX", tagID_125kHz);
   oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 45);
   oled.print(Text2);
+}
+
+/* ============================= CONNECTION ============================================ */
+void showConnectionProgress()
+{
+  oled.setCursorXY((128 - 2 * getTextWidth("Connecting...")) / 2, 25);
+  oled.print("Connecting...");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("Please wait")) / 2, 45);
+  oled.print("Please wait");
+}
+
+void showConnectionSuccess()
+{
+  oled.setCursorXY((128 - 2 * getTextWidth("Connected!")) / 2, 25);
+  oled.print("Connected!");
+
+  oled.setCursorXY((128 - 2 * getTextWidth("Press OK to exit")) / 2, 45);
+  oled.print("Hold OK to exit");
 }

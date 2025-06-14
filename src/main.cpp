@@ -4,7 +4,7 @@ void setup()
 {
   Serial.begin(115200);
   Serial.printf("Starting %s %s\n", APP_NAME, APP_VERSION);
-  
+
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
@@ -30,6 +30,10 @@ void setup()
   analogReadResolution(12);
   batVoltage = readBatteryVoltage();
   EEPROM.begin(512);
+
+  communication.setRadioNRF24();
+  communication.setMasterMode();
+  communication.init();
 
   radio.powerDown();
 
@@ -86,15 +90,29 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       mySwitch.resetAvailable();
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
-    changeFreqButtons("RX");
+    if (changeFreqButtons("RX") && successfullyConnected)
+    {
+      outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+    }
 
     if (mySwitch.available())
     {
@@ -147,11 +165,21 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.enableTransmit(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
     if (!locked && !attackIsActive && (up.click() || up.step()))
@@ -177,10 +205,24 @@ void loop1()
 
     mySwitch.setProtocol(capturedProtocol);
 
-    if (attackIsActive && now - attackTimer >= 1000)
+    if (attackIsActive)
     {
-      mySwitch.send(capturedCode, capturedLength);
-      attackTimer = now;
+      if (changeFreqButtons("TX") && successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
+
+      if (now - attackTimer >= 1000 && !successfullyConnected)
+      {
+        mySwitch.send(capturedCode, capturedLength);
+        attackTimer = now;
+      }
+      else if (successfullyConnected && !commandSent)
+      {
+        mySwitch.send(capturedCode, capturedLength);
+        commandSent = true;
+      }
     }
 
     break;
@@ -191,15 +233,29 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
-    changeFreqButtons("RX");
+    if (changeFreqButtons("RX") && successfullyConnected)
+    {
+      outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+    }
 
     if (anMotorsCaptured || cameCaptured || niceCaptured)
     {
@@ -246,11 +302,21 @@ void loop1()
     {
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
     if (!locked && !attackIsActive && (up.click() || up.step()))
@@ -273,21 +339,45 @@ void loop1()
     barrierCodeAdd = data.codeAdd;
     barrierProtocol = data.protocol;
 
-    if (attackIsActive && now - attackTimer >= 1000)
+    if (attackIsActive)
     {
-      if (barrierProtocol == 0)
+      if (changeFreqButtons("TX") && successfullyConnected)
       {
-        sendANMotors(barrierCodeMain, barrierCodeAdd);
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
       }
-      else if (barrierProtocol == 1)
+      if (now - attackTimer >= 1000 && !successfullyConnected)
       {
-        sendNice(barrierCodeMain);
+        if (barrierProtocol == 0)
+        {
+          sendANMotors(barrierCodeMain, barrierCodeAdd);
+        }
+        else if (barrierProtocol == 1)
+        {
+          sendNice(barrierCodeMain);
+        }
+        else if (barrierProtocol == 2)
+        {
+          sendCame(barrierCodeMain);
+        }
+        attackTimer = now;
       }
-      else if (barrierProtocol == 2)
+      else if (successfullyConnected && !commandSent)
       {
-        sendCame(barrierCodeMain);
+        if (barrierProtocol == 0)
+        {
+          sendANMotors(barrierCodeMain, barrierCodeAdd);
+        }
+        else if (barrierProtocol == 1)
+        {
+          sendNice(barrierCodeMain);
+        }
+        else if (barrierProtocol == 2)
+        {
+          sendCame(barrierCodeMain);
+        }
+        commandSent = true;
       }
-      attackTimer = now;
     }
 
     break;
@@ -301,11 +391,18 @@ void loop1()
     {
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+      }
     }
 
     switch (bruteState)
@@ -317,6 +414,13 @@ void loop1()
         bruteState = BRUTE_RUNNING;
         barrierBruteIndex = 4095;
         lastSendTime = now;
+
+        if (successfullyConnected)
+        {
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, NULL, 0, outgoingData);
+          communication.sendPacket(outgoingData, outgoingDataLen);
+        }
+
         vibro(255, 50);
       }
       break;
@@ -337,7 +441,8 @@ void loop1()
 
         if (barrierBruteIndex >= 0)
         {
-          sendCame(barrierBruteIndex);
+          if (!successfullyConnected)
+            sendCame(barrierBruteIndex);
           barrierBruteIndex--;
         }
         if (barrierBruteIndex < 0)
@@ -387,11 +492,18 @@ void loop1()
     {
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+      }
     }
 
     switch (bruteState)
@@ -403,6 +515,13 @@ void loop1()
         bruteState = BRUTE_RUNNING;
         barrierBruteIndex = 4095;
         lastSendTime = now;
+
+        if (successfullyConnected)
+        {
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, NULL, 0, outgoingData);
+          communication.sendPacket(outgoingData, outgoingDataLen);
+        }
+
         vibro(255, 50);
       }
       break;
@@ -419,7 +538,8 @@ void loop1()
 
       if (barrierBruteIndex >= 0)
       {
-        sendNice(barrierBruteIndex);
+        if (!successfullyConnected)
+          sendNice(barrierBruteIndex);
         barrierBruteIndex--;
       }
       if (barrierBruteIndex < 0)
@@ -469,14 +589,28 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
-    changeFreqButtons("TX");
+    if (changeFreqButtons("TX") && successfullyConnected)
+    {
+      outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+    }
 
     if (nowMicros - lastNoise > 500)
     {
@@ -492,23 +626,36 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
       // vibro(255, 50);
+
+      if (successfullyConnected)
+      {
+        communication.setRadioNRF24();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, NULL, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
-    static bool toggleFreq = false;
-    float freq = toggleFreq ? 315.0 : 433.92;
-    ELECHOUSE_cc1101.SetTx(freq);
-    toggleFreq = !toggleFreq;
+    if (!successfullyConnected)
+    {
+      static bool toggleFreq = false;
+      float freq = toggleFreq ? 315.0 : 433.92;
+      ELECHOUSE_cc1101.SetTx(freq);
+      toggleFreq = !toggleFreq;
 
-    sendTeslaSignal_v1();
-    delay(50);
-    sendTeslaSignal_v2();
-    delay(50);
+      sendTeslaSignal_v1();
+      delay(50);
+      sendTeslaSignal_v2();
+      delay(50);
+    }
 
     break;
   }
@@ -521,20 +668,20 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       initialized = true;
 
       currentScanFreq = 0;
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-      spectrumTimer = millis();
+      spectrumTimer = now;
       waitingForSettle = true;
     }
 
     if (waitingForSettle)
     {
-      if (millis() - spectrumTimer >= RSSI_STEP_MS)
+      if (now - spectrumTimer >= RSSI_STEP_MS)
       {
         currentRssi = ELECHOUSE_cc1101.getRssi();
 
@@ -559,7 +706,7 @@ void loop1()
 
         currentScanFreq = (currentScanFreq + 1) % raFreqCount;
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-        spectrumTimer = millis();
+        spectrumTimer = now;
         waitingForSettle = true;
       }
     }
@@ -569,12 +716,12 @@ void loop1()
   /********************************** RF ACTIVITY **************************************/
   case HF_ACTIVITY:
   {
-    static uint32_t lastStepMs = millis();
+    static uint32_t lastStepMs = now;
 
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.Init();
+      cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
@@ -583,14 +730,14 @@ void loop1()
 
     changeFreqButtons("RX");
 
-    if (millis() - lastStepMs >= RSSI_STEP_MS)
+    if (now - lastStepMs >= RSSI_STEP_MS)
     {
       currentRssi = ELECHOUSE_cc1101.getRssi();
       rssiBuffer[rssiIndex++] = currentRssi;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
 
-      lastStepMs = millis();
+      lastStepMs = now;
     }
     break;
   }
@@ -856,6 +1003,16 @@ void loop1()
     {
       initRadioAttack();
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioCC1101();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, NULL, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
     radioChannel = random(0, 125);
     radio.setChannel(radioChannel);
@@ -867,6 +1024,16 @@ void loop1()
     {
       initRadioAttack();
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioCC1101();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, NULL, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
     radioChannel = random(1, 15);
     radio.setChannel(radioChannel);
@@ -878,6 +1045,16 @@ void loop1()
     {
       initRadioAttack();
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioCC1101();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, NULL, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
     int randomIndex = random(0, sizeof(bluetooth_channels) / sizeof(bluetooth_channels[0]));
     radioChannel = bluetooth_channels[randomIndex];
@@ -890,6 +1067,16 @@ void loop1()
     {
       initRadioAttack();
       initialized = true;
+
+      if (successfullyConnected)
+      {
+        communication.setRadioCC1101();
+        communication.setMasterMode();
+        communication.init();
+
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, NULL, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
     int randomIndex = random(0, sizeof(ble_channels) / sizeof(ble_channels[0]));
     radioChannel = ble_channels[randomIndex];
@@ -912,7 +1099,7 @@ void loop1()
     channel = (channel + 1) % NUM_CHANNELS;
     break;
   }
-  /********************************** ENABLE WIFI **************************************/
+  /*************************** ENABLE BLE SPAM *********************************/
   case UHF_BLE_SPAM:
   {
     if (!initialized)
@@ -991,6 +1178,32 @@ void loop1()
   {
     break;
   }
+    /********************************** CONNECTION **************************************/
+
+  case CONNECTTION:
+  {
+    if (!initialized)
+    {
+      initialized = true;
+      communication.setRadioNRF24();
+      communication.setMasterMode();
+      communication.init();
+    }
+
+    if (!successfullyConnected)
+    {
+      if (communication.checkConnection(1000))
+      {
+        Serial.println("Connection established");
+        successfullyConnected = true;
+      }
+      else
+      {
+        Serial.println("Connection failed");
+      }
+    }
+    break;
+  }
   }
 }
 
@@ -1066,6 +1279,14 @@ void loop()
     currentMenu = parentMenu;
     parentMenu = grandParentMenu;
     grandParentMenu = MAIN_MENU;
+
+    // Communication reset
+    communication.setRadioNRF24();
+    communication.setMasterMode();
+    communication.init();
+    commandSent = false;
+    outgoingDataLen = communication.buildPacket(COMMAND_IDLE, NULL, 0, outgoingData);
+    communication.sendPacket(outgoingData, outgoingDataLen);
 
     // States
     bruteState = BRUTE_IDLE;
@@ -1304,7 +1525,6 @@ void loop()
     if (attackIsActive)
     {
       ShowAttack_HF();
-      changeFreqButtons("TX");
     }
     else
     {
@@ -1363,7 +1583,6 @@ void loop()
     if (attackIsActive)
     {
       ShowAttack_HF();
-      changeFreqButtons("TX");
     }
     else
     {
@@ -1538,18 +1757,56 @@ void loop()
     }
     break;
   }
+  case CONNECTTION:
+  {
+    if (!successfullyConnected)
+    {
+      showConnectionProgress();
+    }
+    else
+    {
+      showConnectionSuccess();
+    }
+    break;
   }
+  }
+
+  //! TODO: READ REMOTE VOLTAGE
+  // if (successfullyConnected && (currentMenu != UHF_SPECTRUM && currentMenu != HF_SPECTRUM && currentMenu != HF_ACTIVITY))
+  // {
+  //   communication.setSlaveMode();
+  //   communication.init();
+  //   communication.receivePacket(recievedData, &recievedDataLen);
+  //   remoteVoltage = remoteBatteryVoltage(recievedData);
+  //   Serial.printf("Remote voltage: " "%.2fV\n", remoteVoltage);
+  //   communication.setMasterMode();
+  //   communication.init();
+  // }
 
   if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
   {
     batVoltage = readBatteryVoltage();
-    cheсkCharging(batVoltage);
+    checkCharging(batVoltage);
     batteryTimer = millis();
   }
 
   if (currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
   {
-    drawBattery(batVoltage);
+    static uint32_t batteryChangerTimer = millis();
+    if (successfullyConnected && millis() - batteryChangerTimer >= 5000)
+    {
+      batteryChangerTimer = millis();
+      showLocalVoltage = !showLocalVoltage;
+    }
+
+    if (showLocalVoltage)
+    {
+      drawBattery(batVoltage);
+    }
+    else
+    {
+      drawBattery(remoteVoltage, "p");
+    }
   }
 
   if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_BARRIER_SCAN && currentMenu != HF_SCAN)
