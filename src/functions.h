@@ -268,6 +268,7 @@ struct Tube
 #define EEPROM_SCORE_START (EEPROM_BARRIER_START + MAX_BARRIER_SIGNALS * SLOT_BARRIER_SIZE)
 #define EEPROM_SETTINGS_START (EEPROM_SCORE_START + SLOT_SCORE_SIZE)
 #define EEPROM_RFID_START (EEPROM_SETTINGS_START + SLOT_RFID_SIZE * MAX_RFID)
+#define EEPROM_STARTCONN_ADDR (EEPROM_RFID_START + MAX_RFID * SLOT_RFID_SIZE)
 
 /*=================== SETTINGS ==========================*/
 struct Settings
@@ -350,6 +351,7 @@ DataTransmission communication(&radio, &ELECHOUSE_cc1101);
 
 bool successfullyConnected = false;
 bool commandSent = false;
+bool startConnection;
 
 uint8_t recievedData[32];
 uint8_t recievedDataLen = 0;
@@ -941,6 +943,19 @@ void saveAllScores()
 {
   EEPROM.put(EEPROM_SCORE_START, gameScores);
   EEPROM.commit();
+}
+
+/******************************* CONNECTION ************************************/
+
+void saveConnectionBegin()
+{
+  EEPROM.put(EEPROM_STARTCONN_ADDR, startConnection);
+  EEPROM.commit();
+}
+
+void loadConnectionBegin()
+{
+  EEPROM.get(EEPROM_STARTCONN_ADDR, startConnection);
 }
 
 /*================================== GAMES ======================================*/

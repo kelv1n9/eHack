@@ -62,6 +62,7 @@ void setup()
 
   loadSettings();
   loadAllScores();
+  loadConnectionBegin();
 
   cc1101Init();
 
@@ -1182,6 +1183,14 @@ void loop1()
 
   case CONNECTTION:
   {
+    if (!locked && ok.click())
+    {
+      startConnection = !startConnection;
+    }
+
+    if (!startConnection)
+      break;
+
     if (!initialized)
     {
       initialized = true;
@@ -1265,6 +1274,11 @@ void loop()
     {
       saveSettings();
       vibro(255, 50);
+    }
+
+    if (currentMenu == CONNECTTION)
+    {
+      saveConnectionBegin();
     }
 
     if (currentMenu == RFID_SCAN)
@@ -1759,14 +1773,7 @@ void loop()
   }
   case CONNECTTION:
   {
-    if (!successfullyConnected)
-    {
-      showConnectionProgress();
-    }
-    else
-    {
-      showConnectionSuccess();
-    }
+    showConnectionStatus();
     break;
   }
   }

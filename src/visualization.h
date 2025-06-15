@@ -122,7 +122,7 @@ uint16_t sineOffset = 0;
 
 /*============================= MAIN APPEARANCE ============================================*/
 
-void drawBattery(float batVoltage, const char* suffix = "")
+void drawBattery(float batVoltage, const char *suffix = "")
 {
   uint8_t percentage = round((batVoltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100.0);
 
@@ -1150,20 +1150,16 @@ void ShowSavedSignal_RFID()
 }
 
 /* ============================= CONNECTION ============================================ */
-void showConnectionProgress()
+void showConnectionStatus()
 {
-  oled.setCursorXY((128 - 2 * getTextWidth("Connecting...")) / 2, 25);
-  oled.print("Connecting...");
+  oled.setScale(1);
 
-  oled.setCursorXY((128 - 2 * getTextWidth("Please wait")) / 2, 45);
-  oled.print("Please wait");
-}
+  char buf[20];
+  sprintf(buf, "Connect: %s", startConnection ? "ON" : "OFF");
+  oled.setCursorXY((128 - getTextWidth(buf)) / 2, 25);
+  oled.print(buf);
 
-void showConnectionSuccess()
-{
-  oled.setCursorXY((128 - 2 * getTextWidth("Connected!")) / 2, 25);
-  oled.print("Connected!");
-
-  oled.setCursorXY((128 - 2 * getTextWidth("Press OK to exit")) / 2, 45);
-  oled.print("Hold OK to exit");
+  const char *txt = successfullyConnected ? "Connected!" : "Connecting...";
+  oled.setCursorXY((128 - getTextWidth(txt)) / 2, 45);
+  oled.print(txt);
 }
