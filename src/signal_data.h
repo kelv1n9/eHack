@@ -205,8 +205,27 @@ const uint8_t teslaSequence[43] PROGMEM = {
 const uint16_t IR_COMMAND_COUNT_PR PROGMEM = sizeof(irCommandsPR) / sizeof(uint16_t) / 3;
 const uint16_t IR_COMMAND_COUNT_TV PROGMEM = sizeof(irCommandsTV) / sizeof(uint16_t) / 3;
 
-const uint8_t bluetooth_channels[] PROGMEM = {32, 34, 46, 48, 50, 52, 0, 1, 2, 4, 6, 8, 22, 24, 26, 28, 30, 74, 76, 78, 80};
-const uint8_t ble_channels[] PROGMEM = {2, 26, 80};
+const uint8_t bluetooth_channels[] PROGMEM = {2,  4,  6,  8,  10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 66, 68, 70, 72, 74, 76, 78, 80};
+const uint8_t ble_channels[] PROGMEM = {1, 2, 3, 25, 26, 27, 79, 80, 81};
+const uint8_t wifi_channels[] PROGMEM = {
+        6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18,         // Channel 1
+        22, 24, 26, 28,                                             // mid band
+        30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, // Channel 6
+        46, 48, 50, 52,                                             // mid band
+        55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68,     // Channel 11
+    }; // WiFi Channels
+const uint8_t usb_channels[] PROGMEM = {40, 50, 60};   // USB Wireless Channels
+const uint8_t video_channels[] PROGMEM = {70, 75, 80}; // Video Streaming Channels
+const uint8_t rc_channels[] PROGMEM = {1, 3, 5, 7};    // RC Toys/ Drones Channels
+const uint8_t full_channels[] PROGMEM = {
+        1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
+        22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42,
+        43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+        64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84,
+        85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100,
+        101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112,
+        113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124
+    }; // All Channels
 const uint8_t noiseAddress[][2] PROGMEM = {{0x55, 0x55}, {0xAA, 0xAA}, {0xA0, 0xAA}, {0xAB, 0xAA}, {0xAC, 0xAA}, {0xAD, 0xAA}};
 
 const uint8_t bManCode[6] PROGMEM = {0x48,0xa9,0xca,0xe6,0xd8,0xc2};

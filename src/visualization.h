@@ -43,6 +43,9 @@ enum MenuState
   UHF_WIFI_JAMMER,
   UHF_BT_JAMMER,
   UHF_BLE_JAMMER,
+  UHF_USB_JAMMER,
+  UHF_VIDEO_JAMMER,
+  UHF_RC_JAMMER,
   UHF_BLE_SPAM,
 
   RFID_SCAN,
@@ -83,6 +86,9 @@ const char PROGMEM *uhfMenuItems[] = {
     "Wi-Fi jam",
     "BT jam",
     "BLE jam",
+    "USB jam",
+    "VIDEO jam",
+    "RC jam",
     "BLE spam",
 };
 
