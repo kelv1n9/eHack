@@ -1181,35 +1181,22 @@ void loop1()
   }
     /********************************** CONNECTION **************************************/
 
-  case CONNECTTION:
+  case CONNECTION:
   {
-    if (!locked && ok.click())
-    {
-      startConnection = !startConnection;
-    }
-
-    if (!startConnection)
-      break;
-
     if (!initialized)
     {
+      ok.reset();
       initialized = true;
-      communication.setRadioNRF24();
+      // communication.setRadioNRF24();
+      communication.setRadioCC1101();
       communication.setMasterMode();
       communication.init();
     }
 
-    if (!successfullyConnected)
+    if (!successfullyConnected && startConnection && communication.checkConnection(1000))
     {
-      if (communication.checkConnection(1000))
-      {
-        Serial.println("Connection established");
-        successfullyConnected = true;
-      }
-      else
-      {
-        Serial.println("Connection failed");
-      }
+      Serial.println("Connection established");
+      successfullyConnected = true;
     }
     break;
   }
@@ -1276,7 +1263,7 @@ void loop()
       vibro(255, 50);
     }
 
-    if (currentMenu == CONNECTTION)
+    if (currentMenu == CONNECTION)
     {
       saveConnectionBegin();
     }
@@ -1771,8 +1758,13 @@ void loop()
     }
     break;
   }
-  case CONNECTTION:
+  case CONNECTION:
   {
+    if (!locked && ok.click())
+    {
+      startConnection = !startConnection;
+    }
+
     showConnectionStatus();
     break;
   }

@@ -9,6 +9,7 @@ enum MenuState
   IR_MENU,
   RFID_MENU,
   GAMES,
+  CONNECTION,
   SETTINGS,
 
   DOTS_GAME,
@@ -47,8 +48,6 @@ enum MenuState
   RFID_SCAN,
   RFID_EMULATE,
   RFID_WRITE,
-
-  CONNECTTION,
 };
 
 const char PROGMEM *mainMenuItems[] = {
@@ -57,8 +56,8 @@ const char PROGMEM *mainMenuItems[] = {
     "IR Tools",
     "RFID",
     "Games",
-    "Settings",
     "Connect",
+    "Settings",
 };
 
 const char PROGMEM *hfMenuItems[] = {
@@ -1159,7 +1158,17 @@ void showConnectionStatus()
   oled.setCursorXY((128 - getTextWidth(buf)) / 2, 25);
   oled.print(buf);
 
-  const char *txt = successfullyConnected ? "Connected!" : "Connecting...";
+  const char *txt;
+
+  if (!startConnection)
+  {
+    txt = "Click OK to enable";
+  }
+  else
+  {
+    txt = successfullyConnected ? "Connected!" : "Connecting...";
+  }
+
   oled.setCursorXY((128 - getTextWidth(txt)) / 2, 45);
   oled.print(txt);
 }

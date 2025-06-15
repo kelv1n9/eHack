@@ -547,14 +547,12 @@ void cc1101ReadyMode()
   ELECHOUSE_cc1101.setRxBW(135);
   ELECHOUSE_cc1101.setPA(12);
   ELECHOUSE_cc1101.setMHZ(raFrequencies[1]);
-  ELECHOUSE_cc1101.setPQT(0);       // Preamble quality estimator threshold. The preamble quality estimator increases an internal counter by one each time a bit is received that is different from the previous bit, and decreases the counter by 8 each time a bit is received that is the same as the last bit. A threshold of 4∙PQT for this counter is used to gate sync word detection. When PQT=0 a sync word is always accepted. (PQT=1 is safe for ASK)
-  ELECHOUSE_cc1101.setPRE(0);       // Sets the minimum number of preamble bytes to be transmitted. Values: 0 : 2, 1 : 3, 2 : 4, 3 : 6, 4 : 8, 5 : 12, 6 : 16, 7 : 24 (6 or higher helps detect ASK bursts)
-  ELECHOUSE_cc1101.setSyncMode(0);  // Combined sync-word qualifier mode. 0 = No preamble/sync. 1 = 16 sync word bits detected. 2 = 16/16 sync word bits detected. 3 = 30/32 sync word bits detected. (2 is optimal for ASK + RCSwitch)
-  ELECHOUSE_cc1101.setFEC(0);       // Enable Forward Error Correction (FEC). 0 = Disable, 1 = Enable. (leave at 0 for RCSwitch ASK)
-  ELECHOUSE_cc1101.setCCMode(0);    // set config for internal transmission mode.
-  ELECHOUSE_cc1101.setPktFormat(0); // Format of RX and TX data. 0 = Normal mode, use FIFOs for RX and TX. (needed for RCSwitch, leave at 0)
-  ELECHOUSE_cc1101.setAdrChk(0);    // Controls address check configuration of received packages. 0 = No address check. (leave at 0 for RCSwitch ASK)
-  ELECHOUSE_cc1101.goSleep();
+  ELECHOUSE_cc1101.setPQT(0);      // Preamble quality estimator threshold. The preamble quality estimator increases an internal counter by one each time a bit is received that is different from the previous bit, and decreases the counter by 8 each time a bit is received that is the same as the last bit. A threshold of 4∙PQT for this counter is used to gate sync word detection. When PQT=0 a sync word is always accepted. (PQT=1 is safe for ASK)
+  ELECHOUSE_cc1101.setPRE(0);      // Sets the minimum number of preamble bytes to be transmitted. Values: 0 : 2, 1 : 3, 2 : 4, 3 : 6, 4 : 8, 5 : 12, 6 : 16, 7 : 24 (6 or higher helps detect ASK bursts)
+  ELECHOUSE_cc1101.setSyncMode(0); // Combined sync-word qualifier mode. 0 = No preamble/sync. 1 = 16 sync word bits detected. 2 = 16/16 sync word bits detected. 3 = 30/32 sync word bits detected. (2 is optimal for ASK + RCSwitch)
+  ELECHOUSE_cc1101.setFEC(0);      // Enable Forward Error Correction (FEC). 0 = Disable, 1 = Enable. (leave at 0 for RCSwitch ASK)
+  ELECHOUSE_cc1101.setCCMode(0);   // set config for internal transmission mode.
+  ELECHOUSE_cc1101.setAdrChk(0);   // Controls address check configuration of received packages. 0 = No address check. (leave at 0 for RCSwitch ASK)
 }
 
 //================================== TESLA ======================================*/
