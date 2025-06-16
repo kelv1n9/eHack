@@ -556,7 +556,7 @@ void ShowAttack_HF()
 
 void ShowCapturedBarrier_HF()
 {
-  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
+  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME", "PRINCETON", "CAME-TWEE", "KeeLoq"};
 
   if (barrierProtocol == 0)
   {
@@ -571,10 +571,10 @@ void ShowCapturedBarrier_HF()
     oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
     oled.print(Text2);
 
-    char Text3[20];
-    sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
-    oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-    oled.print(Text3);
+    // char Text3[20];
+    // sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
+    // oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+    // oled.print(Text3);
 
     char Text4[20];
     sprintf(Text4, "Protocol: %s", protocols[barrierProtocol]);
@@ -639,10 +639,10 @@ void ShowSavedSignalBarrier_HF()
     oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
     oled.print(Text2);
 
-    char Text3[20];
-    sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
-    oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
-    oled.print(Text3);
+    // char Text3[20];
+    // sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
+    // oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+    // oled.print(Text3);
 
     char Text4[20];
     sprintf(Text4, "Protocol: %s", protocol_);

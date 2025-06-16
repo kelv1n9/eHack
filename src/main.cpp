@@ -238,7 +238,7 @@ void loop1()
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
-      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
+      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureCode_ISR, CHANGE);
       initialized = true;
 
       if (successfullyConnected)
@@ -258,14 +258,14 @@ void loop1()
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
 
-    if (anMotorsCaptured || cameCaptured || niceCaptured)
+    if (cameCaptured || niceCaptured || princetonCaptured || cameTweeCaptured || keeloqCaptured)
     {
       signalCaptured_433MHZ = true;
       currentRssi = ELECHOUSE_cc1101.getRssi();
 
       SimpleBarrierData data;
       data.codeMain = barrierCodeMain;
-      data.codeAdd = barrierCodeAdd;
+      // data.codeAdd = barrierCodeAdd;
       data.protocol = barrierProtocol;
 
       vibro(255, 200, 3, 80);
@@ -273,9 +273,12 @@ void loop1()
       // Check for duplicates
       if (isDuplicateBarrier(data))
       {
-        anMotorsCaptured = false;
+        // anMotorsCaptured = false;
         niceCaptured = false;
         cameCaptured = false;
+        princetonCaptured = false;
+        cameTweeCaptured = false;
+        keeloqCaptured = false;
 
         break;
       }
@@ -287,9 +290,12 @@ void loop1()
 
       lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
 
-      anMotorsCaptured = false;
+      // anMotorsCaptured = false;
       niceCaptured = false;
       cameCaptured = false;
+      princetonCaptured = false;
+      cameTweeCaptured = false;
+      keeloqCaptured = false;
     }
 
     break;
@@ -337,7 +343,7 @@ void loop1()
 
     SimpleBarrierData data = readBarrierData(selectedSlotBarrier);
     barrierCodeMain = data.codeMain;
-    barrierCodeAdd = data.codeAdd;
+    // barrierCodeAdd = data.codeAdd;
     barrierProtocol = data.protocol;
 
     if (attackIsActive)
@@ -351,7 +357,7 @@ void loop1()
       {
         if (barrierProtocol == 0)
         {
-          sendANMotors(barrierCodeMain, barrierCodeAdd);
+          // sendANMotors(barrierCodeMain, barrierCodeAdd);
         }
         else if (barrierProtocol == 1)
         {
@@ -367,7 +373,7 @@ void loop1()
       {
         if (barrierProtocol == 0)
         {
-          sendANMotors(barrierCodeMain, barrierCodeAdd);
+          // sendANMotors(barrierCodeMain, barrierCodeAdd);
         }
         else if (barrierProtocol == 1)
         {

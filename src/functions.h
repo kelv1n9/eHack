@@ -6,6 +6,12 @@
 #include <SPI.h>
 #include <EEPROM.h>
 
+#include "NiceFloDecoder.h"
+#include "CameDecoder.h"
+#include "PrincetonDecoder.h"
+#include "CameTweeDecoder.h"
+#include "KeeLoqDecoder.h"
+
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
 #include <PN532_I2C.h>
 #include <PN532_I2C.cpp>
@@ -154,7 +160,7 @@ struct SimpleBarrierData
 };
 
 int16_t barrierBruteIndex = 4095;
-volatile uint32_t barrierCodeMain, barrierCodeAdd;
+volatile uint32_t barrierCodeMain;
 volatile uint8_t barrierProtocol;
 volatile uint8_t barrierBit;
 
@@ -165,18 +171,18 @@ volatile uint32_t lastEdgeMicros;
 volatile uint32_t lowDurationMicros, highDurationMicros, barrierCurrentLevel;
 
 // AN Motors
-volatile byte anMotorsCounter = 0;      // количество принятых битов
-volatile long code1 = 0;                // зашифрованная часть
-volatile long code2 = 0;                // фиксированная часть
-volatile bool anMotorsCaptured = false; // флаг, что код принят
+// volatile byte anMotorsCounter = 0;      // количество принятых битов
+// volatile long code1 = 0;                // зашифрованная часть
+// volatile long code2 = 0;                // фиксированная часть
+// volatile bool anMotorsCaptured = false; // флаг, что код принят
 // CAME
-volatile byte cameCounter = 0;  // сохраненое количество бит
-volatile uint32_t cameCode = 0; // код Came
-volatile bool cameCaptured = false;
+// volatile byte cameCounter = 0;  // сохраненое количество бит
+// volatile uint32_t cameCode = 0; // код Came
+// volatile bool cameCaptured = false;
 // NICE
-volatile byte niceCounter = 0;  // сохраненое количество бит
-volatile uint32_t niceCode = 0; // код Nice
-volatile bool niceCaptured = false;
+// volatile byte niceCounter = 0;  // сохраненое количество бит
+// volatile uint32_t niceCode = 0; // код Nice
+// volatile bool niceCaptured = false;
 
 /* ================= IR ================== */
 #define DELAY_AFTER_SEND 50
@@ -1545,115 +1551,129 @@ boolean CheckValue(uint16_t base, uint16_t value)
   return ((value == base) || ((value > base) && ((value - base) < MAX_DELTA_T_BARRIER)) || ((value < base) && ((base - value) < MAX_DELTA_T_BARRIER)));
 }
 
-void captureBarrierCode()
-{
-  barrierCurrentLevel = digitalRead(GD0_PIN_CC);
-  if (barrierCurrentLevel == HIGH)
-    lowDurationMicros = micros() - lastEdgeMicros;
-  else
-    highDurationMicros = micros() - lastEdgeMicros;
+void captureCode_ISR() {
+  uint32_t now = micros();
+  uint32_t duration = now - lastEdgeMicros;
+  lastEdgeMicros = now;
 
-  lastEdgeMicros = micros();
+  bool previousLevel = !digitalRead(GD0_PIN_CC);
 
-  // AN-MOTORS
-  if (barrierCurrentLevel == HIGH)
-  {
-    if (CheckValue(AN_MOTORS_PULSE, highDurationMicros) && CheckValue(AN_MOTORS_PULSE * 2, lowDurationMicros))
-    { // valid 1
-      if (anMotorsCounter < 32)
-        code1 = (code1 << 1) | 1;
-      else if (anMotorsCounter < 64)
-        code2 = (code2 << 1) | 1;
-      anMotorsCounter++;
-    }
-    else if (CheckValue(AN_MOTORS_PULSE * 2, highDurationMicros) && CheckValue(AN_MOTORS_PULSE, lowDurationMicros))
-    { // valid 0
-      if (anMotorsCounter < 32)
-        code1 = (code1 << 1) | 0;
-      else if (anMotorsCounter < 64)
-        code2 = (code2 << 1) | 0;
-      anMotorsCounter++;
-    }
-    else
-    {
-      anMotorsCounter = 0;
-      code1 = 0;
-      code2 = 0;
-    }
-    if (anMotorsCounter >= 65 && code2 != -1)
-    {
-      anMotorsCaptured = true;
-      barrierProtocol = 0;
-      barrierCodeMain = code1;
-      barrierCodeAdd = code2;
-      barrierBit = anMotorsCounter;
-
-      code1 = 0;
-      code2 = 0;
-      anMotorsCounter = 0;
-    }
-  }
-
-  // CAME
-  if (barrierCurrentLevel == LOW)
-  {
-    if (CheckValue(320, highDurationMicros) && CheckValue(640, lowDurationMicros))
-    { // valid 1
-      cameCode = (cameCode << 1) | 1;
-      cameCounter++;
-    }
-    else if (CheckValue(640, highDurationMicros) && CheckValue(320, lowDurationMicros))
-    { // valid 0
-      cameCode = (cameCode << 1) | 0;
-      cameCounter++;
-    }
-    else
-    {
-      cameCounter = 0;
-      cameCode = 0;
-    }
-  }
-  else if ((cameCounter == 12 || cameCounter == 24) && lowDurationMicros > 1000)
-  {
-    cameCaptured = true;
-    barrierProtocol = 2;
-    barrierCodeMain = cameCode;
-    barrierBit = cameCounter;
-
-    cameCode = 0;
-    cameCounter = 0;
-  }
-
-  // NICE
-  if (barrierCurrentLevel == LOW)
-  {
-    if (CheckValue(700, highDurationMicros) && CheckValue(1400, lowDurationMicros))
-    { // valid 1
-      niceCode = (niceCode << 1) | 1;
-      niceCounter++;
-    }
-    else if (CheckValue(1400, highDurationMicros) && CheckValue(700, lowDurationMicros))
-    { // valid 0
-      niceCode = (niceCode << 1) | 0;
-      niceCounter++;
-    }
-    else
-    {
-      niceCounter = 0;
-      niceCode = 0;
-    }
-  }
-  else if ((niceCounter == 12 || niceCounter == 24) && lowDurationMicros > 2000)
-  {
-    niceCaptured = true;
-    barrierProtocol = 1;
-    barrierCodeMain = niceCode;
-    barrierBit = niceCounter;
-
-    niceCode = 0;
-    niceCounter = 0;
-  }
+  processNiceSignal(previousLevel, duration);
+  processCameSignal(previousLevel, duration);
+  processPrincetonSignal(previousLevel, duration);
+  processCameTweeSignal(previousLevel, duration);
+  processKeeloqSignal(previousLevel, duration);
 }
+
+// void captureBarrierCode()
+// {
+//   barrierCurrentLevel = digitalRead(GD0_PIN_CC);
+//   if (barrierCurrentLevel == HIGH)
+//     lowDurationMicros = micros() - lastEdgeMicros;
+//   else
+//     highDurationMicros = micros() - lastEdgeMicros;
+
+//   lastEdgeMicros = micros();
+
+//   // AN-MOTORS
+//   if (barrierCurrentLevel == HIGH)
+//   {
+//     if (CheckValue(AN_MOTORS_PULSE, highDurationMicros) && CheckValue(AN_MOTORS_PULSE * 2, lowDurationMicros))
+//     { // valid 1
+//       if (anMotorsCounter < 32)
+//         code1 = (code1 << 1) | 1;
+//       else if (anMotorsCounter < 64)
+//         code2 = (code2 << 1) | 1;
+//       anMotorsCounter++;
+//     }
+//     else if (CheckValue(AN_MOTORS_PULSE * 2, highDurationMicros) && CheckValue(AN_MOTORS_PULSE, lowDurationMicros))
+//     { // valid 0
+//       if (anMotorsCounter < 32)
+//         code1 = (code1 << 1) | 0;
+//       else if (anMotorsCounter < 64)
+//         code2 = (code2 << 1) | 0;
+//       anMotorsCounter++;
+//     }
+//     else
+//     {
+//       anMotorsCounter = 0;
+//       code1 = 0;
+//       code2 = 0;
+//     }
+//     if (anMotorsCounter >= 65 && code2 != -1)
+//     {
+//       anMotorsCaptured = true;
+//       barrierProtocol = 0;
+//       barrierCodeMain = code1;
+//       barrierCodeAdd = code2;
+//       barrierBit = anMotorsCounter;
+
+//       code1 = 0;
+//       code2 = 0;
+//       anMotorsCounter = 0;
+//     }
+//   }
+
+//   // CAME
+//   if (barrierCurrentLevel == LOW)
+//   {
+//     if (CheckValue(320, highDurationMicros) && CheckValue(640, lowDurationMicros))
+//     { // valid 1
+//       cameCode = (cameCode << 1) | 1;
+//       cameCounter++;
+//     }
+//     else if (CheckValue(640, highDurationMicros) && CheckValue(320, lowDurationMicros))
+//     { // valid 0
+//       cameCode = (cameCode << 1) | 0;
+//       cameCounter++;
+//     }
+//     else
+//     {
+//       cameCounter = 0;
+//       cameCode = 0;
+//     }
+//   }
+//   else if ((cameCounter == 12 || cameCounter == 24) && lowDurationMicros > 1000)
+//   {
+//     cameCaptured = true;
+//     barrierProtocol = 2;
+//     barrierCodeMain = cameCode;
+//     barrierBit = cameCounter;
+
+//     cameCode = 0;
+//     cameCounter = 0;
+//   }
+
+//   // NICE
+//   if (barrierCurrentLevel == LOW)
+//   {
+//     if (CheckValue(700, highDurationMicros) && CheckValue(1400, lowDurationMicros))
+//     { // valid 1
+//       niceCode = (niceCode << 1) | 1;
+//       niceCounter++;
+//     }
+//     else if (CheckValue(1400, highDurationMicros) && CheckValue(700, lowDurationMicros))
+//     { // valid 0
+//       niceCode = (niceCode << 1) | 0;
+//       niceCounter++;
+//     }
+//     else
+//     {
+//       niceCounter = 0;
+//       niceCode = 0;
+//     }
+//   }
+//   else if ((niceCounter == 12 || niceCounter == 24) && lowDurationMicros > 2000)
+//   {
+//     niceCaptured = true;
+//     barrierProtocol = 1;
+//     barrierCodeMain = niceCode;
+//     barrierBit = niceCounter;
+
+//     niceCode = 0;
+//     niceCounter = 0;
+//   }
+// }
 
 /* ============================= 125 kHz RFID EMULATION =============================== */
 
