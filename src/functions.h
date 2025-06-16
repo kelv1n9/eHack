@@ -161,8 +161,8 @@ volatile uint8_t barrierBit;
 uint8_t selectedSlotBarrier = 0;
 uint8_t lastUsedSlotBarrier = 0;
 
-volatile uint16_t lastEdgeMicros;
-volatile uint16_t lowDurationMicros, highDurationMicros, barrierCurrentLevel;
+volatile uint32_t lastEdgeMicros;
+volatile uint32_t lowDurationMicros, highDurationMicros, barrierCurrentLevel;
 
 // AN Motors
 volatile byte anMotorsCounter = 0;      // количество принятых битов
@@ -1547,7 +1547,6 @@ boolean CheckValue(uint16_t base, uint16_t value)
 
 void captureBarrierCode()
 {
-  // barrierCurrentLevel = digitalRead(RA_RX);
   barrierCurrentLevel = digitalRead(GD0_PIN_CC);
   if (barrierCurrentLevel == HIGH)
     lowDurationMicros = micros() - lastEdgeMicros;
