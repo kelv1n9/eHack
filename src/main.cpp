@@ -1255,8 +1255,7 @@ void loop1()
     {
       ok.reset();
       initialized = true;
-      // communication.setRadioNRF24();
-      communication.setRadioCC1101();
+      communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
     }
@@ -1296,6 +1295,11 @@ void loop()
   if (locked)
   {
     showLock();
+  }
+
+  if (successfullyConnected)
+  {
+    showConnection();
   }
 
   if (isCharging)

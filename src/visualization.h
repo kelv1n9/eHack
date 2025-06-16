@@ -371,6 +371,12 @@ void showLock()
   oled.print("L");
 }
 
+void showConnection()
+{
+  oled.setCursorXY(42, 0);
+  oled.print("C");
+}
+
 void showCharging()
 {
   oled.setCursorXY(98, 0);
