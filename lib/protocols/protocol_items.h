@@ -19,26 +19,26 @@
 #include "Bett/BettDecoder.h"
 #include "Doitrand/DoitrandDecoder.h"
 #include "PhoenixV2/PhoenixV2Decoder.h"
+#include "Honeywell/HoneywellDecoder.h"
+#include "Magellan/MagellanDecoder.h"
+#include "IntertechnoV3/IntertechnoV3Decoder.h"
+#include "Ansonic/AnsonicDecoder.h"
+#include "SMC5326/SMC5326Decoder.h"
+#include "HoltekHT12x/HoltekHT12xDecoder.h"
 
 // Error in: GateTX, PowerSmart
 
 const char *rf_protocols[] = {"NiceFlo", "Came", "Princeton", "CameTwee", "KeeLoq",
                               "NeroSketch", "Hormann", "NeroRadio", "GateTX", "Linear", 
                               "LinearD3", "MegaCode", "Holtek", "Chamberlain", "PowerSmart", 
-                              "Marantec", "Bett", "DoitRand", "PhoenixV2", "HoneywellWDB",
-                                "Magellan", "IntertechnoV3", "Clemsa", "Ansonic", "SMC5326",
-                                "HoltekHT12x", "Dooya", "MasterCode", "DickertMAHS" };
+                              "Marantec", "Bett", "DoitRand", "PhoenixV2", "Honeywell",
+                                "Magellan", "Intertechno", "Clemsa", "Ansonic", "SMC5326",
+                                "HoltekHT", "Dooya", "MasterCode", "DickertMAHS" };
 
-// #include "honeywell_wdb.h"
-// #include "magellan.h"
-// #include "intertechno_v3.h"
-// #include "clemsa.h"
-// #include "ansonic.h"
-// #include "smc5326.h"
-// #include "holtek_ht12x.h"
 // #include "dooya.h"
 // #include "mastercode.h"
 // #include "dickert_mahs.h"
+// #include "clemsa.h"
 
 // #include "bin_raw.h"
 // #include "raw.h"

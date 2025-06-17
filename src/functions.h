@@ -1555,6 +1555,13 @@ void captureCode_ISR() {
   processBettSignal(previousLevel, duration);
   processDoitrandSignal(previousLevel, duration);
   processPhoenixV2Signal(previousLevel, duration);
+  processHoneywellSignal(previousLevel, duration);
+  processMagellanSignal(previousLevel, duration);
+  processIntertechnoV3Signal(previousLevel, duration);
+  // processClemsaSignal(previousLevel, duration);
+  processAnsonicSignal(previousLevel, duration);
+  processSmc5326Signal(previousLevel, duration);
+  processHoltekHT12xSignal(previousLevel, duration);
 }
 
 /* ============================= 125 kHz RFID EMULATION =============================== */
