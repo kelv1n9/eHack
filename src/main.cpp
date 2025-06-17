@@ -258,7 +258,7 @@ void loop1()
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
 
-    if (cameCaptured || niceCaptured || princetonCaptured || cameTweeCaptured || keeloqCaptured)
+    if (newSignalReady)
     {
       signalCaptured_433MHZ = true;
       currentRssi = ELECHOUSE_cc1101.getRssi();
@@ -273,13 +273,7 @@ void loop1()
       // Check for duplicates
       if (isDuplicateBarrier(data))
       {
-        // anMotorsCaptured = false;
-        niceCaptured = false;
-        cameCaptured = false;
-        princetonCaptured = false;
-        cameTweeCaptured = false;
-        keeloqCaptured = false;
-
+        newSignalReady = false;
         break;
       }
 
@@ -290,12 +284,7 @@ void loop1()
 
       lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
 
-      // anMotorsCaptured = false;
-      niceCaptured = false;
-      cameCaptured = false;
-      princetonCaptured = false;
-      cameTweeCaptured = false;
-      keeloqCaptured = false;
+      newSignalReady = false;
     }
 
     break;
