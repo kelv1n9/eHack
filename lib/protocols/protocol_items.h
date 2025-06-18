@@ -26,6 +26,7 @@
 #include "SMC5326/SMC5326Decoder.h"
 #include "HoltekHT12x/HoltekHT12xDecoder.h"
 #include "Dooya/DooyaDecoder.h"
+// #include "RawLogger/RawRecorderDecoder.h"
 
 // Error in: GateTX, PowerSmart
 
@@ -34,11 +35,8 @@ const char *rf_protocols[] = {"NiceFlo", "Came", "Princeton", "CameTwee", "KeeLo
                               "LinearD3", "MegaCode", "Holtek", "Chamberlain", "PowerSmart", 
                               "Marantec", "Bett", "DoitRand", "PhoenixV2", "Honeywell",
                                 "Magellan", "Intertechno", "Clemsa", "Ansonic", "SMC5326",
-                                "HoltekHT", "Dooya", "MasterCode", "DickertMAHS" };
+                                "HoltekHT", "Dooya", "MasterCode", "DickertMAHS", "BinRaw"};
 
 // #include "dickert_mahs.h"
 // #include "clemsa.h"
 // #include "mastercode.h"
-
-// #include "bin_raw.h"
-// #include "raw.h"
