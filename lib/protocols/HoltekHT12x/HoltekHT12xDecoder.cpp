@@ -1,7 +1,7 @@
 #include "HoltekHT12xDecoder.h"
 
 // !!! Для включения/выключения отладки - следующая строка !!!
-#define DEBUG_HOLTEK_HT12X
+// #define DEBUG_HOLTEK_HT12X
 
 #ifdef DEBUG_HOLTEK_HT12X
 #define HT12X_DEB_PRINT(...) Serial.print(__VA_ARGS__)

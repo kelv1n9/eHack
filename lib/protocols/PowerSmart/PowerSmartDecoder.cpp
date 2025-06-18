@@ -1,7 +1,7 @@
 #include "PowerSmartDecoder.h"
 
 // ======================= ОТЛАДКА =======================
-#define DEBUG_POWER_SMART
+// #define DEBUG_POWER_SMART
 // =======================================================
 
 
