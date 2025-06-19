@@ -26,7 +26,7 @@
 #include "SMC5326/SMC5326Decoder.h"
 #include "HoltekHT12x/HoltekHT12xDecoder.h"
 #include "Dooya/DooyaDecoder.h"
-// #include "RawLogger/RawRecorderDecoder.h"
+#include "RawLogger/RawRecorder.h"
 
 // Error in: GateTX, PowerSmart
 
