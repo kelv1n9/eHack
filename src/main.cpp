@@ -35,6 +35,7 @@ void setup()
   communication.setMasterMode();
   communication.init();
 
+  radio.begin();
   radio.powerDown();
 
   // digitalWrite(23, HIGH); // PFM to PWM
@@ -1349,12 +1350,15 @@ void loop()
     grandParentMenu = MAIN_MENU;
 
     // Communication reset
-    communication.setRadioNRF24();
-    communication.setMasterMode();
-    communication.init();
-    commandSent = false;
-    outgoingDataLen = communication.buildPacket(COMMAND_IDLE, NULL, 0, outgoingData);
-    communication.sendPacket(outgoingData, outgoingDataLen);
+    if (startConnection)
+    {
+      communication.setRadioNRF24();
+      communication.setMasterMode();
+      communication.init();
+      commandSent = false;
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, NULL, 0, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+    }
 
     // States
     bruteState = BRUTE_IDLE;

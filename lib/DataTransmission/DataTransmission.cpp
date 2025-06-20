@@ -1,5 +1,8 @@
 #include "DataTransmission.h"
 
+const uint64_t pipe_master_to_slave = 0xAABBCCDD11LL;
+const uint64_t pipe_slave_to_master = 0x11223344EELL;
+
 DataTransmission::DataTransmission(RF24 *radioPtrNRF,
                                    ELECHOUSE_CC1101 *radioPtrCC)
 {
@@ -55,24 +58,26 @@ void DataTransmission::init()
 
         DBG("CC1101 radio initialized\n");
     }
-    else if (currentRadio == RADIO_NRF24)
+    if (currentRadio == RADIO_NRF24)
     {
         radioNRF24->powerUp();
-        radioNRF24->stopListening();
         radioNRF24->enableDynamicPayloads();
         radioNRF24->setAutoAck(true);
-        radioNRF24->setPayloadSize(32);
         radioNRF24->setDataRate(RF24_2MBPS);
         radioNRF24->setCRCLength(RF24_CRC_16);
         radioNRF24->setChannel(125);
+
         if (currentMode == Master)
         {
-            radioNRF24->openWritingPipe(0xAABBCCDD11LL);
+            radioNRF24->openWritingPipe(pipe_master_to_slave);
+            radioNRF24->openReadingPipe(1, pipe_slave_to_master);
+            radioNRF24->stopListening();
         }
         else if (currentMode == Slave)
         {
-            radioNRF24->openReadingPipe(1, 0xAABBCCDD11LL);
-            radioNRF24->startListening();
+            radioNRF24->openReadingPipe(1, pipe_master_to_slave);
+            radioNRF24->openWritingPipe(pipe_slave_to_master);
+            radioNRF24->startListening(); 
         }
         DBG("NRF24 radio initialized\n");
     }
@@ -114,14 +119,17 @@ bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
     {
         radioCC1101->SendData(data, len);
         DBG("Packet sent via CC1101\n");
+        return true;
     }
     else if (currentRadio == RADIO_NRF24)
     {
-        radioNRF24->write(data, len);
+        bool sent = radioNRF24->write(data, len);
+        DBG("Packet sent via NRF24, success: %d\n", sent);
         DBG("Packet sent via NRF24\n");
+        return sent;
     }
 
-    return true;
+    return false;
 }
 
 bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
@@ -129,6 +137,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
     if (currentRadio == RADIO_CC1101 && radioCC1101->CheckReceiveFlag())
     {
         *len = radioCC1101->ReceiveData(data);
+
 #ifdef DEBUG
         DBG("Packet received via CC1101, length: %d\n", *len);
         for (uint8_t i = 0; i < *len; i++)
@@ -142,7 +151,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
     {
         uint8_t size = radioNRF24->getDynamicPayloadSize();
 
-        if (size == 0)
+        if (size <= 1 || size > 5)
         {
             radioNRF24->flush_rx();
             return false;
@@ -150,6 +159,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
 
         *len = size;
         radioNRF24->read(data, *len);
+
 #ifdef DEBUG
         DBG("Packet received via NRF24, length: %d\n", *len);
         for (uint8_t i = 0; i < *len; i++)
@@ -164,47 +174,68 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
 
 bool DataTransmission::checkConnection(uint16_t timeoutMs)
 {
-    static uint32_t startT = 0;
-    static bool waiting = false;
-
-    uint8_t buf[32];
-    uint8_t len = 0;
-    uint32_t now = millis();
-
-    if (!waiting)
+    if (currentMode == Master)
     {
-        startT = now;
+        radioNRF24->stopListening(); 
+        byte ping[4] = {'P', 'I', 'N', 'G'};
+        DBG("Master: Sending PING...\n");
+        bool ping_sent_successfully = sendPacket(ping, 4);
 
-        if (currentMode == Master)
+        if (!ping_sent_successfully)
         {
-            byte ping[4] = {80, 73, 78, 71};
-            sendPacket(ping, 4);
+            DBG("Master: PING send failed. No ACK received.\n");
+            return false;
         }
-        waiting = true;
+
+        DBG("Master: PING sent successfully (ACK received). Waiting for PONG data...\n");
+        radioNRF24->startListening(); 
+        uint32_t startT = millis();
+        uint8_t buf[32];
+        uint8_t len = 0;
+
+        while (millis() - startT < timeoutMs)
+        {
+            if (receivePacket(buf, &len) && len == 4)
+            {
+                if (buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
+                {
+                    DBG("Master: PONG received! Connection OK.\n");
+                    radioNRF24->stopListening(); 
+                    return true;
+                }
+            }
+        }
+
+        DBG("Master: PONG response timeout.\n");
+        radioNRF24->stopListening();
+        return false;
     }
-
-    if (receivePacket(buf, &len) && len == 4)
+    else if (currentMode == Slave)
     {
-        if (currentMode == Master &&
-            buf[0] == 80 && buf[1] == 79 && buf[2] == 78 && buf[3] == 71) // «PONG»
-        {
-            waiting = false;
-            return true;
-        }
+        uint8_t buf[32];
+        uint8_t len = 0;
 
-        if (currentMode == Slave &&
-            buf[0] == 80 && buf[1] == 73 && buf[2] == 78 && buf[3] == 71) // «PING»
+        if (receivePacket(buf, &len) && len == 4 &&
+            buf[0] == 'P' && buf[1] == 'I' && buf[2] == 'N' && buf[3] == 'G')
         {
-            byte pong[4] = {80, 79, 78, 71};
-            sendPacket(pong, 4);
-            waiting = false;
-            return true;
-        }
-    }
+            DBG("Slave: PING received. Sending PONG...\n");
 
-    if (now - startT >= timeoutMs)
-    {
-        waiting = false;
+            radioNRF24->stopListening(); 
+            byte pong[4] = {'P', 'O', 'N', 'G'};
+            bool pong_sent_successfully = sendPacket(pong, 4);
+            radioNRF24->startListening(); 
+
+            if (pong_sent_successfully)
+            {
+                DBG("Slave: PONG sent successfully (ACK received).\n");
+            }
+            else
+            {
+                DBG("Slave: PONG send failed. No ACK from Master.\n");
+            }
+            return true; 
+        }
+        return false;
     }
     return false;
 }

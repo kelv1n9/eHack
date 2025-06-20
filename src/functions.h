@@ -1353,35 +1353,29 @@ FlappyGame flappy;
 //*================================== UHF ======================================*/
 void initRadioAttack()
 {
-  if (radio.begin())
-  {
-    radio.powerUp();
-    radio.setAutoAck(false);
-    radio.stopListening();
-    radio.setRetries(0, 0);
-    radio.setPALevel(RF24_PA_MAX, true);
-    radio.setDataRate(RF24_2MBPS);
-    radio.setCRCLength(RF24_CRC_DISABLED);
-    radio.startConstCarrier(RF24_PA_HIGH, START_CHANNEL);
-  }
+  radio.powerUp();
+  radio.setAutoAck(false);
+  radio.stopListening();
+  radio.setRetries(0, 0);
+  radio.setPALevel(RF24_PA_MAX, true);
+  radio.setDataRate(RF24_2MBPS);
+  radio.setCRCLength(RF24_CRC_DISABLED);
+  radio.startConstCarrier(RF24_PA_HIGH, START_CHANNEL);
 }
 
 void initRadioScanner()
 {
-  if (radio.begin())
+  radio.setAutoAck(false);
+  radio.disableCRC();
+  radio.setAddressWidth(2);
+  for (uint8_t i = 0; i < 6; ++i)
   {
-    radio.setAutoAck(false);
-    radio.disableCRC();
-    radio.setAddressWidth(2);
-    for (uint8_t i = 0; i < 6; ++i)
-    {
-      radio.openReadingPipe(i, noiseAddress[i]);
-    }
-    radio.setDataRate(RF24_1MBPS);
-    radio.startListening();
-    radio.stopListening();
-    radio.flush_rx();
+    radio.openReadingPipe(i, noiseAddress[i]);
   }
+  radio.setDataRate(RF24_1MBPS);
+  radio.startListening();
+  radio.stopListening();
+  radio.flush_rx();
 }
 
 void stopRadioAttack()
@@ -1529,7 +1523,8 @@ void sendNice(uint32_t Code)
 
 /********************************** BARRIER SIGNAL RECEIVE (HF) ***************************************/
 
-void captureCode_ISR() {
+void captureCode_ISR()
+{
   uint32_t now = micros();
   uint32_t duration = now - lastEdgeMicros;
   lastEdgeMicros = now;
