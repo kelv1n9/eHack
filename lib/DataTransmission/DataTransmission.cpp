@@ -77,7 +77,7 @@ void DataTransmission::init()
         {
             radioNRF24->openReadingPipe(1, pipe_master_to_slave);
             radioNRF24->openWritingPipe(pipe_slave_to_master);
-            radioNRF24->startListening(); 
+            radioNRF24->startListening();
         }
         DBG("NRF24 radio initialized\n");
     }
@@ -151,7 +151,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
     {
         uint8_t size = radioNRF24->getDynamicPayloadSize();
 
-        if (size <= 1 || size > 5)
+        if (size <= 1 || size > 10)
         {
             radioNRF24->flush_rx();
             return false;
@@ -176,7 +176,7 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
 {
     if (currentMode == Master)
     {
-        radioNRF24->stopListening(); 
+        radioNRF24->stopListening();
         byte ping[4] = {'P', 'I', 'N', 'G'};
         DBG("Master: Sending PING...\n");
         bool ping_sent_successfully = sendPacket(ping, 4);
@@ -188,7 +188,7 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
         }
 
         DBG("Master: PING sent successfully (ACK received). Waiting for PONG data...\n");
-        radioNRF24->startListening(); 
+        radioNRF24->startListening();
         uint32_t startT = millis();
         uint8_t buf[32];
         uint8_t len = 0;
@@ -200,7 +200,7 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
                 if (buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
                 {
                     DBG("Master: PONG received! Connection OK.\n");
-                    radioNRF24->stopListening(); 
+                    radioNRF24->stopListening();
                     return true;
                 }
             }
@@ -220,11 +220,11 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
         {
             DBG("Slave: PING received. Sending PONG...\n");
 
-            radioNRF24->stopListening(); 
+            radioNRF24->stopListening();
             byte pong[4] = {'P', 'O', 'N', 'G'};
             bool pong_sent_successfully = sendPacket(pong, 4);
-            radioNRF24->startListening(); 
-
+            radioNRF24->startListening();
+#ifdef DEBUG
             if (pong_sent_successfully)
             {
                 DBG("Slave: PONG sent successfully (ACK received).\n");
@@ -233,7 +233,8 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
             {
                 DBG("Slave: PONG send failed. No ACK from Master.\n");
             }
-            return true; 
+#endif
+            return true;
         }
         return false;
     }

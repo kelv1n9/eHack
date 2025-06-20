@@ -80,6 +80,7 @@ uint8_t barrierBruteMenuIndex = 0;
 float batVoltage;
 float voltageHistory[HISTORY_SIZE] = {0};
 uint32_t batteryTimer;
+uint32_t remotebatteryTimer;
 uint8_t historyIndex = 0;
 bool isCharging = false;
 

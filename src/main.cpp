@@ -1832,17 +1832,32 @@ void loop()
   }
   }
 
-  //! TODO: READ REMOTE VOLTAGE
-  // if (successfullyConnected && (currentMenu != UHF_SPECTRUM && currentMenu != HF_SPECTRUM && currentMenu != HF_ACTIVITY))
-  // {
-  //   communication.setSlaveMode();
-  //   communication.init();
-  //   communication.receivePacket(recievedData, &recievedDataLen);
-  //   remoteVoltage = remoteBatteryVoltage(recievedData);
-  //   Serial.printf("Remote voltage: " "%.2fV\n", remoteVoltage);
-  //   communication.setMasterMode();
-  //   communication.init();
-  // }
+  if (successfullyConnected && (currentMenu != UHF_SPECTRUM && currentMenu != HF_SPECTRUM && currentMenu != HF_ACTIVITY))
+  {
+    radio.startListening();
+    // communication.setSlaveMode();
+    // communication.init();
+
+    // communication.receivePacket(recievedData, &recievedDataLen);
+    // remoteVoltage = remoteBatteryVoltage(recievedData);
+    // Serial.printf("Remote voltage: " "%.2fV\n", remoteVoltage);
+
+    if (communication.receivePacket(recievedData, &recievedDataLen))
+    {
+      if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
+      {
+        if (recievedDataLen == 2 + sizeof(float))
+        {
+          memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
+          Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
+        }
+      }
+    }
+
+    radio.stopListening();
+    // communication.setMasterMode();
+    // communication.init();
+  }
 
   if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
   {
