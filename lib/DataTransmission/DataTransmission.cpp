@@ -44,21 +44,17 @@ void DataTransmission::init()
     if (currentRadio == RADIO_CC1101)
     {
         radioCC1101->Init();
+        radioCC1101->setGDO0(GD0_PIN_CC);
         radioCC1101->setCCMode(1);
-        if (currentMode == Master)
-        {
-            radioCC1101->SetTx(433.92);
-        }
-        else if (currentMode == Slave)
-        {
-            radioCC1101->SetRx(433.92);
-        }
+        radioCC1101->setModulation(0); 
+        radioCC1101->setMHZ(433.92);   
+        radioCC1101->setSyncMode(2);
         radioCC1101->setCrc(1);
-        radioCC1101->setDRate(500);
+        // radioCC1101->setDRate(500);
 
         DBG("CC1101 radio initialized\n");
     }
-    if (currentRadio == RADIO_NRF24)
+    else if (currentRadio == RADIO_NRF24)
     {
         radioNRF24->powerUp();
         radioNRF24->enableDynamicPayloads();
@@ -67,19 +63,17 @@ void DataTransmission::init()
         radioNRF24->setCRCLength(RF24_CRC_16);
         radioNRF24->setChannel(125);
         radioNRF24->setPALevel(RF24_PA_MAX);
-
         if (currentMode == Master)
         {
             radioNRF24->openWritingPipe(pipe_master_to_slave);
             radioNRF24->openReadingPipe(1, pipe_slave_to_master);
-            radioNRF24->stopListening();
         }
         else if (currentMode == Slave)
         {
             radioNRF24->openReadingPipe(1, pipe_master_to_slave);
             radioNRF24->openWritingPipe(pipe_slave_to_master);
-            radioNRF24->startListening();
         }
+        radioNRF24->startListening();
         DBG("NRF24 radio initialized\n");
     }
 }
@@ -123,8 +117,10 @@ bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
         return true;
     }
     else if (currentRadio == RADIO_NRF24)
-    {
+    {   
+        radioNRF24->stopListening();
         bool sent = radioNRF24->write(data, len);
+        radioNRF24->startListening();
         DBG("Packet sent via NRF24, success: %d\n", sent);
         DBG("Packet sent via NRF24\n");
         return sent;
@@ -135,7 +131,7 @@ bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
 
 bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
 {
-    if (currentRadio == RADIO_CC1101 && radioCC1101->CheckReceiveFlag())
+    if (currentRadio == RADIO_CC1101 && radioCC1101->CheckReceiveFlag() && radioCC1101->CheckCRC())
     {
         *len = radioCC1101->ReceiveData(data);
 
@@ -177,7 +173,6 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
 {
     if (currentMode == Master)
     {
-        radioNRF24->stopListening();
         byte ping[4] = {'P', 'I', 'N', 'G'};
         DBG("Master: Sending PING...\n");
         bool ping_sent_successfully = sendPacket(ping, 4);
@@ -189,7 +184,6 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
         }
 
         DBG("Master: PING sent successfully (ACK received). Waiting for PONG data...\n");
-        radioNRF24->startListening();
         uint32_t startT = millis();
         uint8_t buf[32];
         uint8_t len = 0;
@@ -201,14 +195,12 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
                 if (buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
                 {
                     DBG("Master: PONG received! Connection OK.\n");
-                    radioNRF24->stopListening();
                     return true;
                 }
             }
         }
 
         DBG("Master: PONG response timeout.\n");
-        radioNRF24->stopListening();
         return false;
     }
     else if (currentMode == Slave)
@@ -220,11 +212,8 @@ bool DataTransmission::checkConnection(uint16_t timeoutMs)
             buf[0] == 'P' && buf[1] == 'I' && buf[2] == 'N' && buf[3] == 'G')
         {
             DBG("Slave: PING received. Sending PONG...\n");
-
-            radioNRF24->stopListening();
             byte pong[4] = {'P', 'O', 'N', 'G'};
             bool pong_sent_successfully = sendPacket(pong, 4);
-            radioNRF24->startListening();
 #ifdef DEBUG
             if (pong_sent_successfully)
             {

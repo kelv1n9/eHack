@@ -31,14 +31,8 @@ void setup()
   batVoltage = readBatteryVoltage();
   EEPROM.begin(512);
 
-  communication.setRadioNRF24();
-  communication.setMasterMode();
-  communication.init();
-
   radio.begin();
   radio.powerDown();
-
-  // digitalWrite(23, HIGH); // PFM to PWM
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
   IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);
@@ -107,7 +101,7 @@ void loop1()
     }
 
     if (checkFreqButtons() && successfullyConnected)
-    { 
+    {
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
@@ -410,7 +404,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, NULL, 0, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, 0, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
@@ -511,7 +505,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, NULL, 0, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, 0, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
@@ -625,7 +619,7 @@ void loop1()
 
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
     }
@@ -713,8 +707,9 @@ void loop1()
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       initialized = true;
     }
- 
-    if(checkFreqButtons()){
+
+    if (checkFreqButtons())
+    {
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
     }
 
@@ -989,18 +984,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(full_channels) / sizeof(full_channels[0]));
     radioChannel = full_channels[randomIndex];
@@ -1011,18 +1005,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(wifi_channels) / sizeof(wifi_channels[0]));
     radioChannel = wifi_channels[randomIndex];
@@ -1033,18 +1026,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(bluetooth_channels) / sizeof(bluetooth_channels[0]));
     radioChannel = bluetooth_channels[randomIndex];
@@ -1055,18 +1047,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(ble_channels) / sizeof(ble_channels[0]));
     radioChannel = ble_channels[randomIndex];
@@ -1077,18 +1068,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_USB_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_USB_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(usb_channels) / sizeof(usb_channels[0]));
     radioChannel = usb_channels[randomIndex];
@@ -1099,18 +1089,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(video_channels) / sizeof(video_channels[0]));
     radioChannel = video_channels[randomIndex];
@@ -1121,18 +1110,17 @@ void loop1()
   {
     if (!initialized)
     {
-      initRadioAttack();
-      initialized = true;
-
       if (successfullyConnected)
       {
-        communication.setRadioCC1101();
-        communication.setMasterMode();
-        communication.init();
-
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_RC_JAMMER, NULL, 0, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_RC_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+
+        communication.setRadioCC1101();
+        communication.init();
       }
+
+      initRadioAttack();
+      initialized = true;
     }
     int randomIndex = random(0, sizeof(rc_channels) / sizeof(rc_channels[0]));
     radioChannel = rc_channels[randomIndex];
@@ -1284,9 +1272,17 @@ void loop()
     showLock();
   }
 
+  const static uint8_t icons_7x7[][7] PROGMEM = {
+      {0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f},
+  };
+
   if (successfullyConnected)
   {
-    showConnection();
+    oled.setCursorXY(115, 0);
+    for (uint8_t i = 0; i < 7; i++)
+    {
+      oled.drawByte(pgm_read_byte(&(icons_7x7[0][i])));
+    }
   }
 
   if (isCharging)
@@ -1335,6 +1331,24 @@ void loop()
       }
     }
 
+    if (successfullyConnected)
+    {
+      switch (currentMenu)
+      {
+      case UHF_SPECTRUM:
+      case UHF_ALL_JAMMER:
+      case UHF_WIFI_JAMMER:
+      case UHF_BT_JAMMER:
+      case UHF_BLE_JAMMER:
+      case UHF_USB_JAMMER:
+      case UHF_VIDEO_JAMMER:
+      case UHF_RC_JAMMER:
+      case UHF_BLE_SPAM:
+        stopRadioAttack();
+        break;
+      }
+    }
+
     // Menu return
     currentMenu = parentMenu;
     parentMenu = grandParentMenu;
@@ -1347,7 +1361,7 @@ void loop()
       communication.setMasterMode();
       communication.init();
       commandSent = false;
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, NULL, 0, outgoingData);
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
 
@@ -1371,7 +1385,6 @@ void loop()
     digitalWrite(GD0_PIN_CC, LOW);
     digitalWrite(RFID_COIL_PIN, LOW);
     digitalWrite(BLE_PIN, LOW);
-    stopRadioAttack();
 
     vibro(255, 50);
     return;
@@ -1817,37 +1830,27 @@ void loop()
     {
       startConnection = !startConnection;
     }
+    if (!startConnection)
+    {
+      successfullyConnected = false;
+      showLocalVoltage = true;
+    }
 
     showConnectionStatus();
     break;
   }
   }
 
-  if (successfullyConnected && (currentMenu != UHF_SPECTRUM && currentMenu != HF_SPECTRUM && currentMenu != HF_ACTIVITY))
+  if (successfullyConnected)
   {
-    radio.startListening();
-    // communication.setSlaveMode();
-    // communication.init();
-
-    // communication.receivePacket(recievedData, &recievedDataLen);
-    // remoteVoltage = remoteBatteryVoltage(recievedData);
-    // Serial.printf("Remote voltage: " "%.2fV\n", remoteVoltage);
-
     if (communication.receivePacket(recievedData, &recievedDataLen))
     {
       if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
       {
-        if (recievedDataLen == 2 + sizeof(float))
-        {
-          memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
-          Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
-        }
+        memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
+        Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
       }
     }
-
-    radio.stopListening();
-    // communication.setMasterMode();
-    // communication.init();
   }
 
   if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
@@ -1872,7 +1875,7 @@ void loop()
     }
     else
     {
-      drawBattery(remoteVoltage, "p");
+      drawBattery(remoteVoltage, ".");
     }
   }
 

@@ -140,19 +140,6 @@ void drawBattery(float batVoltage, const char *suffix = "")
   oled.setCursorXY(5 + getTextWidth(voltageText), 0);
   oled.print("V");
   oled.print(suffix);
-
-  oled.setCursorXY(106, 0);
-  oled.drawByte(0b00111100);
-  oled.drawByte(0b00111100);
-  oled.drawByte(0b11111111);
-  for (byte i = 0; i < 100 / 8; i++)
-  {
-    if (i < (100 - percentage) / 8)
-      oled.drawByte(0b10000001);
-    else
-      oled.drawByte(0b11111111);
-  }
-  oled.drawByte(0b11111111);
 }
 
 void drawDashedLine(int y, int startX, int endX, int dashLength = 3, int gapLength = 3)
@@ -369,12 +356,6 @@ void showLock()
 {
   oled.setCursorXY(98, 0);
   oled.print("L");
-}
-
-void showConnection()
-{
-  oled.setCursorXY(42, 0);
-  oled.print("C");
 }
 
 void showCharging()
