@@ -1247,7 +1247,7 @@ void loop1()
       communication.init();
     }
 
-    if (!successfullyConnected && startConnection && communication.checkConnection(1000))
+    if (!successfullyConnected && startConnection && communication.checkConnection(5000))
     {
       Serial.println("Connection established");
       successfullyConnected = true;
