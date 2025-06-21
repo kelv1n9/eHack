@@ -468,31 +468,23 @@ void getIRCommand(const uint16_t *data, uint8_t index, uint16_t &protocol, uint1
 
 //================================== HF ======================================*/
 
-bool changeFreqButtons(const char *mode) // ← bool
+bool checkFreqButtons() 
 {
-  bool changed = false;
-
-  if (!locked && down.click())
-  {
-    currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
-    changed = true;
-  }
-  else if (!locked && up.click())
-  {
-    currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
-    changed = true;
-  }
-
-  if (changed)
-  {
-    if (strcmp(mode, "RX") == 0)
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-    else if (strcmp(mode, "TX") == 0)
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-
-    vibro(255, 30);
-  }
-  return changed;
+    bool changed = false;
+    if (!locked && down.click())
+    {
+        currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
+        changed = true;
+        vibro(255, 30);
+    }
+    else if (!locked && up.click())
+    {
+        currentFreqIndex = (currentFreqIndex == 0 ? raFreqCount - 1 : currentFreqIndex - 1);
+        changed = true;
+        vibro(255, 30);
+    }
+    
+    return changed;
 }
 
 void resetSpectrum_HF()
@@ -1354,7 +1346,7 @@ FlappyGame flappy;
 //*================================== UHF ======================================*/
 void initRadioAttack()
 {
-  radio.powerUp();
+  // radio.powerUp();
   radio.setAutoAck(false);
   radio.stopListening();
   radio.setRetries(0, 0);
@@ -1381,8 +1373,8 @@ void initRadioScanner()
 
 void stopRadioAttack()
 {
-  radio.stopConstCarrier();
-  radio.powerDown();
+  // radio.stopConstCarrier();
+  // radio.powerDown();
 }
 
 bool scanChannels(uint8_t channel)

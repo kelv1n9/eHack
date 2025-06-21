@@ -101,17 +101,14 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
     }
 
-    if (changeFreqButtons("RX") && successfullyConnected)
-    {
+    if (checkFreqButtons() && successfullyConnected)
+    { 
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
@@ -175,10 +172,6 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -209,8 +202,9 @@ void loop1()
 
     if (attackIsActive)
     {
-      if (changeFreqButtons("TX") && successfullyConnected)
+      if (checkFreqButtons() && successfullyConnected)
       {
+        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
         outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -253,8 +247,9 @@ void loop1()
       }
     }
 
-    if (changeFreqButtons("RX") && successfullyConnected)
+    if (checkFreqButtons() && successfullyConnected)
     {
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
@@ -338,8 +333,9 @@ void loop1()
 
     if (attackIsActive)
     {
-      if (changeFreqButtons("TX") && successfullyConnected)
+      if (checkFreqButtons() && successfullyConnected)
       {
+        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
         outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -594,17 +590,14 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
     }
 
-    if (changeFreqButtons("TX") && successfullyConnected)
+    if (checkFreqButtons() && successfullyConnected)
     {
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
       outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
     }
@@ -632,10 +625,6 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, NULL, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -724,8 +713,10 @@ void loop1()
       ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
       initialized = true;
     }
-
-    changeFreqButtons("RX");
+ 
+    if(checkFreqButtons()){
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+    }
 
     if (now - lastStepMs >= RSSI_STEP_MS)
     {
@@ -1350,7 +1341,7 @@ void loop()
     grandParentMenu = MAIN_MENU;
 
     // Communication reset
-    if (startConnection)
+    if (successfullyConnected)
     {
       communication.setRadioNRF24();
       communication.setMasterMode();
