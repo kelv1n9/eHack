@@ -52,7 +52,7 @@ void processGateTxSignal(bool level, uint32_t duration) {
              if (duration > (GATETX_TE_LONG * 4)) {
                 if(gateTxBitCount == 24) {
                     barrierCodeMain = gateTxRawData;
-                    barrierProtocol = 8;
+                    barrierProtocol = 6;
                     newSignalReady = true;
                 }
                 gateTxState = GATE_TX_RESET; // Готовимся к следующей преамбуле

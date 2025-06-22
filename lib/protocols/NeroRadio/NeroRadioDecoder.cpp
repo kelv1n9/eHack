@@ -84,7 +84,7 @@ void processNeroRadioSignal(bool level, uint32_t duration) {
                 // Проверяем, что пакет собран полностью
                 if (neroRadioBitCount == 56) {
                     barrierCodeMain = neroRadioRawData;
-                    barrierProtocol = 7; // Уникальный ID для Nero Radio
+                    barrierProtocol = 5; // Уникальный ID для Nero Radio
                     newSignalReady = true;
                 }
                 neroRadioState = NERO_RADIO_RESET; // В любом случае сброс

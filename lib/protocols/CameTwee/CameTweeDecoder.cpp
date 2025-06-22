@@ -109,7 +109,7 @@ void manchester_decoder_add_pulse(bool level) {
 
         if (tweeCounter == 54) {
             decryptCameTwee(tweeRawData);
-            barrierProtocol = 3;
+            barrierProtocol = 2;
             newSignalReady = true;
             tweeState = TWEE_RESET;
         }

@@ -61,7 +61,7 @@ void processHormannSignal(bool level, uint32_t duration) {
                 if (hormannBitCount == 44 && check_hormann_pattern(hormannRawData)) {
                     // Успех! Ключ валидный.
                     barrierCodeMain = hormannRawData;
-                    barrierProtocol = 6; // Уникальный ID для Hormann HSM
+                    barrierProtocol = 4; // Уникальный ID для Hormann HSM
                     newSignalReady = true;
                 }
                 // В любом случае, мы уже поймали заголовок нового пакета,

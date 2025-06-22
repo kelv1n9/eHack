@@ -43,7 +43,7 @@ void processSmc5326Signal(bool level, uint32_t duration) {
         if (smcBitCount == 25) {
             SMC_DEB_PRINTLN("SUCCESS! Packet received and captured.");
             barrierCodeMain = smcRawData;
-            barrierProtocol = 24; // ID для SMC5326
+            barrierProtocol = 16; // ID для SMC5326
             newSignalReady = true;
         } else if (smcState != SMC_RESET && smcBitCount > 0) { // Проверяем, только если что-то было принято
             SMC_DEB_PRINT("Incomplete packet ("); SMC_DEB_PRINT(smcBitCount); SMC_DEB_PRINTLN(" bits), discarding.");

@@ -70,7 +70,7 @@ void processAnsonicSignal(bool level, uint32_t duration) {
                 ANSONIC_DEB_PRINT("DEBUG: End of packet detected. Bits: "); ANSONIC_DEB_PRINTLN(ansonicBitCount);
                 if (ansonicBitCount == 12) {
                     barrierCodeMain = ansonicRawData & 0xFFF;
-                    barrierProtocol = 23; // Уникальный ID для Ansonic
+                    barrierProtocol = 15; // Уникальный ID для Ansonic
                     newSignalReady = true;
                 }
                 ansonicState = ANSONIC_FOUND_START_BIT; // Готовы к следующему пакету в серии

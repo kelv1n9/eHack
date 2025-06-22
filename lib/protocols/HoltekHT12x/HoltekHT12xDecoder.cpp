@@ -69,7 +69,7 @@ void processHoltekHT12xSignal(bool level, uint32_t duration) {
                     // Разбираем данные: 8 бит адреса + 4 бита данных/кнопки
                     barrierCodeMain = (ht12x_rawData >> 4) & 0xFF; 
                     barrierBit = ht12x_rawData & 0x0F;
-                    barrierProtocol = 25; // ID для Holtek HT12x
+                    barrierProtocol = 17; // ID для Holtek HT12x
                     newSignalReady = true;
                 }
                 ht12x_state = HT12X_RESET;

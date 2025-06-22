@@ -36,7 +36,7 @@ volatile uint32_t doitrand_last_pause_dur = 0;
 #define D_START_PULSE_DELTA (D_TE_DELTA * 3)
 #define D_RESYNC_PAUSE_US (D_TE_SHORT * 10)
 
-#define PROTOCOL_ID_DOITRAND 17
+#define PROTOCOL_ID_DOITRAND 13
 
 /**
  * @brief Главная функция-обработчик для протокола Doitrand.

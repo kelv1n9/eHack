@@ -30,7 +30,7 @@ volatile bool ps_manchester_last_level = false;
 #define PS_TE_DELTA 160 // Было 120, теперь диапазон [65, 385]
 #define PS_PACKET_HEADER        0xFD000000AA000000ULL
 #define PS_PACKET_HEADER_MASK   0xFF000000FF000000ULL
-#define PROTOCOL_ID_POWERSMART  14
+#define PROTOCOL_ID_POWERSMART  11
 
 // --- Вспомогательная функция для проверки контрольной суммы ---
 static bool check_power_smart_packet(uint64_t packet) {

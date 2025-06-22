@@ -75,7 +75,7 @@ void processLinearSignal(bool level, uint32_t duration) {
                     }
                     if (linearBitCount == 10) {
                         barrierCodeMain = linearRawData;
-                        barrierProtocol = 9; // Уникальный ID для Linear
+                        barrierProtocol = 7; // Уникальный ID для Linear
                         newSignalReady = true;
                     }
                 }

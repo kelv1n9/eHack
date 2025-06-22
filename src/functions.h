@@ -116,7 +116,7 @@ const byte GD0_PIN_CC = 19;
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
 uint8_t currentScanFreq = 0;
-const float raFrequencies[] = {315.0, 433.92, 868.0, 915.0};
+const float raFrequencies[] = {315.0, 433.92, 868.35, 915.0};
 const uint8_t raFreqCount = sizeof(raFrequencies) / sizeof(raFrequencies[0]);
 float rssiMaxPeak[raFreqCount] = {-100, -100, -100, -100};
 float rssiAbsoluteMax[raFreqCount] = {-100, -100, -100, -100};
@@ -1514,31 +1514,22 @@ void captureCode_ISR()
 
   processNiceSignal(previousLevel, duration);
   processCameSignal(previousLevel, duration);
-  processPrincetonSignal(previousLevel, duration);
   processCameTweeSignal(previousLevel, duration);
-  processKeeloqSignal(previousLevel, duration);
   processNeroSketchSignal(previousLevel, duration);
   processHormannSignal(previousLevel, duration);
   processNeroRadioSignal(previousLevel, duration);
   // processGateTxSignal(previousLevel, duration);
   processLinearSignal(previousLevel, duration);
   processLinearDelta3Signal(previousLevel, duration);
-  processMegaCodeSignal(previousLevel, duration);
   processHoltekSignal(previousLevel, duration);
   processChamberlainSignal(previousLevel, duration);
   // processPowerSmartSignal(previousLevel, duration);
   processMarantecSignal(previousLevel, duration);
-  processBettSignal(previousLevel, duration);
   processDoitrandSignal(previousLevel, duration);
   processPhoenixV2Signal(previousLevel, duration);
-  processHoneywellSignal(previousLevel, duration);
-  processMagellanSignal(previousLevel, duration);
-  processIntertechnoV3Signal(previousLevel, duration);
-  // processClemsaSignal(previousLevel, duration);
   processAnsonicSignal(previousLevel, duration);
   processSmc5326Signal(previousLevel, duration);
   processHoltekHT12xSignal(previousLevel, duration);
-  // processDooyaSignal(previousLevel, duration);
   // processRawRecord(previousLevel, duration);
 }
 

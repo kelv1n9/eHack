@@ -32,7 +32,7 @@ void processLinearDelta3Signal(bool level, uint32_t duration) {
             // Логика "приема дважды"
             if (ld3_lastData != 0 && ld3_lastData == ld3_rawData) {
                 barrierCodeMain = ld3_rawData;
-                barrierProtocol = 10;
+                barrierProtocol = 8;
                 newSignalReady = true;
             }
             ld3_lastData = ld3_rawData;

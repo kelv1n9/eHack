@@ -61,7 +61,7 @@ void processNeroSketchSignal(bool level, uint32_t duration) {
                 if (neroBitCount == 40) {
                     // Успех! Собрали ровно 40 бит.
                     barrierCodeMain = neroRawData;
-                    barrierProtocol = 5; // Уникальный ID для Nero Sketch
+                    barrierProtocol = 3; // Уникальный ID для Nero Sketch
                     newSignalReady = true;
                 }
                 break;

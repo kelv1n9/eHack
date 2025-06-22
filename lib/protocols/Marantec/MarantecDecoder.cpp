@@ -45,7 +45,7 @@ volatile uint8_t  marantec_bit_count = 0;
 #define M_TE_DELTA 350  // Увеличенный допуск для стабильности
 #define M_HEADER_PAUSE_US 10000
 #define M_RESYNC_PAUSE_US 4200
-#define PROTOCOL_ID_MARANTEC 15
+#define PROTOCOL_ID_MARANTEC 12
 
 /**
  * @brief Точный порт манчестер-декодера Flipper, управляемый событиями.

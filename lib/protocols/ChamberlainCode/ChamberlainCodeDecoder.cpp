@@ -77,7 +77,7 @@ void processChamberlainSignal(bool level, uint32_t duration) {
                 if (chambBitCount >= 7 && chambBitCount <= 9) {
                     barrierCodeMain = chambRawData;
                     barrierBit = chambBitCount; // Сохраняем длину ключа
-                    barrierProtocol = 13;       // ID для Chamberlain
+                    barrierProtocol = 10;       // ID для Chamberlain
                     newSignalReady = true;
                 }
                 chambState = CHAMB_RESET;

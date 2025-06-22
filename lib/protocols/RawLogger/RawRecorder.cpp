@@ -10,6 +10,7 @@ volatile uint16_t rawSignalLen = 0;
 // Константы для фильтрации шума
 #define RAW_MIN_DURATION 80 
 #define RAW_MAX_DURATION 50000 
+#define PROTOCOL = 18
 
 void processRawRecord(bool level, uint32_t duration) {
     // Если буфер уже заполнен, ничего не делаем

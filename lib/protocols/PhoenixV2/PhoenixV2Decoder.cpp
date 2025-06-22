@@ -37,7 +37,7 @@ volatile uint32_t ph_last_pause_dur = 0;
 #define P_START_PULSE_DELTA (P_TE_DELTA * 4)
 #define P_RESYNC_PAUSE_US (P_TE_SHORT * 10)
 
-#define PROTOCOL_ID_PHOENIX_V2 18
+#define PROTOCOL_ID_PHOENIX_V2 14
 
 /**
  * @brief Главная функция-обработчик для протокола Phoenix V2.

@@ -90,7 +90,7 @@ void processHoltekSignal(bool level, uint32_t duration) {
                     // Проверяем, что старшие 4 бита соответствуют маске
                     if ((holtekRawData & HOLTEK_HEADER_MASK) == HOLTEK_HEADER) {
                         barrierCodeMain = holtekRawData;
-                        barrierProtocol = 12; // ID для Holtek
+                        barrierProtocol = 9; // ID для Holtek
                         newSignalReady = true;
                     }
                     holtekState = HOLTEK_RESET; // В любом случае сброс
