@@ -1097,6 +1097,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
+        wasSuccessfullyConnected = true;
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -1316,39 +1317,72 @@ void loop()
 
     if (currentMenu == SETTINGS)
     {
+      currentMenu = parentMenu;
+      parentMenu = grandParentMenu;
+      grandParentMenu = MAIN_MENU;
       saveSettings();
       vibro(255, 50);
+      return;
     }
 
     if (currentMenu == CONNECTION)
     {
+      currentMenu = parentMenu;
+      parentMenu = grandParentMenu;
+      grandParentMenu = MAIN_MENU;
+      initialized = false;
       saveConnectionBegin();
+      vibro(255, 50);
+      return;
     }
 
     if (currentMenu == RFID_SCAN)
     {
       ShowReboot();
+      vibro(255, 50);
       while (1)
       {
       }
     }
 
+    switch (currentMenu)
+    {
+    case UHF_SPECTRUM:
+    case UHF_ALL_JAMMER:
+    case UHF_WIFI_JAMMER:
+    case UHF_BT_JAMMER:
+    case UHF_BLE_JAMMER:
+    case UHF_USB_JAMMER:
+    case UHF_VIDEO_JAMMER:
+    case UHF_RC_JAMMER:
+    case UHF_BLE_SPAM:
+    {
+      Serial.println("1");
+      stopRadioAttack();
+      communication.setRadioNRF24();
+      communication.setMasterMode();
+      communication.init();
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
+
+      if (wasSuccessfullyConnected && !successfullyConnected)
+      {
+        Serial.println("True");
+        while (!communication.sendPacket(outgoingData, outgoingDataLen))
+        {
+          Serial.println("?");
+        }
+      }
+      break;
+    }
+    }
+
     if (successfullyConnected)
     {
-      switch (currentMenu)
-      {
-      case UHF_SPECTRUM:
-      case UHF_ALL_JAMMER:
-      case UHF_WIFI_JAMMER:
-      case UHF_BT_JAMMER:
-      case UHF_BLE_JAMMER:
-      case UHF_USB_JAMMER:
-      case UHF_VIDEO_JAMMER:
-      case UHF_RC_JAMMER:
-      case UHF_BLE_SPAM:
-        stopRadioAttack();
-        break;
-      }
+      // Communication reset
+      communication.setRadioNRF24();
+      communication.setMasterMode();
+      communication.init();
+      commandSent = false;
     }
 
     // Menu return
@@ -1356,23 +1390,13 @@ void loop()
     parentMenu = grandParentMenu;
     grandParentMenu = MAIN_MENU;
 
-    // Communication reset
-    if (successfullyConnected)
-    {
-      communication.setRadioNRF24();
-      communication.setMasterMode();
-      communication.init();
-      commandSent = false;
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
-    }
-
     // States
     bruteState = BRUTE_IDLE;
     initialized = false;
     signalCaptured_IR = false;
     attackIsActive = false;
     signalCaptured_433MHZ = false;
+    wasSuccessfullyConnected = false;
 
     // Disable
     ELECHOUSE_cc1101.goSleep();

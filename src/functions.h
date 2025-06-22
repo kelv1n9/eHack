@@ -343,6 +343,7 @@ bool nfcDataValid = false;
 DataTransmission communication(&radio, &ELECHOUSE_cc1101);
 
 bool successfullyConnected = false;
+bool wasSuccessfullyConnected = false;
 bool commandSent = false;
 bool startConnection;
 
@@ -1365,6 +1366,7 @@ void initRadioScanner()
 void stopRadioAttack()
 {
   radio.stopConstCarrier();
+  radio.powerDown();
 }
 
 bool scanChannels(uint8_t channel)
