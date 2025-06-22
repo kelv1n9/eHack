@@ -101,11 +101,14 @@ void loop1()
       }
     }
 
-    if (checkFreqButtons() && successfullyConnected)
+    if (checkFreqButtons())
     {
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
     if (mySwitch.available())
@@ -197,11 +200,14 @@ void loop1()
 
     if (attackIsActive)
     {
-      if (checkFreqButtons() && successfullyConnected)
+      if (checkFreqButtons())
       {
         ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
+        if (successfullyConnected)
+        {
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
+          communication.sendPacket(outgoingData, outgoingDataLen);
+        }
       }
 
       if (now - attackTimer >= 1000 && !successfullyConnected)
@@ -242,11 +248,14 @@ void loop1()
       }
     }
 
-    if (checkFreqButtons() && successfullyConnected)
+    if (checkFreqButtons())
     {
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
     if (newSignalReady)
@@ -328,11 +337,14 @@ void loop1()
 
     if (attackIsActive)
     {
-      if (checkFreqButtons() && successfullyConnected)
+      if (checkFreqButtons())
       {
         ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
+        if (successfullyConnected)
+        {
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
+          communication.sendPacket(outgoingData, outgoingDataLen);
+        }
       }
       if (now - attackTimer >= 1000 && !successfullyConnected)
       {
@@ -590,11 +602,14 @@ void loop1()
       }
     }
 
-    if (checkFreqButtons() && successfullyConnected)
+    if (checkFreqButtons())
     {
       ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-      outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
     if (nowMicros - lastNoise > 500)
