@@ -1827,6 +1827,42 @@ void loop()
         memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
         Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
       }
+
+      if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
+      {
+        byte ping[4] = {'P', 'O', 'N', 'G'};
+        communication.sendPacket(ping, 4);
+      }
+
+      if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
+      {
+        DBG("Master: PONG received! Connection OK.\n");
+        awaitingPong = false;
+        successfullyConnected = true;
+      }
+    }
+
+    if (awaitingPong && (millis() - pingSentTime > 1000))
+    {
+      Serial.println("Connection LOST (PONG timeout)!");
+      successfullyConnected = false;
+      awaitingPong = false;
+    }
+
+    if (!awaitingPong && (millis() - checkConnectionTimer > 5000))
+    {
+      byte ping[4] = {'P', 'I', 'N', 'G'};
+      if (communication.sendPacket(ping, 4))
+      {
+        DBG("Master: PING sent.\n");
+        awaitingPong = true;
+        pingSentTime = millis();
+        checkConnectionTimer = millis();
+      }
+      else
+      {
+        successfullyConnected = false;
+      }
     }
   }
 

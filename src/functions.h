@@ -350,6 +350,10 @@ uint8_t recievedDataLen = 0;
 uint8_t outgoingData[32];
 uint8_t outgoingDataLen = 0;
 
+uint32_t pingSentTime;
+uint32_t checkConnectionTimer;
+bool awaitingPong = false; 
+
 /*======================= FUNCTIONS ============================*/
 
 /*======================== COMMON ==============================*/
