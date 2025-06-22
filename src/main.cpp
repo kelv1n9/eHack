@@ -1362,14 +1362,17 @@ void loop()
       communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
+      // outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
 
       if (wasSuccessfullyConnected && !successfullyConnected)
       {
         Serial.println("True");
-        while (!communication.sendPacket(outgoingData, outgoingDataLen))
+        while (!(recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G'))
         {
           Serial.println("?");
+          byte ping[4] = {'P', 'I', 'N', 'G'};
+          communication.sendPacket(ping, 4);
+          communication.receivePacket(recievedData, &recievedDataLen);
         }
       }
       break;
@@ -1893,8 +1896,8 @@ void loop()
 
       if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
-        byte ping[4] = {'P', 'O', 'N', 'G'};
-        communication.sendPacket(ping, 4);
+        byte pong[4] = {'P', 'O', 'N', 'G'};
+        communication.sendPacket(pong, 4);
       }
 
       if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
