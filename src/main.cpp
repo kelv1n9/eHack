@@ -17,6 +17,10 @@ void setup()
   SPI.setMISO(4);
   SPI.begin();
 
+  radio.begin();
+  radio.powerDown();
+  cc1101Init();
+
   oled.init();
   oled.clear();
   resetBrightness();
@@ -30,9 +34,6 @@ void setup()
   analogReadResolution(12);
   batVoltage = readBatteryVoltage();
   EEPROM.begin(512);
-
-  radio.begin();
-  radio.powerDown();
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
   IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);
@@ -58,8 +59,6 @@ void setup()
   loadSettings();
   loadAllScores();
   loadConnectionBegin();
-
-  cc1101Init();
 
   for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++)
   {
@@ -988,9 +987,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1009,9 +1005,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1030,9 +1023,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1051,9 +1041,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1072,9 +1059,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_USB_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1093,9 +1077,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1114,9 +1095,6 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_RC_JAMMER, 0, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
-
-        communication.setRadioCC1101();
-        communication.init();
       }
 
       initRadioAttack();
@@ -1371,7 +1349,6 @@ void loop()
     signalCaptured_IR = false;
     attackIsActive = false;
     signalCaptured_433MHZ = false;
-    ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
 
     // Disable
     ELECHOUSE_cc1101.goSleep();
