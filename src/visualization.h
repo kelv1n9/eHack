@@ -125,6 +125,22 @@ MenuState parentMenu = MAIN_MENU;
 MenuState grandParentMenu = MAIN_MENU;
 uint16_t sineOffset = 0;
 
+bool isGameOrFullScreenActivity()
+{
+  return (currentMenu == DOTS_GAME ||
+          currentMenu == SNAKE_GAME ||
+          currentMenu == FLAPPY_GAME ||
+          currentMenu == HF_ACTIVITY);
+}
+
+bool isHighFrequencyMode()
+{
+  return (currentMenu == HF_ACTIVITY ||
+          currentMenu == HF_SPECTRUM ||
+          currentMenu == HF_BARRIER_SCAN ||
+          currentMenu == HF_SCAN);
+}
+
 /*============================= MAIN APPEARANCE ============================================*/
 
 void drawBattery(float batVoltage, const char *suffix = "")

@@ -1,5 +1,7 @@
 #include "visualization.h"
 
+void handleBatteryTasks();
+
 void setup()
 {
   Serial.begin(115200);
@@ -1866,36 +1868,73 @@ void loop()
     }
   }
 
-  if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
+  // if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
+  // {
+  //   batVoltage = readBatteryVoltage();
+  //   checkCharging(batVoltage);
+  //   batteryTimer = millis();
+  // }
+
+  // if (currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
+  // {
+  //   static uint32_t batteryChangerTimer = millis();
+  //   if (successfullyConnected && millis() - batteryChangerTimer >= 5000)
+  //   {
+  //     batteryChangerTimer = millis();
+  //     showLocalVoltage = !showLocalVoltage;
+  //   }
+
+  //   if (showLocalVoltage)
+  //   {
+  //     drawBattery(batVoltage);
+  //   }
+  //   else
+  //   {
+  //     drawBattery(remoteVoltage, ".");
+  //   }
+  // }
+
+  // if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_BARRIER_SCAN && currentMenu != HF_SCAN)
+  // {
+  //   setMinBrightness();
+  // }
+
+  if (!isGameOrFullScreenActivity())
   {
-    batVoltage = readBatteryVoltage();
-    checkCharging(batVoltage);
-    batteryTimer = millis();
+    handleBatteryTasks();
   }
 
-  if (currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
-  {
-    static uint32_t batteryChangerTimer = millis();
-    if (successfullyConnected && millis() - batteryChangerTimer >= 5000)
-    {
-      batteryChangerTimer = millis();
-      showLocalVoltage = !showLocalVoltage;
-    }
-
-    if (showLocalVoltage)
-    {
-      drawBattery(batVoltage);
-    }
-    else
-    {
-      drawBattery(remoteVoltage, ".");
-    }
-  }
-
-  if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_BARRIER_SCAN && currentMenu != HF_SCAN)
+  if (!isHighFrequencyMode())
   {
     setMinBrightness();
   }
 
   oled.update();
+}
+
+void handleBatteryTasks()
+{
+  static uint32_t batteryCheckTimer = 0;
+  if (millis() - batteryCheckTimer >= BATTERY_CHECK_INTERVAL)
+  {
+    batVoltage = readBatteryVoltage();
+    checkCharging(batVoltage);
+    batteryCheckTimer = millis();
+  }
+
+  static uint32_t batteryDisplayToggleTimer = 0;
+  if (successfullyConnected && millis() - batteryDisplayToggleTimer >= 5000)
+  {
+    batteryDisplayToggleTimer = millis();
+    showLocalVoltage = !showLocalVoltage;
+  }
+
+  if (showLocalVoltage)
+  {
+    drawBattery(batVoltage);
+  }
+  else
+  {
+    drawBattery(remoteVoltage, ".");
+  }
 }
