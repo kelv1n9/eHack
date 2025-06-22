@@ -1868,37 +1868,6 @@ void loop()
     }
   }
 
-  // if (millis() - batteryTimer >= BATTERY_CHECK_INTERVAL && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
-  // {
-  //   batVoltage = readBatteryVoltage();
-  //   checkCharging(batVoltage);
-  //   batteryTimer = millis();
-  // }
-
-  // if (currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_ACTIVITY)
-  // {
-  //   static uint32_t batteryChangerTimer = millis();
-  //   if (successfullyConnected && millis() - batteryChangerTimer >= 5000)
-  //   {
-  //     batteryChangerTimer = millis();
-  //     showLocalVoltage = !showLocalVoltage;
-  //   }
-
-  //   if (showLocalVoltage)
-  //   {
-  //     drawBattery(batVoltage);
-  //   }
-  //   else
-  //   {
-  //     drawBattery(remoteVoltage, ".");
-  //   }
-  // }
-
-  // if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_BARRIER_SCAN && currentMenu != HF_SCAN)
-  // {
-  //   setMinBrightness();
-  // }
-
   if (!isGameOrFullScreenActivity())
   {
     handleBatteryTasks();
