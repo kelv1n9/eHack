@@ -43,13 +43,14 @@ bool initialized = false;
 bool locked = false;
 
 uint8_t mainMenuCount = 7;
-uint8_t hfMenuCount = 6;
+uint8_t hfMenuCount = 5;
 uint8_t irMenuCount = 4;
 uint8_t uhfMenuCount = 9;
 uint8_t RFIDMenuCount = 3;
 uint8_t gamesMenuCount = 3;
 uint8_t barrierMenuCount = 3;
 uint8_t RAsignalMenuCount = 2;
+uint8_t hfCommonMenuCount = 2;
 uint8_t barrierBruteMenuCount = 2;
 
 uint8_t MAINmenuIndex = 0;
@@ -60,6 +61,7 @@ uint8_t RFIDMenuIndex = 0;
 uint8_t gamesMenuIndex = 0;
 uint8_t barrierMenuIndex = 0;
 uint8_t RAsignalMenuIndex = 0;
+uint8_t HFCommonMenuIndex = 0;
 uint8_t barrierBruteMenuIndex = 0;
 
 /* ================= Battery ================== */

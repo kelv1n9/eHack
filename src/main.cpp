@@ -1305,7 +1305,7 @@ void loop()
     }
 
     // Exiting menu
-    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_MENU || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == HF_AIR_MENU || currentMenu == HF_BARRIER_MENU || currentMenu == HF_BARRIER_BRUTE_MENU)
+    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_MENU || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == HF_AIR_MENU || currentMenu == HF_BARRIER_MENU || currentMenu == HF_COMMON_MENU || currentMenu == HF_BARRIER_BRUTE_MENU)
     {
       currentMenu = parentMenu;
       parentMenu = grandParentMenu;
@@ -1543,6 +1543,21 @@ void loop()
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
       currentMenu = static_cast<MenuState>(HF_BARRIER_SCAN + barrierMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case HF_COMMON_MENU:
+  {
+    menuButtons(HFCommonMenuIndex, hfCommonMenuCount);
+    drawMenu(hfCommonMenuItems, hfCommonMenuCount, HFCommonMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(HF_SCAN + HFCommonMenuIndex);
       vibro(255, 50);
     }
     break;

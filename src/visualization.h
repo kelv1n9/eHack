@@ -18,14 +18,15 @@ enum MenuState
 
   HF_AIR_MENU,
   HF_BARRIER_MENU,
-
-  HF_SCAN,
-  HF_REPLAY,
+  HF_COMMON_MENU,
   HF_JAMMER,
   HF_TESLA,
 
   HF_SPECTRUM,
   HF_ACTIVITY,
+
+  HF_SCAN,
+  HF_REPLAY,
 
   HF_BARRIER_SCAN,
   HF_BARRIER_REPLAY,
@@ -65,12 +66,16 @@ const char PROGMEM *mainMenuItems[] = {
 
 const char PROGMEM *hfMenuItems[] = {
     "Air Scan",
-    "Barriers",
-    "Capture",
-    "Replay",
+    "Gates",
+    "Common",
     "Jammer",
     "Tesla",
     "Self Test",
+};
+
+const char PROGMEM *hfCommonMenuItems[] = {
+    "Capture",
+    "Replay",
 };
 
 const char PROGMEM *irMenuItems[] = {
