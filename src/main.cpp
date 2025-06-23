@@ -417,7 +417,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, 0, 1, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, 0, 0, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
@@ -518,7 +518,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, 0, 1, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, 0, 0, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
@@ -635,7 +635,7 @@ void loop1()
 
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
     }
@@ -1002,7 +1002,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_ALL_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1021,7 +1021,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_WIFI_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1040,7 +1040,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BT_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1059,7 +1059,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_BLE_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1078,7 +1078,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_USB_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_USB_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1098,7 +1098,7 @@ void loop1()
       if (successfullyConnected)
       {
         wasSuccessfullyConnected = true;
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1117,7 +1117,7 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_UHF_RC_JAMMER, 0, 1, outgoingData);
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_RC_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
@@ -1275,6 +1275,11 @@ void loop()
     showLock();
   }
 
+  if (isPortableInited)
+  {
+    showPortableInited();
+  }
+
   const static uint8_t icons_7x7[][7] PROGMEM = {
       {0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f},
   };
@@ -1362,7 +1367,6 @@ void loop()
       communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
-      // outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 1, outgoingData);
 
       if (wasSuccessfullyConnected && !successfullyConnected)
       {
@@ -1370,7 +1374,6 @@ void loop()
         while (!(recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G'))
         {
           Serial.println("?");
-          byte ping[4] = {'P', 'I', 'N', 'G'};
           communication.sendPacket(ping, 4);
           communication.receivePacket(recievedData, &recievedDataLen);
         }
@@ -1381,11 +1384,11 @@ void loop()
 
     if (successfullyConnected)
     {
-      // Communication reset
-      communication.setRadioNRF24();
-      communication.setMasterMode();
-      communication.init();
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
       commandSent = false;
+      isPortableInited = false;
+      Serial.println("Reset");
     }
 
     // Menu return
@@ -1894,9 +1897,13 @@ void loop()
         Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
       }
 
+      if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
+      {
+        isPortableInited = true;
+      }
+
       if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
-        byte pong[4] = {'P', 'O', 'N', 'G'};
         communication.sendPacket(pong, 4);
       }
 
@@ -1915,9 +1922,8 @@ void loop()
       awaitingPong = false;
     }
 
-    if (!awaitingPong && (millis() - checkConnectionTimer > 5000))
+    if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
     {
-      byte ping[4] = {'P', 'I', 'N', 'G'};
       if (communication.sendPacket(ping, 4))
       {
         DBG("Master: PING sent.\n");

@@ -339,13 +339,18 @@ uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes 
 bool nfcDataValid = false;
 
 /*======================= COMMUNICATION ============================*/
+#define CONNECTION_DELAY 10000
+
+byte ping[4] = {'P', 'I', 'N', 'G'};
+byte pong[4] = {'P', 'O', 'N', 'G'};
 
 DataTransmission communication(&radio, &ELECHOUSE_cc1101);
 
 bool successfullyConnected = false;
 bool wasSuccessfullyConnected = false;
 bool commandSent = false;
-bool startConnection;
+bool startConnection = false;
+bool isPortableInited = false;
 
 uint8_t recievedData[32];
 uint8_t recievedDataLen = 0;

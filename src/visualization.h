@@ -379,6 +379,12 @@ void showLock()
   oled.print("L");
 }
 
+void showPortableInited()
+{
+  oled.setCursorXY(108, 0);
+  oled.print("I");
+}
+
 void showCharging()
 {
   oled.setCursorXY(98, 0);
