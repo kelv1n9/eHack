@@ -39,8 +39,8 @@ Button up(BTN_UP);
 Button ok(BTN_OK);
 Button down(BTN_DOWN);
 
-bool initialized = false;
-bool locked = false;
+volatile bool initialized = false;
+volatile bool locked = false;
 
 uint8_t mainMenuCount = 7;
 uint8_t hfMenuCount = 5;
@@ -341,13 +341,21 @@ bool nfcDataValid = false;
 /*======================= COMMUNICATION ============================*/
 #define CONNECTION_DELAY 10000
 
+enum ConnectionProcessState
+{
+  CONN_IDLE,
+  CONN_AWAITING_PONG
+};
+
+ConnectionProcessState connState = CONN_IDLE;
+uint32_t pongTimeoutTimer = 0;
+
 byte ping[4] = {'P', 'I', 'N', 'G'};
 byte pong[4] = {'P', 'O', 'N', 'G'};
 
 DataTransmission communication(&radio, &ELECHOUSE_cc1101);
 
 bool successfullyConnected = false;
-bool wasSuccessfullyConnected = false;
 bool commandSent = false;
 bool startConnection = false;
 bool isPortableInited = false;
@@ -360,7 +368,7 @@ uint8_t outgoingDataLen = 0;
 
 uint32_t pingSentTime;
 uint32_t checkConnectionTimer;
-bool awaitingPong = false; 
+bool awaitingPong = false;
 
 /*======================= FUNCTIONS ============================*/
 
@@ -435,7 +443,7 @@ void checkCharging(float newVoltage)
   else
   {
     isCharging = false;
-  } 
+  }
 }
 
 float readBatteryVoltage()

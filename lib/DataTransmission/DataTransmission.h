@@ -135,13 +135,6 @@ public:
    * @note This function checks for incoming packets and reads them into the provided buffer.
    */
   bool receivePacket(uint8_t *data, uint8_t *len);
-  /**
-   * @brief Checks the connection status of the radio module.
-   * @param timeoutMs Timeout in milliseconds for the connection check.
-   * @return True if the connection is established, false otherwise.
-   * @note This function attempts to verify if the radio module is connected and operational within the specified timeout.
-   */
-  bool checkConnection(uint16_t timeoutMs);
 
   /**
    * @brief Gets the current mode of the radio.

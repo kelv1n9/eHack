@@ -4,9 +4,6 @@ void handleBatteryTasks();
 
 void setup()
 {
-  Serial.begin(115200);
-  Serial.printf("Starting %s %s\n", APP_NAME, APP_VERSION);
-
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
@@ -68,6 +65,8 @@ void setup()
   }
 
   vibro(255, 30);
+
+  Serial.begin(9600);
 }
 
 void setup1()
@@ -239,10 +238,6 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -306,10 +301,6 @@ void loop1()
 
       if (successfullyConnected)
       {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-
         outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -396,13 +387,6 @@ void loop1()
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
-
-      if (successfullyConnected)
-      {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-      }
     }
 
     switch (bruteState)
@@ -497,13 +481,6 @@ void loop1()
       mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
-
-      if (successfullyConnected)
-      {
-        communication.setRadioNRF24();
-        communication.setMasterMode();
-        communication.init();
-      }
     }
 
     switch (bruteState)
@@ -1097,7 +1074,6 @@ void loop1()
     {
       if (successfullyConnected)
       {
-        wasSuccessfullyConnected = true;
         outgoingDataLen = communication.buildPacket(COMMAND_UHF_VIDEO_JAMMER, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
@@ -1225,23 +1201,67 @@ void loop1()
   {
     break;
   }
-    /********************************** CONNECTION **************************************/
-
+  /********************************** CONNECTION **************************************/
   case CONNECTION:
   {
     if (!initialized)
     {
-      ok.reset();
-      initialized = true;
       communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
+      initialized = true;
     }
 
-    if (!successfullyConnected && startConnection && communication.checkConnection(5000))
+    if (successfullyConnected)
     {
-      Serial.println("Connection established");
-      successfullyConnected = true;
+      break;
+    }
+
+    if (startConnection)
+    {
+      switch (connState)
+      {
+      case CONN_IDLE:
+      {
+        byte ping[4] = {'P', 'I', 'N', 'G'};
+        Serial.printf("Master: Sending PING...\n");
+        if (communication.sendPacket(ping, 4))
+        {
+          Serial.printf("Master: PING sent. Waiting for PONG...\n");
+          connState = CONN_AWAITING_PONG;
+          pongTimeoutTimer = millis();
+        }
+        else
+        {
+          Serial.printf("Master: PING send failed.\n");
+          startConnection = false;
+        }
+        break;
+      }
+
+      case CONN_AWAITING_PONG:
+      {
+        uint8_t buf[32];
+        uint8_t len = 0;
+        if (communication.receivePacket(buf, &len) && len == 4 &&
+            buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
+        {
+          Serial.printf("Master: PONG received! Connection OK.\n");
+          Serial.println("Connection established");
+          successfullyConnected = true;
+          connState = CONN_IDLE;
+          break;
+        }
+
+        if (millis() - pongTimeoutTimer > 5000)
+        {
+          Serial.printf("Master: PONG response timeout.\n");
+          startConnection = false;
+          connState = CONN_IDLE;
+        }
+        break;
+      }
+      }
     }
     break;
   }
@@ -1305,53 +1325,95 @@ void loop()
 
   if (!locked && ok.hold())
   {
-    if (currentMenu == MAIN_MENU)
-    {
-      return;
-    }
-
-    // Exiting menu
-    if (currentMenu == HF_MENU || currentMenu == UHF_MENU || currentMenu == IR_MENU || currentMenu == RFID_MENU || currentMenu == GAMES || currentMenu == HF_AIR_MENU || currentMenu == HF_BARRIER_MENU || currentMenu == HF_COMMON_MENU || currentMenu == HF_BARRIER_BRUTE_MENU)
-    {
-      currentMenu = parentMenu;
-      parentMenu = grandParentMenu;
-      grandParentMenu = MAIN_MENU;
-      vibro(255, 50);
-      return;
-    }
-
-    if (currentMenu == SETTINGS)
-    {
-      currentMenu = parentMenu;
-      parentMenu = grandParentMenu;
-      grandParentMenu = MAIN_MENU;
-      saveSettings();
-      vibro(255, 50);
-      return;
-    }
-
-    if (currentMenu == CONNECTION)
-    {
-      currentMenu = parentMenu;
-      parentMenu = grandParentMenu;
-      grandParentMenu = MAIN_MENU;
-      initialized = false;
-      saveConnectionBegin();
-      vibro(255, 50);
-      return;
-    }
-
-    if (currentMenu == RFID_SCAN)
-    {
-      ShowReboot();
-      vibro(255, 50);
-      while (1)
-      {
-      }
-    }
+    bool isSimpleMenuExit = false;
 
     switch (currentMenu)
     {
+    case MAIN_MENU:
+    {
+      return;
+    }
+    case SETTINGS:
+    {
+      saveSettings();
+      isSimpleMenuExit = true;
+      break;
+    }
+    case CONNECTION:
+    {
+      saveConnectionBegin();
+      initialized = false;
+      isSimpleMenuExit = true;
+      break;
+    }
+    case UHF_MENU:
+    case IR_MENU:
+    case RFID_MENU:
+    case GAMES:
+    case HF_MENU:
+    case HF_AIR_MENU:
+    case HF_BARRIER_MENU:
+    case HF_COMMON_MENU:
+    case HF_BARRIER_BRUTE_MENU:
+    {
+      isSimpleMenuExit = true;
+      break;
+    }
+    case IR_SCAN:
+    {
+      signalCaptured_IR = false;
+    }
+    case IR_REPLAY:
+    case IR_BRUTE_TV:
+    case IR_BRUTE_PROJECTOR:
+    {
+      bruteState = BRUTE_IDLE;
+      IrReceiver.disableIRIn();
+      isSimpleMenuExit = true;
+      break;
+    }
+    case HF_JAMMER:
+    case HF_TESLA:
+    {
+      digitalWrite(GD0_PIN_CC, LOW);
+    }
+    case HF_SPECTRUM:
+    case HF_ACTIVITY:
+    {
+      ELECHOUSE_cc1101.goSleep();
+      isSimpleMenuExit = true;
+      break;
+    }
+    case HF_REPLAY:
+    {
+      attackIsActive = false;
+    }
+    case HF_SCAN:
+    {
+      mySwitch.disableReceive();
+      mySwitch.disableTransmit();
+    }
+    case HF_BARRIER_SCAN:
+    {
+      signalCaptured_433MHZ = false;
+      ELECHOUSE_cc1101.goSleep();
+      detachInterrupt(GD0_PIN_CC);
+      isSimpleMenuExit = true;
+      break;
+    }
+    case HF_BARRIER_REPLAY:
+    {
+      attackIsActive = false;
+    }
+    case HF_BARRIER_BRUTE_CAME:
+    case HF_BARRIER_BRUTE_NICE:
+    {
+      bruteState = BRUTE_IDLE;
+      ELECHOUSE_cc1101.goSleep();
+      digitalWrite(GD0_PIN_CC, LOW);
+      isSimpleMenuExit = true;
+      break;
+    }
     case UHF_SPECTRUM:
     case UHF_ALL_JAMMER:
     case UHF_WIFI_JAMMER:
@@ -1360,65 +1422,54 @@ void loop()
     case UHF_USB_JAMMER:
     case UHF_VIDEO_JAMMER:
     case UHF_RC_JAMMER:
+    {
+      stopRadioAttack();
+      isSimpleMenuExit = true;
+      break;
+    }
     case UHF_BLE_SPAM:
     {
-      Serial.println("1");
-      stopRadioAttack();
+      digitalWrite(BLE_PIN, LOW);
+      isSimpleMenuExit = true;
+      break;
+    }
+    case RFID_EMULATE:
+    case RFID_WRITE:
+    case RFID_SCAN:
+    {
+      attackIsActive = false;
+      nfc.setRFField(0, 0);
+      nfc.powerDownMode();
+      rdm6300.end();
+      digitalWrite(RFID_COIL_PIN, LOW);
+      ShowReboot();
+      vibro(255, 50);
+      while (1)
+      {
+      }
+    }
+    }
+
+    if (startConnection)
+    {
       communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
-
-      if (wasSuccessfullyConnected && !successfullyConnected)
-      {
-        Serial.println("True");
-        while (!(recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G'))
-        {
-          Serial.println("?");
-          communication.sendPacket(ping, 4);
-          communication.receivePacket(recievedData, &recievedDataLen);
-        }
-      }
-      break;
-    }
-    }
-
-    if (successfullyConnected)
-    {
       outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
       commandSent = false;
       isPortableInited = false;
-      Serial.println("Reset");
     }
 
-    // Menu return
-    currentMenu = parentMenu;
-    parentMenu = grandParentMenu;
-    grandParentMenu = MAIN_MENU;
-
-    // States
-    bruteState = BRUTE_IDLE;
-    initialized = false;
-    signalCaptured_IR = false;
-    attackIsActive = false;
-    signalCaptured_433MHZ = false;
-    wasSuccessfullyConnected = false;
-
-    // Disable
-    ELECHOUSE_cc1101.goSleep();
-    mySwitch.disableReceive();
-    mySwitch.disableTransmit();
-    IrReceiver.disableIRIn();
-    rdm6300.end();
-    nfc.setRFField(0, 0);
-    nfc.powerDownMode();
-    detachInterrupt(GD0_PIN_CC);
-    digitalWrite(GD0_PIN_CC, LOW);
-    digitalWrite(RFID_COIL_PIN, LOW);
-    digitalWrite(BLE_PIN, LOW);
-
-    vibro(255, 50);
-    return;
+    if (isSimpleMenuExit)
+    {
+      currentMenu = parentMenu;
+      parentMenu = grandParentMenu;
+      grandParentMenu = MAIN_MENU;
+      initialized = false;
+      vibro(255, 50);
+      return;
+    }
   }
 
   switch (currentMenu)
@@ -1880,6 +1931,7 @@ void loop()
     {
       successfullyConnected = false;
       showLocalVoltage = true;
+      isPortableInited = false;
     }
 
     showConnectionStatus();
@@ -1909,7 +1961,7 @@ void loop()
 
       if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
-        DBG("Master: PONG received! Connection OK.\n");
+        Serial.printf("Master: PONG received! Connection OK.\n");
         awaitingPong = false;
         successfullyConnected = true;
       }
@@ -1919,6 +1971,7 @@ void loop()
     {
       Serial.println("Connection LOST (PONG timeout)!");
       successfullyConnected = false;
+      isPortableInited = false;
       awaitingPong = false;
     }
 
@@ -1926,7 +1979,7 @@ void loop()
     {
       if (communication.sendPacket(ping, 4))
       {
-        DBG("Master: PING sent.\n");
+        Serial.printf("Master: PING sent.\n");
         awaitingPong = true;
         pingSentTime = millis();
         checkConnectionTimer = millis();
@@ -1934,6 +1987,7 @@ void loop()
       else
       {
         successfullyConnected = false;
+        isPortableInited = false;
       }
     }
   }
@@ -1975,5 +2029,12 @@ void handleBatteryTasks()
   else
   {
     drawBattery(remoteVoltage, ".");
+  }
+
+  static uint32_t timer_;
+  if (millis() - timer_ > 1000)
+  {
+    Serial.println(initialized);
+    timer_ = millis();
   }
 }
