@@ -62,7 +62,7 @@ void DataTransmission::init()
         radioNRF24->setDataRate(RF24_2MBPS);
         radioNRF24->setCRCLength(RF24_CRC_16);
         radioNRF24->setChannel(125);
-        radioNRF24->setPALevel(RF24_PA_MAX);
+        radioNRF24->setPALevel(RF24_PA_MAX, true);
         if (currentMode == Master)
         {
             radioNRF24->openWritingPipe(pipe_master_to_slave);

@@ -1231,11 +1231,6 @@ void loop1()
           connState = CONN_AWAITING_PONG;
           pongTimeoutTimer = millis();
         }
-        else
-        {
-          Serial.printf("Master: PING send failed.\n");
-          startConnection = false;
-        }
         break;
       }
 
@@ -1256,7 +1251,7 @@ void loop1()
         if (millis() - pongTimeoutTimer > 5000)
         {
           Serial.printf("Master: PONG response timeout.\n");
-          startConnection = false;
+          successfullyConnected = false;
           connState = CONN_IDLE;
         }
         break;
@@ -1424,6 +1419,13 @@ void loop()
     case UHF_RC_JAMMER:
     {
       stopRadioAttack();
+      communication.setRadioNRF24();
+      communication.setMasterMode();
+      communication.init();
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+      commandSent = false;
+      isPortableInited = false;
       isSimpleMenuExit = true;
       break;
     }
@@ -1448,17 +1450,6 @@ void loop()
       {
       }
     }
-    }
-
-    if (startConnection)
-    {
-      communication.setRadioNRF24();
-      communication.setMasterMode();
-      communication.init();
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
-      commandSent = false;
-      isPortableInited = false;
     }
 
     if (isSimpleMenuExit)
@@ -1953,13 +1944,11 @@ void loop()
       {
         isPortableInited = true;
       }
-
-      if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
+      else if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
         communication.sendPacket(pong, 4);
       }
-
-      if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
+      else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
         Serial.printf("Master: PONG received! Connection OK.\n");
         awaitingPong = false;
@@ -2029,12 +2018,5 @@ void handleBatteryTasks()
   else
   {
     drawBattery(remoteVoltage, ".");
-  }
-
-  static uint32_t timer_;
-  if (millis() - timer_ > 1000)
-  {
-    Serial.println(initialized);
-    timer_ = millis();
   }
 }
