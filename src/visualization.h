@@ -147,6 +147,17 @@ bool isHighFrequencyMode()
 }
 
 /*============================= MAIN APPEARANCE ============================================*/
+const static uint8_t radioConnectedIcon[7] PROGMEM = {
+    0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f};
+
+void drawRadioConnected()
+{
+  oled.setCursorXY(115, 0);
+  for (uint8_t i = 0; i < 7; i++)
+  {
+    oled.drawByte(pgm_read_byte(&(radioConnectedIcon[i])));
+  }
+}
 
 void drawBattery(float batVoltage, const char *suffix = "")
 {

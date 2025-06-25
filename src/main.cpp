@@ -89,7 +89,7 @@ void loop1()
       cc1101ReadyMode();
       mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       mySwitch.resetAvailable();
       initialized = true;
 
@@ -232,7 +232,7 @@ void loop1()
       cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureCode_ISR, CHANGE);
       initialized = true;
 
@@ -697,7 +697,7 @@ void loop1()
       cc1101ReadyMode();
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-      ELECHOUSE_cc1101.SetRx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       initialized = true;
     }
 
@@ -1295,19 +1295,6 @@ void loop()
     showPortableInited();
   }
 
-  const static uint8_t icons_7x7[][7] PROGMEM = {
-      {0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f},
-  };
-
-  if (successfullyConnected)
-  {
-    oled.setCursorXY(115, 0);
-    for (uint8_t i = 0; i < 7; i++)
-    {
-      oled.drawByte(pgm_read_byte(&(icons_7x7[0][i])));
-    }
-  }
-
   if (isCharging)
   {
     showCharging();
@@ -1321,13 +1308,19 @@ void loop()
   if (!locked && ok.hold())
   {
     bool isSimpleMenuExit = false;
+    MenuState lastMenu = currentMenu;
 
-    switch (currentMenu)
-    {
-    case MAIN_MENU:
+    if (currentMenu == MAIN_MENU)
     {
       return;
     }
+
+    currentMenu = parentMenu;
+    parentMenu = grandParentMenu;
+    grandParentMenu = MAIN_MENU;
+
+    switch (lastMenu)
+    {
     case SETTINGS:
     {
       saveSettings();
@@ -1351,7 +1344,7 @@ void loop()
     case HF_COMMON_MENU:
     case HF_BARRIER_BRUTE_MENU:
     {
-      isSimpleMenuExit = true;
+      vibro(255, 50);
       break;
     }
     case IR_SCAN:
@@ -1382,6 +1375,7 @@ void loop()
     case HF_REPLAY:
     {
       attackIsActive = false;
+      commandSent = false;
     }
     case HF_SCAN:
     {
@@ -1399,6 +1393,7 @@ void loop()
     case HF_BARRIER_REPLAY:
     {
       attackIsActive = false;
+      commandSent = false;
     }
     case HF_BARRIER_BRUTE_CAME:
     case HF_BARRIER_BRUTE_NICE:
@@ -1422,10 +1417,6 @@ void loop()
       communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
-      commandSent = false;
-      isPortableInited = false;
       isSimpleMenuExit = true;
       break;
     }
@@ -1454,10 +1445,10 @@ void loop()
 
     if (isSimpleMenuExit)
     {
-      currentMenu = parentMenu;
-      parentMenu = grandParentMenu;
-      grandParentMenu = MAIN_MENU;
       initialized = false;
+      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+      isPortableInited = false;
       vibro(255, 50);
       return;
     }
@@ -1979,6 +1970,8 @@ void loop()
         isPortableInited = false;
       }
     }
+
+    drawRadioConnected();
   }
 
   if (!isGameOrFullScreenActivity())
