@@ -535,7 +535,6 @@ void cc1101Init()
 
 void cc1101ReadyMode()
 {
-  // ELECHOUSE_cc1101.Init();
   ELECHOUSE_cc1101.setCCMode(0);
   ELECHOUSE_cc1101.setSyncMode(0);
   ELECHOUSE_cc1101.setCrc(0);

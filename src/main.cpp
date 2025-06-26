@@ -16,9 +16,9 @@ void setup()
   SPI.setMISO(4);
   SPI.begin();
 
+  cc1101Init();
   radio.begin();
   radio.powerDown();
-  cc1101Init();
 
   oled.init();
   oled.clear();
@@ -87,7 +87,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       cc1101ReadyMode();
-      mySwitch.disableTransmit();
       mySwitch.enableReceive(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       mySwitch.resetAvailable();
@@ -162,7 +161,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
       mySwitch.enableTransmit(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
@@ -230,8 +228,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureCode_ISR, CHANGE);
       initialized = true;
@@ -294,8 +290,6 @@ void loop1()
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
 
@@ -383,8 +377,6 @@ void loop1()
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
     }
@@ -477,8 +469,6 @@ void loop1()
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
     }
@@ -567,8 +557,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
 
@@ -604,8 +592,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
       initialized = true;
       // vibro(255, 50);
@@ -642,8 +628,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       initialized = true;
 
       currentScanFreq = 0;
@@ -695,8 +679,6 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       cc1101ReadyMode();
-      mySwitch.disableReceive();
-      mySwitch.disableTransmit();
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       initialized = true;
     }
@@ -1446,8 +1428,11 @@ void loop()
     if (isSimpleMenuExit)
     {
       initialized = false;
-      outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
-      communication.sendPacket(outgoingData, outgoingDataLen);
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
       isPortableInited = false;
       vibro(255, 50);
       return;
