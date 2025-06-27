@@ -17,7 +17,6 @@ enum MenuState
   FLAPPY_GAME,
 
   HF_AIR_MENU,
-  HF_BARRIER_MENU,
   HF_COMMON_MENU,
   HF_JAMMER,
   HF_TESLA,
@@ -27,12 +26,6 @@ enum MenuState
 
   HF_SCAN,
   HF_REPLAY,
-
-  HF_BARRIER_SCAN,
-  HF_BARRIER_REPLAY,
-  HF_BARRIER_BRUTE_MENU,
-  HF_BARRIER_BRUTE_CAME,
-  HF_BARRIER_BRUTE_NICE,
 
   IR_SCAN,
   IR_REPLAY,
@@ -66,11 +59,9 @@ const char PROGMEM *mainMenuItems[] = {
 
 const char PROGMEM *hfMenuItems[] = {
     "Air Scan",
-    "Gates",
     "Common",
     "Jammer",
     "Tesla",
-    "Self Test",
 };
 
 const char PROGMEM *hfCommonMenuItems[] = {
@@ -109,17 +100,6 @@ const char PROGMEM *gamesMenuItems[] = {
     "Flappy",
 };
 
-const char PROGMEM *barrierMenuItems[] = {
-    "Capture",
-    "Replay",
-    "Brute",
-};
-
-const char PROGMEM *barrierBruteMenuItems[] = {
-    "CAME",
-    "NICE",
-};
-
 const char PROGMEM *RAsignalMenuItems[] = {
     "Spectrum",
     "Activity",
@@ -142,7 +122,6 @@ bool isHighFrequencyMode()
 {
   return (currentMenu == HF_ACTIVITY ||
           currentMenu == HF_SPECTRUM ||
-          currentMenu == HF_BARRIER_SCAN ||
           currentMenu == HF_SCAN);
 }
 
@@ -571,69 +550,6 @@ void ShowAttack_HF()
   }
 
   sineOffset += 2;
-}
-
-void ShowCapturedBarrier_HF()
-{
-  char Text[25];
-  sprintf(Text, "RF Signal: %d dBm", currentRssi);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Code: %d", barrierCodeMain);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text4[20];
-  sprintf(Text4, "Protocol: %s", rf_protocols[barrierProtocol]);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 35);
-  oled.print(Text4);
-
-  char Text5[20];
-  sprintf(Text5, "Length: %d Bit", barrierBit);
-  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 45);
-  oled.print(Text5);
-}
-
-void ShowSavedSignalBarrier_HF()
-{
-  barrierBit = (barrierCodeMain >> 12) ? 24 : 12;
-
-  char Text[25];
-  sprintf(Text, "Saved RF, slot: %d", selectedSlotBarrier);
-  oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
-  oled.print(Text);
-
-  char Text2[20];
-  sprintf(Text2, "Code: %d", barrierCodeMain);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
-  oled.print(Text2);
-
-  char Text4[20];
-  sprintf(Text4, "Protocol: %s", rf_protocols[barrierProtocol]);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 35);
-  oled.print(Text4);
-
-  char Text5[20];
-  sprintf(Text5, "Length: %d Bit", barrierBit);
-  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 45);
-  oled.print(Text5);
-}
-
-void ShowBarrierBrute_HF(uint8_t protocol)
-{
-  char Text1[20];
-  sprintf(Text1, "Protocol: %s", rf_protocols[protocol]);
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 25);
-  oled.print(Text1);
-
-  char Text2[20];
-  sprintf(Text2, "Command: %d", barrierBruteIndex);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
-  oled.print(Text2);
 }
 
 void DrawRSSIPlot_HF()

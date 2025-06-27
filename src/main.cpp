@@ -53,7 +53,6 @@ void setup()
   findLastUsedSlotRA();
   findLastUsedSlotIR();
   findLastUsedSlotRFID();
-  findLastUsedSlotBarrier();
 
   loadSettings();
   loadAllScores();
@@ -219,331 +218,6 @@ void loop1()
       }
     }
 
-    break;
-  }
-  /******************************* BARRIER SCAN **********************************/
-  case HF_BARRIER_SCAN:
-  {
-    if (!initialized)
-    {
-      pinMode(GD0_PIN_CC, INPUT);
-      cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureCode_ISR, CHANGE);
-      initialized = true;
-
-      if (successfullyConnected)
-      {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
-      }
-    }
-
-    if (checkFreqButtons())
-    {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      if (successfullyConnected)
-      {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
-      }
-    }
-
-    if (newSignalReady)
-    {
-      signalCaptured_433MHZ = true;
-      currentRssi = ELECHOUSE_cc1101.getRssi();
-
-      SimpleBarrierData data;
-      data.codeMain = barrierCodeMain;
-      // data.codeAdd = barrierCodeAdd;
-      data.protocol = barrierProtocol;
-
-      vibro(255, 200, 3, 80);
-
-      // Check for duplicates
-      if (isDuplicateBarrier(data))
-      {
-        newSignalReady = false;
-        break;
-      }
-
-      if (settings.saveRA)
-      {
-        writeBarrierData(lastUsedSlotBarrier, data);
-      }
-
-      lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
-
-      newSignalReady = false;
-    }
-
-    break;
-  }
-  /********************************** BARRIER REPLAY **************************************/
-  case HF_BARRIER_REPLAY:
-  {
-    static uint32_t attackTimer = 0;
-
-    if (!initialized)
-    {
-      ok.reset();
-      pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
-      initialized = true;
-
-      if (successfullyConnected)
-      {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
-      }
-    }
-
-    if (!locked && !attackIsActive && (up.click() || up.step()))
-    {
-      if (selectedSlotBarrier == 0)
-        selectedSlotBarrier = MAX_BARRIER_SIGNALS - 1;
-      else
-        selectedSlotBarrier--;
-      vibro(255, 20);
-    }
-
-    if (!locked && !attackIsActive && (down.click() || down.step()))
-    {
-      selectedSlotBarrier = (selectedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
-      vibro(255, 20);
-    }
-
-    SimpleBarrierData data = readBarrierData(selectedSlotBarrier);
-    barrierCodeMain = data.codeMain;
-    // barrierCodeAdd = data.codeAdd;
-    barrierProtocol = data.protocol;
-
-    if (attackIsActive)
-    {
-      if (checkFreqButtons())
-      {
-        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-        if (successfullyConnected)
-        {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
-          communication.sendPacket(outgoingData, outgoingDataLen);
-        }
-      }
-      if (now - attackTimer >= 1000 && !successfullyConnected)
-      {
-        if (barrierProtocol == 0)
-        {
-          // sendANMotors(barrierCodeMain, barrierCodeAdd);
-        }
-        else if (barrierProtocol == 1)
-        {
-          sendNice(barrierCodeMain);
-        }
-        else if (barrierProtocol == 2)
-        {
-          sendCame(barrierCodeMain);
-        }
-        attackTimer = now;
-      }
-      else if (successfullyConnected && !commandSent)
-      {
-        if (barrierProtocol == 0)
-        {
-          // sendANMotors(barrierCodeMain, barrierCodeAdd);
-        }
-        else if (barrierProtocol == 1)
-        {
-          sendNice(barrierCodeMain);
-        }
-        else if (barrierProtocol == 2)
-        {
-          sendCame(barrierCodeMain);
-        }
-        commandSent = true;
-      }
-    }
-
-    break;
-  }
-  /********************************** BRUTE CAME **************************************/
-  case HF_BARRIER_BRUTE_CAME:
-  {
-    static uint32_t lastSendTime = 0;
-
-    if (!initialized)
-    {
-      ok.reset();
-      pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
-      initialized = true;
-    }
-
-    switch (bruteState)
-    {
-    case BRUTE_IDLE:
-    {
-      if (!locked && ok.click())
-      {
-        bruteState = BRUTE_RUNNING;
-        barrierBruteIndex = 4095;
-        lastSendTime = now;
-
-        if (successfullyConnected)
-        {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, 0, 0, outgoingData);
-          communication.sendPacket(outgoingData, outgoingDataLen);
-        }
-
-        vibro(255, 50);
-      }
-      break;
-    }
-
-    case BRUTE_RUNNING:
-    {
-      if (!locked && ok.click())
-      {
-        bruteState = BRUTE_PAUSED;
-        vibro(255, 50);
-        break;
-      }
-
-      if (now - lastSendTime > 50)
-      {
-        lastSendTime = now;
-
-        if (barrierBruteIndex >= 0)
-        {
-          if (!successfullyConnected)
-            sendCame(barrierBruteIndex);
-          barrierBruteIndex--;
-        }
-        if (barrierBruteIndex < 0)
-        {
-          bruteState = BRUTE_IDLE;
-          vibro(255, 50);
-        }
-      }
-      break;
-    }
-    case BRUTE_PAUSED:
-    {
-      if (!locked && (up.click() || up.step()))
-      {
-        if (barrierBruteIndex == 4095)
-          barrierBruteIndex = 0;
-        else
-          barrierBruteIndex++;
-        vibro(255, 20);
-      }
-
-      if (!locked && (down.click() || down.step()))
-      {
-        if (barrierBruteIndex == 0)
-          barrierBruteIndex = 4095;
-        else
-          barrierBruteIndex--;
-        vibro(255, 20);
-      }
-
-      if (!locked && ok.click())
-      {
-        sendCame(barrierBruteIndex);
-        vibro(255, 50);
-      }
-      break;
-    }
-    }
-    break;
-  }
-  /********************************** BRUTE NICE **************************************/
-  case HF_BARRIER_BRUTE_NICE:
-  {
-    static uint32_t lastSendTime = 0;
-
-    if (!initialized)
-    {
-      ok.reset();
-      pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
-      initialized = true;
-    }
-
-    switch (bruteState)
-    {
-    case BRUTE_IDLE:
-    {
-      if (!locked && ok.click())
-      {
-        bruteState = BRUTE_RUNNING;
-        barrierBruteIndex = 4095;
-        lastSendTime = now;
-
-        if (successfullyConnected)
-        {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, 0, 0, outgoingData);
-          communication.sendPacket(outgoingData, outgoingDataLen);
-        }
-
-        vibro(255, 50);
-      }
-      break;
-    }
-
-    case BRUTE_RUNNING:
-    {
-      if (!locked && ok.click())
-      {
-        bruteState = BRUTE_PAUSED;
-        vibro(255, 50);
-        break;
-      }
-
-      if (barrierBruteIndex >= 0)
-      {
-        if (!successfullyConnected)
-          sendNice(barrierBruteIndex);
-        barrierBruteIndex--;
-      }
-      if (barrierBruteIndex < 0)
-      {
-        bruteState = BRUTE_IDLE;
-        vibro(255, 50);
-      }
-      break;
-    }
-    case BRUTE_PAUSED:
-    {
-      if (!locked && (up.click() || up.step()))
-      {
-        if (barrierBruteIndex == 4095)
-          barrierBruteIndex = 0;
-        else
-          barrierBruteIndex++;
-        vibro(255, 20);
-      }
-
-      if (!locked && (down.click() || down.step()))
-      {
-        if (barrierBruteIndex == 0)
-          barrierBruteIndex = 4095;
-        else
-          barrierBruteIndex--;
-        vibro(255, 20);
-      }
-
-      if (!locked && ok.click())
-      {
-        sendNice(barrierBruteIndex);
-        vibro(255, 50);
-      }
-      break;
-    }
-    }
     break;
   }
   /********************************** NOISE **************************************/
@@ -1270,7 +944,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != IR_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != RFID_EMULATE)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
@@ -1339,9 +1013,7 @@ void loop()
     case GAMES:
     case HF_MENU:
     case HF_AIR_MENU:
-    case HF_BARRIER_MENU:
     case HF_COMMON_MENU:
-    case HF_BARRIER_BRUTE_MENU:
     {
       vibro(255, 50);
       break;
@@ -1380,26 +1052,8 @@ void loop()
     {
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
-    }
-    case HF_BARRIER_SCAN:
-    {
       signalCaptured_433MHZ = false;
       ELECHOUSE_cc1101.goSleep();
-      detachInterrupt(GD0_PIN_CC);
-      isSimpleMenuExit = true;
-      break;
-    }
-    case HF_BARRIER_REPLAY:
-    {
-      attackIsActive = false;
-      commandSent = false;
-    }
-    case HF_BARRIER_BRUTE_CAME:
-    case HF_BARRIER_BRUTE_NICE:
-    {
-      bruteState = BRUTE_IDLE;
-      ELECHOUSE_cc1101.goSleep();
-      digitalWrite(GD0_PIN_CC, LOW);
       isSimpleMenuExit = true;
       break;
     }
@@ -1597,21 +1251,6 @@ void loop()
     drawSettingsMenu(settingsMenuIndex);
     break;
   }
-  case HF_BARRIER_MENU:
-  {
-    menuButtons(barrierMenuIndex, barrierMenuCount);
-    drawMenu(barrierMenuItems, barrierMenuCount, barrierMenuIndex);
-
-    if (!locked && ok.click())
-    {
-      ok.reset();
-      grandParentMenu = parentMenu;
-      parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(HF_BARRIER_SCAN + barrierMenuIndex);
-      vibro(255, 50);
-    }
-    break;
-  }
   case HF_COMMON_MENU:
   {
     menuButtons(HFCommonMenuIndex, hfCommonMenuCount);
@@ -1623,20 +1262,6 @@ void loop()
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
       currentMenu = static_cast<MenuState>(HF_SCAN + HFCommonMenuIndex);
-      vibro(255, 50);
-    }
-    break;
-  }
-  case HF_BARRIER_BRUTE_MENU:
-  {
-    menuButtons(barrierBruteMenuIndex, barrierBruteMenuCount);
-    drawMenu(barrierBruteMenuItems, barrierBruteMenuCount, barrierBruteMenuIndex);
-
-    if (!locked && ok.click())
-    {
-      grandParentMenu = parentMenu;
-      parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(HF_BARRIER_BRUTE_CAME + barrierBruteMenuIndex);
       vibro(255, 50);
     }
     break;
@@ -1711,50 +1336,6 @@ void loop()
       resetSpectrum_HF();
     }
     DrawRSSISpectrum_HF();
-    break;
-  }
-  case HF_BARRIER_SCAN:
-  {
-    if (!signalCaptured_433MHZ)
-      ShowScanning_HF();
-    else
-    {
-      ShowCapturedBarrier_HF();
-    }
-    break;
-  }
-  case HF_BARRIER_REPLAY:
-  {
-    if (ok.click() && barrierCodeMain != 0)
-    {
-      attackIsActive = !attackIsActive;
-      vibro(255, 50);
-    }
-
-    if (up.hold() && down.hold())
-    {
-      clearBarrierData(selectedSlotBarrier);
-      vibro(255, 50);
-    }
-
-    if (attackIsActive)
-    {
-      ShowAttack_HF();
-    }
-    else
-    {
-      ShowSavedSignalBarrier_HF();
-    }
-    break;
-  }
-  case HF_BARRIER_BRUTE_CAME:
-  {
-    ShowBarrierBrute_HF(2);
-    break;
-  }
-  case HF_BARRIER_BRUTE_NICE:
-  {
-    ShowBarrierBrute_HF(1);
     break;
   }
   case IR_SCAN:
