@@ -147,14 +147,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
     }
     else if (currentRadio == RADIO_NRF24 && radioNRF24->available())
     {
-        // uint8_t size = radioNRF24->getDynamicPayloadSize();
         uint8_t size = radioNRF24->getPayloadSize();
-
-        // if (size <= 1 || size > 10)
-        // {
-        //     radioNRF24->flush_rx();
-        //     return false;
-        // }
 
         *len = size;
         radioNRF24->read(data, *len);
