@@ -321,7 +321,7 @@ uint32_t pongTimeoutTimer = 0;
 byte ping[32] = {'P', 'I', 'N', 'G'};
 byte pong[32] = {'P', 'O', 'N', 'G'};
 
-DataTransmission communication(&radio, &ELECHOUSE_cc1101);
+DataTransmission communication(&radio);
 
 bool successfullyConnected = false;
 bool commandSent = false;

@@ -40,14 +40,6 @@
 
 #define COMMAND_BATTERY_VOLTAGE 0xFF
 
-extern const byte GD0_PIN_CC;
-
-enum RadioType
-{
-  RADIO_CC1101,
-  RADIO_NRF24
-};
-
 enum RadioMode
 {
   Master,
@@ -57,10 +49,8 @@ enum RadioMode
 class DataTransmission
 {
 private:
-  RadioType currentRadio;
   RadioMode currentMode;
   RF24 *radioNRF24;
-  ELECHOUSE_CC1101 *radioCC1101;
 
 public:
   /**
@@ -76,29 +66,15 @@ public:
   @param radioPtrCC Pointer to ELECHOUSE_CC1101 radio object.
   @note This constructor initializes the DataTransmission object with pointers to the RF24 and ELECHOUSE_CC1101 radio objects.
   */
-  DataTransmission(RF24 *radioPtrNRF, ELECHOUSE_CC1101 *radioPtrCC);
+  DataTransmission(RF24 *radioPtrNRF);
 
-  /**
-   * @brief Initializes the CC1101 radio module for communication.
-   * @param None
-   * @return None
-   * @note This function is called internally to ensure the radio is properly configured before sending or receiving packets.
-   *
-   */
-  void setRadioCC1101();
-
-  /**
-   * @brief Initializes the NRF24 radio module for communication.
-   * @param None
-   * @return None
-   */
-  void setRadioNRF24();
   /**
    * @brief Sets the radio module to slave mode.
    * @param None
    * @return None
    */
   void setSlaveMode();
+
   /**
    * @brief Sets the radio module to master mode.
    * @param None
@@ -115,6 +91,7 @@ public:
    * @return The length of the built packet.
    */
   uint8_t buildPacket(uint8_t mode, const uint8_t *payload, uint8_t payloadLen, uint8_t *packetOut);
+
   /**
    * @brief Sends a packet of data.
    * @param data Pointer to the data to be sent.
@@ -123,6 +100,7 @@ public:
    * @note This function initializes the radio and sends the provided data packet.
    */
   bool sendPacket(uint8_t *data, uint8_t len);
+
   /**
    * @brief Receives a packet of data.
    * @param data Pointer to the buffer where received data will be stored.

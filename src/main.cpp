@@ -879,7 +879,6 @@ void loop1()
   {
     if (!initialized)
     {
-      communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
       initialized = true;
@@ -1067,7 +1066,6 @@ void loop()
     case UHF_RC_JAMMER:
     {
       stopRadioAttack();
-      communication.setRadioNRF24();
       communication.setMasterMode();
       communication.init();
       isSimpleMenuExit = true;
