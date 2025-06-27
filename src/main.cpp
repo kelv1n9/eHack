@@ -66,6 +66,13 @@ void setup()
   vibro(255, 30);
 
   Serial.begin(9600);
+
+  if (startConnection)
+  {
+    communication.setMasterMode();
+    communication.init();
+    communicationInitialized = true;
+  }
 }
 
 void setup1()
@@ -879,56 +886,30 @@ void loop1()
   {
     if (!initialized)
     {
-      communication.setMasterMode();
-      communication.init();
+      ok.reset();
+      if (!communicationInitialized)
+      {
+        communication.setMasterMode();
+        communication.init();
+        communicationInitialized = true;
+      }
       initialized = true;
     }
-
-    if (successfullyConnected)
+    if (!locked && ok.click())
     {
-      break;
-    }
+      startConnection = !startConnection;
 
-    if (startConnection)
-    {
-      switch (connState)
+      if (!startConnection)
       {
-      case CONN_IDLE:
-      {
-        // byte ping[4] = {'P', 'I', 'N', 'G'};
-        Serial.printf("Master: Sending PING...\n");
-        if (communication.sendPacket(ping, 32))
-        {
-          Serial.printf("Master: PING sent. Waiting for PONG...\n");
-          connState = CONN_AWAITING_PONG;
-          pongTimeoutTimer = millis();
-        }
-        break;
+        successfullyConnected = false;
+        showLocalVoltage = true;
+        isPortableInited = false;
+        awaitingPong = false;
+        connState = CONN_IDLE;
+        Serial.println("Connection attempts STOPPED by user.");
       }
 
-      case CONN_AWAITING_PONG:
-      {
-        uint8_t buf[32];
-        uint8_t len = 0;
-        if (communication.receivePacket(buf, &len) &&
-            buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
-        {
-          Serial.printf("Master: PONG received! Connection OK.\n");
-          Serial.println("Connection established");
-          successfullyConnected = true;
-          connState = CONN_IDLE;
-          break;
-        }
-
-        if (millis() - pongTimeoutTimer > 5000)
-        {
-          Serial.printf("Master: PONG response timeout.\n");
-          successfullyConnected = false;
-          connState = CONN_IDLE;
-        }
-        break;
-      }
-      }
+      vibro(255, 30);
     }
     break;
   }
@@ -1068,6 +1049,7 @@ void loop()
       stopRadioAttack();
       communication.setMasterMode();
       communication.init();
+      communicationInitialized = true;
       isSimpleMenuExit = true;
       break;
     }
@@ -1486,17 +1468,6 @@ void loop()
   }
   case CONNECTION:
   {
-    if (!locked && ok.click())
-    {
-      startConnection = !startConnection;
-    }
-    if (!startConnection)
-    {
-      successfullyConnected = false;
-      showLocalVoltage = true;
-      isPortableInited = false;
-    }
-
     showConnectionStatus();
     break;
   }
@@ -1527,12 +1498,13 @@ void loop()
       }
     }
 
-    if (awaitingPong && (millis() - pingSentTime > 1000))
+    if (awaitingPong && (millis() - pingSentTime > 5000))
     {
       Serial.println("Connection LOST (PONG timeout)!");
       successfullyConnected = false;
       isPortableInited = false;
       awaitingPong = false;
+      connState = CONN_IDLE;
     }
 
     if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY) && currentMenu != HF_ACTIVITY)
@@ -1552,6 +1524,44 @@ void loop()
     }
 
     drawRadioConnected();
+  }
+  else if (!successfullyConnected && startConnection)
+  {
+    switch (connState)
+    {
+    case CONN_IDLE:
+    {
+      Serial.printf("Master: Sending PING...\n");
+      if (communication.sendPacket(ping, 32))
+      {
+        Serial.printf("Master: PING sent. Waiting for PONG...\n");
+        connState = CONN_AWAITING_PONG;
+        pongTimeoutTimer = millis();
+      }
+      break;
+    }
+
+    case CONN_AWAITING_PONG:
+    {
+      if (communication.receivePacket(recievedData, &recievedDataLen) &&
+          recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
+      {
+        Serial.printf("Master: PONG received! Connection OK.\n");
+        Serial.println("Connection established");
+        successfullyConnected = true;
+        connState = CONN_IDLE;
+        break;
+      }
+
+      if (millis() - pongTimeoutTimer > PONG_WAIT_MS)
+      {
+        Serial.printf("Master: PONG response timeout.\n");
+        successfullyConnected = false;
+        connState = CONN_IDLE;
+      }
+      break;
+    }
+    }
   }
 
   if (!isGameOrFullScreenActivity())
