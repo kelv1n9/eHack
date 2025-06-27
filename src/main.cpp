@@ -161,7 +161,7 @@ void loop1()
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
       mySwitch.enableTransmit(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
       initialized = true;
 
       if (successfullyConnected)
@@ -231,7 +231,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
       initialized = true;
 
       if (successfullyConnected)
@@ -266,7 +266,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
       initialized = true;
       // vibro(255, 50);
 

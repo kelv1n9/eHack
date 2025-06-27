@@ -19,7 +19,6 @@
 #include <rdm6300.h>
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
-#include "protocol_items.h"
 
 #define APP_NAME "eHack"
 #define APP_VERSION "v4.0.0 b"
