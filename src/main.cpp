@@ -677,18 +677,32 @@ void loop1()
 
     if (!initialized)
     {
-      pinMode(GD0_PIN_CC, INPUT);
-      cc1101ReadyMode();
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      if (!successfullyConnected)
+      {
+        pinMode(GD0_PIN_CC, INPUT);
+        cc1101ReadyMode();
+        ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      }
+      else
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_ACTIVITY, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
+
       initialized = true;
     }
 
     if (checkFreqButtons())
     {
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
     }
 
-    if (now - lastStepMs >= RSSI_STEP_MS)
+    if (!successfullyConnected && now - lastStepMs >= RSSI_STEP_MS)
     {
       currentRssi = ELECHOUSE_cc1101.getRssi();
       rssiBuffer[rssiIndex++] = currentRssi;
@@ -696,6 +710,9 @@ void loop1()
         rssiIndex = 0;
 
       lastStepMs = now;
+    }
+    else if (successfullyConnected && radio.available())
+    {
     }
     break;
   }
@@ -1205,9 +1222,9 @@ void loop1()
       {
       case CONN_IDLE:
       {
-        byte ping[4] = {'P', 'I', 'N', 'G'};
+        // byte ping[4] = {'P', 'I', 'N', 'G'};
         Serial.printf("Master: Sending PING...\n");
-        if (communication.sendPacket(ping, 4))
+        if (communication.sendPacket(ping, 32))
         {
           Serial.printf("Master: PING sent. Waiting for PONG...\n");
           connState = CONN_AWAITING_PONG;
@@ -1220,7 +1237,7 @@ void loop1()
       {
         uint8_t buf[32];
         uint8_t len = 0;
-        if (communication.receivePacket(buf, &len) && len == 4 &&
+        if (communication.receivePacket(buf, &len) &&
             buf[0] == 'P' && buf[1] == 'O' && buf[2] == 'N' && buf[3] == 'G')
         {
           Serial.printf("Master: PONG received! Connection OK.\n");
@@ -1908,21 +1925,20 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (communication.receivePacket(recievedData, &recievedDataLen))
+    if (communication.receivePacket(recievedData, &recievedDataLen) && currentMenu != HF_ACTIVITY)
     {
       if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
       {
         memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
         Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
       }
-
-      if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
+      else if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
       {
         isPortableInited = true;
       }
       else if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
-        communication.sendPacket(pong, 4);
+        communication.sendPacket(pong, 32);
       }
       else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
@@ -1940,9 +1956,9 @@ void loop()
       awaitingPong = false;
     }
 
-    if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
+    if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY) && currentMenu != HF_ACTIVITY)
     {
-      if (communication.sendPacket(ping, 4))
+      if (communication.sendPacket(ping, 32))
       {
         Serial.printf("Master: PING sent.\n");
         awaitingPong = true;
