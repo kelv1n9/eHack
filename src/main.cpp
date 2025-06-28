@@ -929,12 +929,9 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      if (!communicationInitialized)
-      {
-        communication.setMasterMode();
-        communication.init();
-        communicationInitialized = true;
-      }
+      communication.setMasterMode();
+      communication.init();
+
       initialized = true;
     }
     if (!locked && ok.click())
@@ -1088,7 +1085,6 @@ void loop()
       stopRadioAttack();
       communication.setMasterMode();
       communication.init();
-      communicationInitialized = true;
       isSimpleMenuExit = true;
       break;
     }

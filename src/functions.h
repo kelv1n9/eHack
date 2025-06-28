@@ -322,8 +322,8 @@ uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes 
 bool nfcDataValid = false;
 
 /*======================= COMMUNICATION ============================*/
-#define CONNECTION_DELAY 5000
-#define PONG_WAIT_MS 5000
+#define CONNECTION_DELAY 2000
+#define PONG_WAIT_MS 2000
 
 enum ConnectionProcessState
 {
@@ -343,7 +343,6 @@ bool successfullyConnected = false;
 bool commandSent = false;
 bool startConnection = false;
 bool isPortableInited = false;
-bool communicationInitialized = false;
 bool awaitingPong = false;
 
 uint8_t recievedData[32];

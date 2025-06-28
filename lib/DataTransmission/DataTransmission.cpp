@@ -28,7 +28,6 @@ RadioMode DataTransmission::getCurrentMode()
 void DataTransmission::init()
 {
     radioNRF24->powerUp();
-    // radioNRF24->enableDynamicPayloads();
     radioNRF24->setPayloadSize(32);
     radioNRF24->setAutoAck(true);
     radioNRF24->setDataRate(RF24_2MBPS);
@@ -36,16 +35,8 @@ void DataTransmission::init()
     radioNRF24->setChannel(40);
     radioNRF24->setPALevel(RF24_PA_MAX);
     radioNRF24->setRetries(0, 15);
-    if (currentMode == Master)
-    {
-        radioNRF24->openWritingPipe(pipe_master_to_slave);
-        radioNRF24->openReadingPipe(1, pipe_slave_to_master);
-    }
-    else if (currentMode == Slave)
-    {
-        radioNRF24->openReadingPipe(1, pipe_master_to_slave);
-        radioNRF24->openWritingPipe(pipe_slave_to_master);
-    }
+    radioNRF24->openWritingPipe(pipe_slave_to_master);
+    radioNRF24->openReadingPipe(0, pipe_slave_to_master);
     radioNRF24->startListening();
     DBG_DT("NRF24 radio initialized\n");
 }
