@@ -56,7 +56,6 @@ void setup()
 
   loadSettings();
   loadAllScores();
-  loadConnectionBegin();
 
   for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++)
   {
@@ -66,13 +65,6 @@ void setup()
   vibro(255, 30);
 
   Serial.begin(9600);
-
-  if (startConnection)
-  {
-    communication.setMasterMode();
-    communication.init();
-    communicationInitialized = true;
-  }
 }
 
 void setup1()
@@ -307,17 +299,25 @@ void loop1()
 
     if (!initialized)
     {
-      pinMode(GD0_PIN_CC, INPUT);
-      cc1101ReadyMode();
-      initialized = true;
+      if (!successfullyConnected)
+      {
+        pinMode(GD0_PIN_CC, INPUT);
+        cc1101ReadyMode();
 
-      currentScanFreq = 0;
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-      spectrumTimer = now;
-      waitingForSettle = true;
+        currentScanFreq = 0;
+        ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
+        spectrumTimer = now;
+        waitingForSettle = true;
+      }
+      else
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_SPECTRUM, &currentScanFreq, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
+      initialized = true;
     }
 
-    if (waitingForSettle)
+    if (!successfullyConnected && waitingForSettle)
     {
       if (now - spectrumTimer >= RSSI_STEP_MS)
       {
@@ -346,6 +346,38 @@ void loop1()
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
         spectrumTimer = now;
         waitingForSettle = true;
+      }
+    }
+    else if (successfullyConnected && radio.available())
+    {
+      int data[2];
+      radio.read(&data, sizeof(data));
+
+      currentRssi = data[0];
+      currentScanFreq = data[1];
+
+      if (currentRssi > 0)
+      {
+        currentRssi = -100;
+      }
+
+      if (currentRssi > rssiMaxPeak[currentScanFreq])
+      {
+        rssiMaxPeak[currentScanFreq] = currentRssi;
+      }
+      else
+      {
+        if (rssiMaxPeak[currentScanFreq] > -100)
+        {
+          rssiMaxPeak[currentScanFreq] -= 3;
+          if (rssiMaxPeak[currentScanFreq] < -100)
+            rssiMaxPeak[currentScanFreq] = -100;
+        }
+      }
+
+      if (currentRssi > rssiAbsoluteMax[currentScanFreq])
+      {
+        rssiAbsoluteMax[currentScanFreq] = currentRssi;
       }
     }
 
@@ -394,6 +426,18 @@ void loop1()
     }
     else if (successfullyConnected && radio.available())
     {
+      radio.read(&currentRssi, 32);
+
+      if (currentRssi > 0)
+      {
+        currentRssi = -100;
+      }
+
+      rssiBuffer[rssiIndex++] = currentRssi;
+      if (rssiIndex >= RSSI_BUFFER_SIZE)
+        rssiIndex = 0;
+
+      lastStepMs = now;
     }
     break;
   }
@@ -982,7 +1026,6 @@ void loop()
     }
     case CONNECTION:
     {
-      saveConnectionBegin();
       initialized = false;
       isSimpleMenuExit = true;
       break;
@@ -1475,7 +1518,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (communication.receivePacket(recievedData, &recievedDataLen) && currentMenu != HF_ACTIVITY)
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && communication.receivePacket(recievedData, &recievedDataLen))
     {
       if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
       {
@@ -1502,12 +1545,13 @@ void loop()
     {
       Serial.println("Connection LOST (PONG timeout)!");
       successfullyConnected = false;
+      startConnection = false;
       isPortableInited = false;
       awaitingPong = false;
       connState = CONN_IDLE;
     }
 
-    if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY) && currentMenu != HF_ACTIVITY)
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
     {
       if (communication.sendPacket(ping, 32))
       {
@@ -1519,7 +1563,10 @@ void loop()
       else
       {
         successfullyConnected = false;
+        startConnection = false;
         isPortableInited = false;
+        awaitingPong = false;
+        connState = CONN_IDLE;
       }
     }
 

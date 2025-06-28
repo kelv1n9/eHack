@@ -837,19 +837,6 @@ void saveAllScores()
   EEPROM.commit();
 }
 
-/******************************* CONNECTION ************************************/
-
-void saveConnectionBegin()
-{
-  EEPROM.put(EEPROM_STARTCONN_ADDR, startConnection);
-  EEPROM.commit();
-}
-
-void loadConnectionBegin()
-{
-  EEPROM.get(EEPROM_STARTCONN_ADDR, startConnection);
-}
-
 /*================================== GAMES ======================================*/
 /*********************************** DOTS ***************************************/
 struct FallingDotsGame
