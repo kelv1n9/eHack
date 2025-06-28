@@ -75,8 +75,6 @@ void setup1()
 
 void loop1()
 {
-  uint32_t now = millis();
-
   switch (currentMenu)
   {
   /*============================= 433 MHz Protocol =================================*/
@@ -206,10 +204,10 @@ void loop1()
         }
       }
 
-      if (now - attackTimer >= 1000 && !successfullyConnected)
+      if (millis() - attackTimer >= 1000 && !successfullyConnected)
       {
         mySwitch.send(capturedCode, capturedLength);
-        attackTimer = now;
+        attackTimer = millis();
       }
       else if (successfullyConnected && !commandSent)
       {
@@ -225,12 +223,10 @@ void loop1()
   {
     static uint32_t lastNoise = 0;
     static bool noiseState = false;
-    uint32_t nowMicros = micros();
 
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      // ELECHOUSE_cc1101.Init();
       ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
@@ -252,11 +248,11 @@ void loop1()
       }
     }
 
-    if (nowMicros - lastNoise > 500)
+    if (micros() - lastNoise > 500)
     {
       noiseState = !noiseState;
       digitalWrite(GD0_PIN_CC, noiseState);
-      lastNoise = nowMicros;
+      lastNoise = micros();
     }
     break;
   }
@@ -305,8 +301,9 @@ void loop1()
         pinMode(GD0_PIN_CC, INPUT);
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
         currentScanFreq = 0;
-        spectrumTimer = now;
+        spectrumTimer = millis();
         waitingForSettle = true;
+        Serial.println(1);
       }
       else
       {
@@ -319,7 +316,7 @@ void loop1()
 
     if (!successfullyConnected && waitingForSettle)
     {
-      if (now - spectrumTimer >= RSSI_STEP_MS)
+      if (millis() - spectrumTimer >= RSSI_STEP_MS)
       {
         currentRssi = ELECHOUSE_cc1101.getRssi();
 
@@ -344,20 +341,24 @@ void loop1()
 
         currentScanFreq = (currentScanFreq + 1) % raFreqCount;
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
-        spectrumTimer = now;
+        spectrumTimer = millis();
         waitingForSettle = true;
       }
     }
     else if (successfullyConnected && radio.available())
     {
       radio.read(&recievedHFData, sizeof(recievedHFData));
-
       currentRssi = recievedHFData[0];
       currentScanFreq = recievedHFData[1];
+      DBG("RSSI: %d, FREQ: %d\n", currentRssi, currentScanFreq);
 
       if (currentRssi > 0)
       {
         currentRssi = -100;
+      }
+      if (currentScanFreq > 3)
+      {
+        currentScanFreq = 3;
       }
 
       if (currentRssi > rssiMaxPeak[currentScanFreq])
@@ -385,7 +386,7 @@ void loop1()
   /********************************** RF ACTIVITY **************************************/
   case HF_ACTIVITY:
   {
-    static uint32_t lastStepMs = now;
+    static uint32_t lastStepMs = millis();
 
     if (!initialized)
     {
@@ -413,14 +414,14 @@ void loop1()
       }
     }
 
-    if (!successfullyConnected && now - lastStepMs >= RSSI_STEP_MS)
+    if (!successfullyConnected && millis() - lastStepMs >= RSSI_STEP_MS)
     {
       currentRssi = ELECHOUSE_cc1101.getRssi();
       rssiBuffer[rssiIndex++] = currentRssi;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
 
-      lastStepMs = now;
+      lastStepMs = millis();
     }
     else if (successfullyConnected && radio.available())
     {
@@ -435,7 +436,7 @@ void loop1()
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
 
-      lastStepMs = now;
+      lastStepMs = millis();
     }
     break;
   }
@@ -549,7 +550,7 @@ void loop1()
       {
         bruteState = BRUTE_RUNNING;
         currentIndex = 0;
-        lastSendTime = now;
+        lastSendTime = millis();
         vibro(255, 50);
       }
       break;
@@ -564,12 +565,12 @@ void loop1()
         break;
       }
 
-      if (now - lastSendTime > 50 && currentIndex < IR_COMMAND_COUNT_TV)
+      if (millis() - lastSendTime > 50 && currentIndex < IR_COMMAND_COUNT_TV)
       {
         getIRCommand(irCommandsTV, currentIndex, protocol, address, command);
         IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
         delay(DELAY_AFTER_SEND);
-        lastSendTime = now;
+        lastSendTime = millis();
         currentIndex++;
       }
 
@@ -631,7 +632,7 @@ void loop1()
       {
         bruteState = BRUTE_RUNNING;
         currentIndex = 0;
-        lastSendTime = now;
+        lastSendTime = millis();
         vibro(255, 50);
       }
       break;
@@ -646,12 +647,12 @@ void loop1()
         break;
       }
 
-      if (now - lastSendTime > 20 && currentIndex < IR_COMMAND_COUNT_PR)
+      if (millis() - lastSendTime > 20 && currentIndex < IR_COMMAND_COUNT_PR)
       {
         getIRCommand(irCommandsPR, currentIndex, protocol, address, command);
         IrSender.write(static_cast<decode_type_t>(protocol), address, command, IR_N_REPEATS);
         delay(DELAY_AFTER_SEND);
-        lastSendTime = now;
+        lastSendTime = millis();
         currentIndex++;
       }
 
@@ -866,9 +867,9 @@ void loop1()
     static uint32_t lastCheck125kHz = 0;
 
     /********************* 125 kHz *******************/
-    if (now - lastCheck125kHz >= 10)
+    if (millis() - lastCheck125kHz >= 10)
     {
-      lastCheck125kHz = now;
+      lastCheck125kHz = millis();
 
       if (rdm6300.get_new_tag_id())
       {
@@ -943,7 +944,6 @@ void loop1()
         successfullyConnected = false;
         showLocalVoltage = true;
         isPortableInited = false;
-        awaitingPong = false;
         connState = CONN_IDLE;
         DBG("Connection attempts STOPPED by user.\n");
       }
@@ -1057,7 +1057,9 @@ void loop()
     case HF_SPECTRUM:
     case HF_ACTIVITY:
     {
-      isSimpleMenuExit = true;
+      initialized = false;
+      isPortableInited = false;
+      vibro(255, 50);
       break;
     }
     case HF_REPLAY:
@@ -1530,44 +1532,27 @@ void loop()
         {
           isPortableInited = true;
         }
-        else if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
-        {
-          communication.sendPacket(pong, 32);
-        }
         else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
         {
           DBG("Master: PONG received! Connection OK.\n");
-          awaitingPong = false;
           successfullyConnected = true;
+          checkConnectionTimer = millis();
         }
       }
 
-      if (awaitingPong && (millis() - pingSentTime > 5000))
+      if (millis() - checkConnectionTimer > CONNECTION_DELAY)
       {
-        DBG("Connection LOST (PONG timeout)!\n");
-        successfullyConnected = false;
-        startConnection = false;
-        isPortableInited = false;
-        awaitingPong = false;
-        connState = CONN_IDLE;
-      }
-
-      if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
-      {
-        if (communication.sendPacket(ping, 32))
+        if (communication.sendPacket(ping, sizeof(ping)))
         {
           DBG("Master: PING sent.\n");
-          awaitingPong = true;
-          pingSentTime = millis();
           checkConnectionTimer = millis();
         }
         else
         {
           DBG("Master: Failed to send.\n");
           successfullyConnected = false;
-          startConnection = false;
+          // startConnection = false;
           isPortableInited = false;
-          awaitingPong = false;
           connState = CONN_IDLE;
         }
       }
@@ -1582,12 +1567,10 @@ void loop()
     case CONN_IDLE:
     {
       DBG("Master: Sending PING...\n");
-      if (communication.sendPacket(ping, 32))
-      {
-        DBG("Master: PING sent. Waiting for PONG...\n");
-        connState = CONN_AWAITING_PONG;
-        pongTimeoutTimer = millis();
-      }
+      communication.sendPacket(ping, sizeof(ping));
+      DBG("Master: PING sent. Waiting for PONG...\n");
+      connState = CONN_AWAITING_PONG;
+      pongTimeoutTimer = millis();
       break;
     }
 

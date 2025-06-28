@@ -2,7 +2,7 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
-// #define DEBUG_eHack
+#define DEBUG_eHack
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
@@ -334,8 +334,8 @@ enum ConnectionProcessState
 ConnectionProcessState connState = CONN_IDLE;
 uint32_t pongTimeoutTimer = 0;
 
-byte ping[32] = {'P', 'I', 'N', 'G'};
-byte pong[32] = {'P', 'O', 'N', 'G'};
+byte ping[4] = {'P', 'I', 'N', 'G'};
+byte pong[4] = {'P', 'O', 'N', 'G'};
 
 DataTransmission communication(&radio);
 
@@ -343,18 +343,16 @@ bool successfullyConnected = false;
 bool commandSent = false;
 bool startConnection = false;
 bool isPortableInited = false;
-bool awaitingPong = false;
 
 uint8_t recievedData[32];
 uint8_t recievedDataLen = 0;
 
-int recievedHFData[8];
+int recievedHFData[2];
 int recievedHFDataLen = 0;
 
 uint8_t outgoingData[32];
 uint8_t outgoingDataLen = 0;
 
-uint32_t pingSentTime;
 uint32_t checkConnectionTimer;
 
 /*======================= FUNCTIONS ============================*/
