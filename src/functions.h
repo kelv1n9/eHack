@@ -2,6 +2,21 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
+#define DEBUG_eHack
+
+#ifdef DEBUG_eHack
+#define DBG(...)                \
+  do                            \
+  {                             \
+    Serial.printf(__VA_ARGS__); \
+  } while (0)
+#else
+#define DBG(...) \
+  do             \
+  {              \
+  } while (0)
+#endif
+
 #include <Wire.h>
 #include <SPI.h>
 #include <EEPROM.h>
@@ -333,6 +348,9 @@ bool awaitingPong = false;
 
 uint8_t recievedData[32];
 uint8_t recievedDataLen = 0;
+
+int recievedHFData[8];
+int recievedHFDataLen = 0;
 
 uint8_t outgoingData[32];
 uint8_t outgoingDataLen = 0;

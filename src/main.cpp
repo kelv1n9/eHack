@@ -64,7 +64,9 @@ void setup()
 
   vibro(255, 30);
 
+#ifdef DEBUG_eHack
   Serial.begin(9600);
+#endif
 }
 
 void setup1()
@@ -348,11 +350,10 @@ void loop1()
     }
     else if (successfullyConnected && radio.available())
     {
-      int data[2];
-      radio.read(&data, sizeof(data));
+      radio.read(&recievedHFData, sizeof(recievedHFData));
 
-      currentRssi = data[0];
-      currentScanFreq = data[1];
+      currentRssi = recievedHFData[0];
+      currentScanFreq = recievedHFData[1];
 
       if (currentRssi > 0)
       {
@@ -423,7 +424,7 @@ void loop1()
     }
     else if (successfullyConnected && radio.available())
     {
-      radio.read(&currentRssi, 32);
+      radio.read(&currentRssi, sizeof(currentRssi));
 
       if (currentRssi > 0)
       {
@@ -947,7 +948,7 @@ void loop1()
         isPortableInited = false;
         awaitingPong = false;
         connState = CONN_IDLE;
-        Serial.println("Connection attempts STOPPED by user.");
+        DBG("Connection attempts STOPPED by user.\n");
       }
 
       vibro(255, 30);
@@ -1520,55 +1521,59 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && communication.receivePacket(recievedData, &recievedDataLen))
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM)
     {
-      if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
+      if (communication.receivePacket(recievedData, &recievedDataLen))
       {
-        memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
-        Serial.printf("Remote voltage updated: %.2fV\n", remoteVoltage);
+        if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
+        {
+          memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
+          DBG("Remote voltage updated: %.2fV\n", remoteVoltage);
+        }
+        else if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
+        {
+          isPortableInited = true;
+        }
+        else if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
+        {
+          communication.sendPacket(pong, 32);
+        }
+        else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
+        {
+          DBG("Master: PONG received! Connection OK.\n");
+          awaitingPong = false;
+          successfullyConnected = true;
+        }
       }
-      else if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
-      {
-        isPortableInited = true;
-      }
-      else if (recievedData[0] == 'P' && recievedData[1] == 'I' && recievedData[2] == 'N' && recievedData[3] == 'G')
-      {
-        communication.sendPacket(pong, 32);
-      }
-      else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
-      {
-        Serial.printf("Master: PONG received! Connection OK.\n");
-        awaitingPong = false;
-        successfullyConnected = true;
-      }
-    }
 
-    if (awaitingPong && (millis() - pingSentTime > 5000))
-    {
-      Serial.println("Connection LOST (PONG timeout)!");
-      successfullyConnected = false;
-      startConnection = false;
-      isPortableInited = false;
-      awaitingPong = false;
-      connState = CONN_IDLE;
-    }
-
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
-    {
-      if (communication.sendPacket(ping, 32))
+      if (awaitingPong && (millis() - pingSentTime > 5000))
       {
-        Serial.printf("Master: PING sent.\n");
-        awaitingPong = true;
-        pingSentTime = millis();
-        checkConnectionTimer = millis();
-      }
-      else
-      {
+        DBG("Connection LOST (PONG timeout)!\n");
         successfullyConnected = false;
         startConnection = false;
         isPortableInited = false;
         awaitingPong = false;
         connState = CONN_IDLE;
+      }
+
+      if (!awaitingPong && (millis() - checkConnectionTimer > CONNECTION_DELAY))
+      {
+        if (communication.sendPacket(ping, 32))
+        {
+          DBG("Master: PING sent.\n");
+          awaitingPong = true;
+          pingSentTime = millis();
+          checkConnectionTimer = millis();
+        }
+        else
+        {
+          DBG("Master: Failed to send.\n");
+          successfullyConnected = false;
+          startConnection = false;
+          isPortableInited = false;
+          awaitingPong = false;
+          connState = CONN_IDLE;
+        }
       }
     }
 
@@ -1580,10 +1585,10 @@ void loop()
     {
     case CONN_IDLE:
     {
-      Serial.printf("Master: Sending PING...\n");
+      DBG("Master: Sending PING...\n");
       if (communication.sendPacket(ping, 32))
       {
-        Serial.printf("Master: PING sent. Waiting for PONG...\n");
+        DBG("Master: PING sent. Waiting for PONG...\n");
         connState = CONN_AWAITING_PONG;
         pongTimeoutTimer = millis();
       }
@@ -1595,8 +1600,8 @@ void loop()
       if (communication.receivePacket(recievedData, &recievedDataLen) &&
           recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
       {
-        Serial.printf("Master: PONG received! Connection OK.\n");
-        Serial.println("Connection established");
+        DBG("Master: PONG received! Connection OK.\n");
+        DBG("Connection established\n");
         successfullyConnected = true;
         connState = CONN_IDLE;
         break;
@@ -1604,7 +1609,7 @@ void loop()
 
       if (millis() - pongTimeoutTimer > PONG_WAIT_MS)
       {
-        Serial.printf("Master: PONG response timeout.\n");
+        DBG("Master: PONG response timeout.\n");
         successfullyConnected = false;
         connState = CONN_IDLE;
       }

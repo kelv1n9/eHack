@@ -11,13 +11,13 @@ DataTransmission::DataTransmission(RF24 *radioPtrNRF)
 void DataTransmission::setSlaveMode()
 {
     currentMode = Slave;
-    DBG("Radio set to Slave mode\n");
+    DBG_DT("Radio set to Slave mode\n");
 }
 
 void DataTransmission::setMasterMode()
 {
     currentMode = Master;
-    DBG("Radio set to Master mode\n");
+    DBG_DT("Radio set to Master mode\n");
 }
 
 RadioMode DataTransmission::getCurrentMode()
@@ -47,7 +47,7 @@ void DataTransmission::init()
         radioNRF24->openWritingPipe(pipe_slave_to_master);
     }
     radioNRF24->startListening();
-    DBG("NRF24 radio initialized\n");
+    DBG_DT("NRF24 radio initialized\n");
 }
 
 uint8_t DataTransmission::buildPacket(uint8_t mode, const uint8_t *payload, uint8_t payloadLen, uint8_t *packetOut)
@@ -62,12 +62,12 @@ uint8_t DataTransmission::buildPacket(uint8_t mode, const uint8_t *payload, uint
     }
 
 #ifdef DEBUG
-    DBG("Packet built with mode: %d, payload length: %d\n", mode, payloadLen);
-    DBG("Packet length: %d\n", index);
+    DBG_DT("Packet built with mode: %d, payload length: %d\n", mode, payloadLen);
+    DBG_DT("Packet length: %d\n", index);
 
     for (uint8_t i = 0; i < index; i++)
     {
-        DBG("Packet byte %d: %02X\n", i, packetOut[i]);
+        DBG_DT("Packet byte %d: %02X\n", i, packetOut[i]);
     }
 #endif
 
@@ -80,14 +80,14 @@ bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
 #ifdef DEBUG
     for (uint8_t i = 0; i < len; i++)
     {
-        DBG("Packet to send %d: %02X\n", i, data[i]);
+        DBG_DT("Packet to send %d: %02X\n", i, data[i]);
     }
 #endif
 
     radioNRF24->stopListening();
     bool sent = radioNRF24->write(data, len);
     radioNRF24->startListening();
-    DBG("Packet sent via NRF24, success: %d\n", sent);
+    DBG_DT("Packet sent via NRF24, success: %d\n", sent);
     return sent;
 }
 
@@ -102,17 +102,16 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
         radioNRF24->read(data, *len);
 
 #ifdef DEBUG
-        DBG("Packet received via NRF24, length: %d\n", *len);
+        DBG_DT("Packet received via NRF24, length: %d\n", *len);
         for (uint8_t i = 0; i < *len; i++)
         {
-            DBG("Received byte %d: %02X\n", i, data[i]);
+            DBG_DT("Received byte %d: %02X\n", i, data[i]);
         }
 #endif
         return true;
     }
     else
     {
-        DBG("NRF24 is not available\n");
         return false;
     }
 }

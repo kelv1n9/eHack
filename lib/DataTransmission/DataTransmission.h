@@ -1,15 +1,15 @@
 #pragma once
 
-// #define DEBUG
+// #define DEBUG_DT
 
-#ifdef DEBUG
-#define DBG(...)                \
+#ifdef DEBUG_DT
+#define DBG_DT(...)                \
   do                            \
   {                             \
     Serial.printf(__VA_ARGS__); \
   } while (0)
 #else
-#define DBG(...) \
+#define DBG_DT(...) \
   do             \
   {              \
   } while (0)
