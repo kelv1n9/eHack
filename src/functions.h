@@ -501,14 +501,10 @@ void cc1101Init()
   ELECHOUSE_cc1101.setDcFilterOff(0);
   ELECHOUSE_cc1101.setRxBW(135);
   ELECHOUSE_cc1101.setPA(12);
-}
-
-void cc1101ReadyMode()
-{
+  ELECHOUSE_cc1101.setModulation(2);
   ELECHOUSE_cc1101.setCCMode(0);
   ELECHOUSE_cc1101.setSyncMode(0);
   ELECHOUSE_cc1101.setCrc(0);
-  ELECHOUSE_cc1101.setModulation(2);
 }
 
 //================================== TESLA ======================================*/

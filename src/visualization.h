@@ -589,10 +589,11 @@ void DrawRSSIPlot_HF()
   drawDashedLine(18, 25, 115, 1, 5);
 
   char Text[10];
+  int cursorStart = successfullyConnected ? 85: 102;
   sprintf(Text, "%d", findMaxValue(rssiBuffer, RSSI_BUFFER_SIZE));
-  oled.setCursorXY(102 - getTextWidth(Text), 0);
+  oled.setCursorXY(cursorStart - getTextWidth(Text), 0);
   oled.print(Text);
-  oled.setCursorXY(102, 0);
+  oled.setCursorXY(cursorStart, 0);
   oled.print(" dBm");
 }
 

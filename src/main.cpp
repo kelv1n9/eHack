@@ -84,17 +84,16 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, INPUT);
-      cc1101ReadyMode();
       mySwitch.enableReceive(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
-      mySwitch.resetAvailable();
-      initialized = true;
 
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
+
+      initialized = true;
     }
 
     if (checkFreqButtons())
@@ -158,16 +157,16 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
       mySwitch.enableTransmit(GD0_PIN_CC);
       ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-      initialized = true;
 
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
+
+      initialized = true;
     }
 
     if (!locked && !attackIsActive && (up.click() || up.step()))
@@ -229,15 +228,16 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
+      // ELECHOUSE_cc1101.Init();
       ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-      initialized = true;
 
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
+
+      initialized = true;
     }
 
     if (checkFreqButtons())
@@ -264,16 +264,15 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      cc1101ReadyMode();
       ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
-      initialized = true;
-      // vibro(255, 50);
 
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_TESLA, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
+
+      initialized = true;
     }
 
     if (!successfullyConnected)
@@ -302,10 +301,8 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, INPUT);
-        cc1101ReadyMode();
-
-        currentScanFreq = 0;
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
+        currentScanFreq = 0;
         spectrumTimer = now;
         waitingForSettle = true;
       }
@@ -314,6 +311,7 @@ void loop1()
         outgoingDataLen = communication.buildPacket(COMMAND_HF_SPECTRUM, &currentScanFreq, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
+
       initialized = true;
     }
 
@@ -393,7 +391,6 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, INPUT);
-        cc1101ReadyMode();
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       }
       else
@@ -1062,7 +1059,6 @@ void loop()
     case HF_SPECTRUM:
     case HF_ACTIVITY:
     {
-      ELECHOUSE_cc1101.goSleep();
       isSimpleMenuExit = true;
       break;
     }
@@ -1076,7 +1072,6 @@ void loop()
       mySwitch.disableReceive();
       mySwitch.disableTransmit();
       signalCaptured_433MHZ = false;
-      ELECHOUSE_cc1101.goSleep();
       isSimpleMenuExit = true;
       break;
     }
@@ -1116,6 +1111,13 @@ void loop()
       while (1)
       {
       }
+    }
+    case DOTS_GAME:
+    case SNAKE_GAME:
+    case FLAPPY_GAME:
+    {
+      vibro(255, 50);
+      break;
     }
     }
 
