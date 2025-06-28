@@ -2,7 +2,7 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
-#define DEBUG_eHack
+// #define DEBUG_eHack
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
