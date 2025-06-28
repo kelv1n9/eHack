@@ -303,7 +303,6 @@ void loop1()
         currentScanFreq = 0;
         spectrumTimer = millis();
         waitingForSettle = true;
-        Serial.println(1);
       }
       else
       {
@@ -1554,6 +1553,7 @@ void loop()
           // startConnection = false;
           isPortableInited = false;
           connState = CONN_IDLE;
+          vibro(255, 100, 3, 20);
         }
       }
     }
@@ -1583,6 +1583,8 @@ void loop()
         DBG("Connection established\n");
         successfullyConnected = true;
         connState = CONN_IDLE;
+        vibro(255, 30, 1);
+        vibro(255, 80, 1);
         break;
       }
 
