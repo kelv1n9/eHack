@@ -1,8 +1,5 @@
 #include "DataTransmission.h"
 
-const uint64_t pipe_master_to_slave = 0xAABBCCDD11LL;
-const uint64_t pipe_slave_to_master = 0x11223344EELL;
-
 DataTransmission::DataTransmission(RF24 *radioPtrNRF)
 {
     radioNRF24 = radioPtrNRF;
@@ -35,8 +32,8 @@ void DataTransmission::init()
     radioNRF24->setChannel(40);
     radioNRF24->setPALevel(RF24_PA_MAX);
     radioNRF24->setRetries(0, 15);
-    radioNRF24->openWritingPipe(pipe_slave_to_master);
-    radioNRF24->openReadingPipe(0, pipe_slave_to_master);
+    radioNRF24->openWritingPipe(0x11223344EELL);
+    radioNRF24->openReadingPipe(0, 0x11223344EELL);
     radioNRF24->startListening();
     DBG_DT("NRF24 radio initialized\n");
 }

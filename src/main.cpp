@@ -1560,7 +1560,7 @@ void loop()
 
     drawRadioConnected();
   }
-  else if (!successfullyConnected && startConnection)
+  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM)
   {
     switch (connState)
     {
