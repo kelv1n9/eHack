@@ -324,6 +324,8 @@ bool nfcDataValid = false;
 /*======================= COMMUNICATION ============================*/
 #define CONNECTION_DELAY 2000
 #define PONG_WAIT_MS 2000
+#define SEND_DURATION_MS 200
+#define LISTEN_DURATION_MS 20
 
 enum ConnectionProcessState
 {
@@ -354,6 +356,23 @@ uint8_t outgoingData[32];
 uint8_t outgoingDataLen = 0;
 
 uint32_t checkConnectionTimer;
+
+void sendStopCommandToSlave()
+{
+  unsigned long spamDuration = SEND_DURATION_MS + LISTEN_DURATION_MS + 50;
+  unsigned long spamStartTime = millis();
+  outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
+
+  radio.stopListening();
+
+  while (millis() - spamStartTime < spamDuration)
+  {
+    communication.sendPacket(outgoingData, outgoingDataLen);
+    delay(5);
+  }
+
+  radio.startListening();
+}
 
 /*======================= FUNCTIONS ============================*/
 

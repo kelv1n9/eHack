@@ -1058,6 +1058,10 @@ void loop()
     {
       initialized = false;
       isPortableInited = false;
+      if (successfullyConnected)
+      {
+        sendStopCommandToSlave();
+      }
       vibro(255, 50);
       break;
     }
