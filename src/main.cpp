@@ -708,10 +708,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = full_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(full_channels) / sizeof(full_channels[0]));
+    radioChannel = full_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(full_channels) / sizeof(full_channels[0]));
     break;
   }
   case UHF_WIFI_JAMMER:
@@ -727,10 +726,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = wifi_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(wifi_channels) / sizeof(wifi_channels[0]));
+    radioChannel = wifi_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(wifi_channels) / sizeof(wifi_channels[0]));
     break;
   }
   case UHF_BT_JAMMER:
@@ -746,10 +744,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = bluetooth_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(bluetooth_channels) / sizeof(bluetooth_channels[0]));
+    radioChannel = bluetooth_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(bluetooth_channels) / sizeof(bluetooth_channels[0]));
     break;
   }
   case UHF_BLE_JAMMER:
@@ -765,10 +762,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = ble_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(ble_channels) / sizeof(ble_channels[0]));
+    radioChannel = ble_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(ble_channels) / sizeof(ble_channels[0]));
     break;
   }
   case UHF_USB_JAMMER:
@@ -784,10 +780,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = usb_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(usb_channels) / sizeof(usb_channels[0]));
+    radioChannel = usb_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(usb_channels) / sizeof(usb_channels[0]));
     break;
   }
   case UHF_VIDEO_JAMMER:
@@ -803,10 +798,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = video_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(video_channels) / sizeof(video_channels[0]));
+    radioChannel = video_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(video_channels) / sizeof(video_channels[0]));
     break;
   }
   case UHF_RC_JAMMER:
@@ -822,10 +816,9 @@ void loop1()
       initRadioAttack();
       initialized = true;
     }
-    static int current_channel_index = 0;
-    radioChannel = rc_channels[current_channel_index];
+    int randomIndex = random(0, sizeof(rc_channels) / sizeof(rc_channels[0]));
+    radioChannel = rc_channels[randomIndex];
     radio.setChannel(radioChannel);
-    current_channel_index = (current_channel_index + 1) % (sizeof(rc_channels) / sizeof(rc_channels[0]));
     break;
   }
   case UHF_SPECTRUM:
@@ -1522,7 +1515,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM)
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != UHF_BT_JAMMER)
     {
       if (communication.receivePacket(recievedData, &recievedDataLen))
       {
@@ -1564,7 +1557,7 @@ void loop()
 
     drawRadioConnected();
   }
-  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM)
+  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != UHF_BT_JAMMER)
   {
     switch (connState)
     {
