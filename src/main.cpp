@@ -408,8 +408,15 @@ void loop1()
       ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       if (successfullyConnected)
       {
-        outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
-        communication.sendPacket(outgoingData, outgoingDataLen);
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_ACTIVITY, &currentFreqIndex, 1, outgoingData);
+
+        unsigned long spamDuration = SEND_DURATION_MS + LISTEN_DURATION_MS + 50;
+        unsigned long spamStartTime = millis();
+        while (millis() - spamStartTime < spamDuration)
+        {
+          communication.sendPacket(outgoingData, outgoingDataLen);
+          delay(5);
+        }
       }
     }
 
@@ -1045,6 +1052,8 @@ void loop()
     case HF_TESLA:
     {
       digitalWrite(GD0_PIN_CC, LOW);
+      isSimpleMenuExit = true;
+      break;
     }
     case HF_SPECTRUM:
     case HF_ACTIVITY:
