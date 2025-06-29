@@ -32,6 +32,7 @@ void DataTransmission::init()
     radioNRF24->setChannel(40);
     radioNRF24->setPALevel(RF24_PA_MAX);
     radioNRF24->setRetries(0, 15);
+    radioNRF24->setAddressWidth(5);
     radioNRF24->openWritingPipe(0x11223344EELL);
     radioNRF24->openReadingPipe(0, 0x11223344EELL);
     radioNRF24->startListening();

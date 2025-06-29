@@ -1515,7 +1515,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != UHF_BT_JAMMER)
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
     {
       if (communication.receivePacket(recievedData, &recievedDataLen))
       {
@@ -1557,7 +1557,7 @@ void loop()
 
     drawRadioConnected();
   }
-  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != UHF_BT_JAMMER)
+  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
   {
     switch (connState)
     {

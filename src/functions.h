@@ -1275,7 +1275,6 @@ FlappyGame flappy;
 //*================================== UHF ======================================*/
 void initRadioAttack()
 {
-  // radio.powerUp();
   radio.setAutoAck(false);
   radio.stopListening();
   radio.setRetries(0, 0);

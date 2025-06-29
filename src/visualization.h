@@ -125,6 +125,18 @@ bool isHighFrequencyMode()
           currentMenu == HF_SCAN);
 }
 
+bool isUltraHighFrequencyMode()
+{
+  return (currentMenu == UHF_SPECTRUM ||
+          currentMenu ==  UHF_ALL_JAMMER ||
+          currentMenu ==  UHF_WIFI_JAMMER ||
+          currentMenu ==  UHF_BT_JAMMER ||
+          currentMenu ==  UHF_BLE_JAMMER ||
+          currentMenu ==  UHF_USB_JAMMER || 
+          currentMenu ==  UHF_VIDEO_JAMMER ||
+          currentMenu ==  UHF_RC_JAMMER);
+}
+
 /*============================= MAIN APPEARANCE ============================================*/
 const static uint8_t radioConnectedIcon[7] PROGMEM = {
     0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f};
