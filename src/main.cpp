@@ -1072,6 +1072,15 @@ void loop()
       break;
     }
     case UHF_SPECTRUM:
+    {
+      stopRadioAttack();
+      communication.setMasterMode();
+      communication.init();
+      initialized = false;
+      isPortableInited = false;
+      vibro(255, 50);
+      break;
+    }
     case UHF_ALL_JAMMER:
     case UHF_WIFI_JAMMER:
     case UHF_BT_JAMMER:
@@ -1083,7 +1092,13 @@ void loop()
       stopRadioAttack();
       communication.setMasterMode();
       communication.init();
-      isSimpleMenuExit = true;
+      initialized = false;
+      isPortableInited = false;
+      if (successfullyConnected)
+      {
+        sendStopCommandToSlave(5);
+      }
+      vibro(255, 50);
       break;
     }
     case UHF_BLE_SPAM:

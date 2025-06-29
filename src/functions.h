@@ -357,9 +357,9 @@ uint8_t outgoingDataLen = 0;
 
 uint32_t checkConnectionTimer;
 
-void sendStopCommandToSlave()
+void sendStopCommandToSlave(int coeff = 1)
 {
-  unsigned long spamDuration = SEND_DURATION_MS + LISTEN_DURATION_MS + 50;
+  unsigned long spamDuration = coeff * SEND_DURATION_MS + LISTEN_DURATION_MS + 50;
   unsigned long spamStartTime = millis();
   outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
 
