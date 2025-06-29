@@ -1096,7 +1096,7 @@ void loop()
       isPortableInited = false;
       if (successfullyConnected)
       {
-        sendStopCommandToSlave(5);
+        sendStopCommandToSlave(6);
       }
       vibro(255, 50);
       break;
