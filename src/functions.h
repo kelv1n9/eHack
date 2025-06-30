@@ -96,6 +96,9 @@ uint32_t remotebatteryTimer;
 uint8_t historyIndex = 0;
 bool isCharging = false;
 
+uint32_t batteryDisplayToggleTimer = 0;
+uint32_t batteryCheckTimer = 0;
+
 bool showLocalVoltage = true;
 float remoteVoltage;
 /* ==================== OLED ================== */
@@ -323,9 +326,11 @@ bool nfcDataValid = false;
 
 /*======================= COMMUNICATION ============================*/
 #define CONNECTION_DELAY 2000
-#define PONG_WAIT_MS 2000
+#define PONG_WAIT_MS 1000
 #define SEND_DURATION_MS 200
 #define LISTEN_DURATION_MS 20
+#define N_CONNECTIONS_ATTEMPTS 3
+uint8_t connectionAttempts = 0;
 
 enum ConnectionProcessState
 {

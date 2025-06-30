@@ -1566,15 +1566,24 @@ void loop()
         {
           DBG("Master: PING sent.\n");
           checkConnectionTimer = millis();
+          connectionAttempts = 0;
         }
         else
         {
-          DBG("Master: Failed to send.\n");
-          successfullyConnected = false;
-          // startConnection = false;
-          isPortableInited = false;
-          connState = CONN_IDLE;
-          vibro(255, 100, 3, 20);
+          connectionAttempts++;
+          DBG("Master: Failed to send. Attempt %d\n", connectionAttempts);
+          checkConnectionTimer = millis();
+
+          if (connectionAttempts >= N_CONNECTIONS_ATTEMPTS)
+          {
+            DBG("Master: Connection lost.\n");
+            successfullyConnected = false;
+            // startConnection = false;
+            isPortableInited = false;
+            connState = CONN_IDLE;
+            vibro(255, 100, 3, 20);
+            connectionAttempts = 0;
+          }
         }
       }
     }
@@ -1603,6 +1612,8 @@ void loop()
         DBG("Master: PONG received! Connection OK.\n");
         DBG("Connection established\n");
         successfullyConnected = true;
+        showLocalVoltage = false;
+        batteryDisplayToggleTimer = millis();
         connState = CONN_IDLE;
         vibro(255, 30, 1);
         vibro(255, 80, 1);
@@ -1635,7 +1646,6 @@ void loop()
 
 void handleBatteryTasks()
 {
-  static uint32_t batteryCheckTimer = 0;
   if (millis() - batteryCheckTimer >= BATTERY_CHECK_INTERVAL)
   {
     batVoltage = readBatteryVoltage();
@@ -1643,7 +1653,6 @@ void handleBatteryTasks()
     batteryCheckTimer = millis();
   }
 
-  static uint32_t batteryDisplayToggleTimer = 0;
   if (successfullyConnected && millis() - batteryDisplayToggleTimer >= 5000)
   {
     batteryDisplayToggleTimer = millis();
