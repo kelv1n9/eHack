@@ -391,7 +391,7 @@ DataTransmission communication(&radio);
 bool successfullyConnected = false;
 bool commandSent = false;
 bool startConnection = false;
-bool isPortableInited = false;
+// bool isPortableInited = false;
 
 uint8_t recievedData[32];
 uint8_t recievedDataLen = 0;
