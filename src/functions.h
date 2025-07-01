@@ -168,6 +168,8 @@ bool signalCaptured_433MHZ = false;
 #define MAX_DELTA_T_BARRIER 200
 #define AN_MOTORS_PULSE 412
 
+const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
+
 struct SimpleBarrierData
 {
   uint32_t codeMain;

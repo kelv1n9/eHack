@@ -672,8 +672,6 @@ void DrawRSSISpectrum_HF()
 
 void ShowCapturedBarrier_HF()
 {
-  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
-
   if (barrierProtocol == 0)
   {
     char Text[25];
@@ -729,7 +727,6 @@ void ShowCapturedBarrier_HF()
 
 void ShowSavedSignalBarrier_HF()
 {
-  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
   const char *protocol_ = protocols[barrierProtocol];
 
   if (barrierCodeMain == 0)
@@ -799,8 +796,6 @@ void ShowSavedSignalBarrier_HF()
 
 void ShowBarrierBrute_HF(uint8_t protocol)
 {
-  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
-
   char Text1[20];
   sprintf(Text1, "Protocol: %s", protocols[protocol]);
   oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 25);

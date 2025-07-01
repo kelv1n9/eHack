@@ -165,6 +165,7 @@ void loop1()
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
+      commandSent = false;
       initialized = true;
     }
 
@@ -293,6 +294,7 @@ void loop1()
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
 
+      commandSent = false;
       initialized = true;
     }
 
@@ -372,8 +374,11 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      if (!successfullyConnected)
+      {
+        pinMode(GD0_PIN_CC, OUTPUT);
+        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      }
       initialized = true;
     }
 
@@ -463,8 +468,11 @@ void loop1()
     if (!initialized)
     {
       ok.reset();
-      pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      if (!successfullyConnected)
+      {
+        pinMode(GD0_PIN_CC, OUTPUT);
+        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      }
       initialized = true;
     }
 
@@ -498,16 +506,21 @@ void loop1()
         break;
       }
 
-      if (barrierBruteIndex >= 0)
+      if (millis() - lastSendTime > 50)
       {
-        if (!successfullyConnected)
-          sendNice(barrierBruteIndex);
-        barrierBruteIndex--;
-      }
-      if (barrierBruteIndex < 0)
-      {
-        bruteState = BRUTE_IDLE;
-        vibro(255, 50);
+        lastSendTime = millis();
+
+        if (barrierBruteIndex >= 0)
+        {
+          if (!successfullyConnected)
+            sendNice(barrierBruteIndex);
+          barrierBruteIndex--;
+        }
+        if (barrierBruteIndex < 0)
+        {
+          bruteState = BRUTE_IDLE;
+          vibro(255, 50);
+        }
       }
       break;
     }
@@ -1390,7 +1403,6 @@ void loop()
     case HF_REPLAY:
     {
       attackIsActive = false;
-      commandSent = false;
     }
     case HF_SCAN:
     {
