@@ -1422,6 +1422,7 @@ void loop()
     case HF_BARRIER_REPLAY:
     {
       isSimpleMenuExit = true;
+      attackIsActive = false;
       break;
     }
     case UHF_SPECTRUM:
