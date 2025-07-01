@@ -185,20 +185,19 @@ uint8_t lastUsedSlotBarrier = 0;
 
 volatile uint32_t lastEdgeMicros;
 volatile uint32_t lowDurationMicros, highDurationMicros, barrierCurrentLevel;
+volatile bool barrierCaptured = false;
 
 // AN Motors
 volatile byte anMotorsCounter = 0;
 volatile long code1 = 0;
 volatile long code2 = 0;
-volatile bool anMotorsCaptured = false;
+
 // CAME
 volatile byte cameCounter = 0;
 volatile uint32_t cameCode = 0;
-volatile bool cameCaptured = false;
 // NICE
 volatile byte niceCounter = 0;
 volatile uint32_t niceCode = 0;
-volatile bool niceCaptured = false;
 
 /* ================= IR ================== */
 #define DELAY_AFTER_SEND 50
@@ -1599,7 +1598,7 @@ void captureBarrierCode()
     }
     if (anMotorsCounter >= 65 && code2 != -1)
     {
-      anMotorsCaptured = true;
+      barrierCaptured = true;
       barrierProtocol = 0;
       barrierCodeMain = code1;
       barrierCodeAdd = code2;
@@ -1632,7 +1631,7 @@ void captureBarrierCode()
   }
   else if ((cameCounter == 12 || cameCounter == 24) && lowDurationMicros > 1000)
   {
-    cameCaptured = true;
+    barrierCaptured = true;
     barrierProtocol = 2;
     barrierCodeMain = cameCode;
     barrierBit = cameCounter;
@@ -1662,7 +1661,7 @@ void captureBarrierCode()
   }
   else if ((niceCounter == 12 || niceCounter == 24) && lowDurationMicros > 2000)
   {
-    niceCaptured = true;
+    barrierCaptured = true;
     barrierProtocol = 1;
     barrierCodeMain = niceCode;
     barrierBit = niceCounter;

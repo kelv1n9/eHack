@@ -26,9 +26,7 @@ void setup()
   oled.update();
   ShowSplashScreen();
 
-  nfc.begin();
-  nfc.setPassiveActivationRetries(0xFF);
-  nfc.powerDownMode();
+  delay(500);
 
   analogReadResolution(12);
   batVoltage = readBatteryVoltage();
@@ -247,7 +245,7 @@ void loop1()
       }
     }
 
-    if (anMotorsCaptured || cameCaptured || niceCaptured)
+    if (barrierCaptured)
     {
       signalCaptured_433MHZ = true;
       currentRssi = ELECHOUSE_cc1101.getRssi();
@@ -262,10 +260,7 @@ void loop1()
       // Check for duplicates
       if (isDuplicateBarrier(data))
       {
-        anMotorsCaptured = false;
-        niceCaptured = false;
-        cameCaptured = false;
-
+        barrierCaptured = false;
         break;
       }
 
@@ -276,9 +271,7 @@ void loop1()
 
       lastUsedSlotBarrier = (lastUsedSlotBarrier + 1) % MAX_BARRIER_SIGNALS;
 
-      anMotorsCaptured = false;
-      niceCaptured = false;
-      cameCaptured = false;
+      barrierCaptured = false;
     }
 
     break;
@@ -334,7 +327,6 @@ void loop1()
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
       }
-
 
       if (millis() - attackTimer >= 1000 && !successfullyConnected)
       {
@@ -1187,40 +1179,35 @@ void loop1()
   /******************************** RFID *************************************/
   case RFID_SCAN:
   {
-    if (!initialized)
-    {
-      rdm6300.begin(RFID_RX_PIN);
-      nfc.SAMConfig();
-      initialized = true;
-    }
-
     static uint32_t lastCheck125kHz = 0;
 
-    /********************* 125 kHz *******************/
-    if (millis() - lastCheck125kHz >= 10)
+    if (!initialized)
     {
-      lastCheck125kHz = millis();
-
-      if (rdm6300.get_new_tag_id())
+      /********************* 125 kHz *******************/
+      if (millis() - lastCheck125kHz >= 10)
       {
-        tagID_125kHz = rdm6300.get_tag_id();
-        tagDetected = 1;
-        vibro(255, 30);
+        lastCheck125kHz = millis();
 
-        RFID data;
-        data.tagID = tagID_125kHz;
-
-        // Check for duplicates
-        if (isDuplicateRFID(data))
+        if (rdm6300.get_new_tag_id())
         {
-          break;
-        }
+          tagID_125kHz = rdm6300.get_tag_id();
+          tagDetected = 1;
+          vibro(255, 30);
 
-        writeRFIDData(lastUsedSlotRFID, data);
-        lastUsedSlotRFID = (lastUsedSlotRFID + 1) % MAX_RFID;
+          RFID data;
+          data.tagID = tagID_125kHz;
+
+          // Check for duplicates
+          if (isDuplicateRFID(data))
+          {
+            break;
+          }
+
+          writeRFIDData(lastUsedSlotRFID, data);
+          lastUsedSlotRFID = (lastUsedSlotRFID + 1) % MAX_RFID;
+        }
       }
     }
-
     break;
   }
   case RFID_EMULATE:
@@ -1856,6 +1843,16 @@ void loop()
   }
   case RFID_SCAN:
   {
+    if (!initialized)
+    {
+      rdm6300.begin(RFID_RX_PIN);
+      nfc.begin();
+      nfc.setPassiveActivationRetries(0xFF);
+      nfc.powerDownMode();
+      nfc.SAMConfig();
+      initialized = true;
+    }
+
     // I2C connection should be through the same core.
     nfcPool();
 
