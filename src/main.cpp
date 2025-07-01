@@ -1260,7 +1260,7 @@ void loop1()
       {
         successfullyConnected = false;
         showLocalVoltage = true;
-        isPortableInited = false;
+        // isPortableInited = false;
         connState = CONN_IDLE;
         DBG("Connection attempts STOPPED by user.\n");
       }
@@ -1299,10 +1299,10 @@ void loop()
     showLock();
   }
 
-  if (isPortableInited)
-  {
-    showPortableInited();
-  }
+  // if (isPortableInited)
+  // {
+  //   showPortableInited();
+  // }
 
   if (isCharging)
   {
@@ -1379,7 +1379,7 @@ void loop()
     case HF_ACTIVITY:
     {
       initialized = false;
-      isPortableInited = false;
+      // isPortableInited = false;
       if (successfullyConnected)
       {
         sendStopCommandToSlave();
@@ -1418,7 +1418,7 @@ void loop()
       communication.setMasterMode();
       communication.init();
       initialized = false;
-      isPortableInited = false;
+      // isPortableInited = false;
       vibro(255, 50);
       break;
     }
@@ -1434,7 +1434,7 @@ void loop()
       communication.setMasterMode();
       communication.init();
       initialized = false;
-      isPortableInited = false;
+      // isPortableInited = false;
       if (successfullyConnected)
       {
         sendStopCommandToSlave(6);
@@ -1480,7 +1480,7 @@ void loop()
         outgoingDataLen = communication.buildPacket(COMMAND_IDLE, 0, 0, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
       }
-      isPortableInited = false;
+      // isPortableInited = false;
       vibro(255, 50);
       return;
     }
@@ -1963,10 +1963,10 @@ void loop()
           memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
           DBG("Remote voltage updated: %.2fV\n", remoteVoltage);
         }
-        else if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
-        {
-          isPortableInited = true;
-        }
+        // else if (recievedData[0] == 'I' && recievedData[1] == 'N' && recievedData[2] == 'I' && recievedData[3] == 'T')
+        // {
+        // isPortableInited = true;
+        // }
         else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
         {
           DBG("Master: PONG received! Connection OK.\n");
@@ -1994,7 +1994,7 @@ void loop()
             DBG("Master: Connection lost.\n");
             successfullyConnected = false;
             // startConnection = false;
-            isPortableInited = false;
+            // isPortableInited = false;
             connState = CONN_IDLE;
             vibro(255, 100, 3, 20);
             connectionAttempts = 0;
