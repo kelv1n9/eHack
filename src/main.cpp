@@ -373,7 +373,7 @@ void loop1()
     {
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[1]);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
       initialized = true;
     }
 
@@ -383,15 +383,15 @@ void loop1()
     {
       if (!locked && ok.click())
       {
-        bruteState = BRUTE_RUNNING;
-        barrierBruteIndex = 4095;
-        lastSendTime = millis();
-
         if (successfullyConnected)
         {
           outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, &currentFreqIndex, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
+
+        bruteState = BRUTE_RUNNING;
+        barrierBruteIndex = 4095;
+        lastSendTime = millis();
 
         vibro(255, 50);
       }
@@ -474,15 +474,15 @@ void loop1()
     {
       if (!locked && ok.click())
       {
-        bruteState = BRUTE_RUNNING;
-        barrierBruteIndex = 4095;
-        lastSendTime = millis();
-
         if (successfullyConnected)
         {
           outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, &currentFreqIndex, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
+
+        bruteState = BRUTE_RUNNING;
+        barrierBruteIndex = 4095;
+        lastSendTime = millis();
 
         vibro(255, 50);
       }
