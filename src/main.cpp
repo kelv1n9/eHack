@@ -389,7 +389,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, 0, 0, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_CAME, &currentFreqIndex, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
@@ -480,7 +480,7 @@ void loop1()
 
         if (successfullyConnected)
         {
-          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, 0, 0, outgoingData);
+          outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_BRUTE_NICE, &currentFreqIndex, 1, outgoingData);
           communication.sendPacket(outgoingData, outgoingDataLen);
         }
 
