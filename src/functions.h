@@ -57,13 +57,15 @@ volatile bool initialized = false;
 volatile bool locked = false;
 
 uint8_t mainMenuCount = 7;
-uint8_t hfMenuCount = 4;
+uint8_t hfMenuCount = 5;
 uint8_t irMenuCount = 4;
 uint8_t uhfMenuCount = 9;
 uint8_t RFIDMenuCount = 3;
 uint8_t gamesMenuCount = 3;
+uint8_t barrierMenuCount = 3;
 uint8_t RAsignalMenuCount = 2;
 uint8_t hfCommonMenuCount = 2;
+uint8_t barrierBruteMenuCount = 2;
 
 uint8_t MAINmenuIndex = 0;
 uint8_t HFmenuIndex = 0;
@@ -71,8 +73,10 @@ uint8_t IRmenuIndex = 0;
 uint8_t uhfMenuIndex = 0;
 uint8_t RFIDMenuIndex = 0;
 uint8_t gamesMenuIndex = 0;
+uint8_t barrierMenuIndex = 0;
 uint8_t RAsignalMenuIndex = 0;
 uint8_t HFCommonMenuIndex = 0;
+uint8_t barrierBruteMenuIndex = 0;
 
 /* ================= Battery ================== */
 #define BATTERY_COEFFICIENT 0.9611905
@@ -160,6 +164,42 @@ uint16_t capturedDelay;
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
 
+/* ================ Barrier =================== */
+#define MAX_DELTA_T_BARRIER 200
+#define AN_MOTORS_PULSE 412
+
+struct SimpleBarrierData
+{
+  uint32_t codeMain;
+  uint32_t codeAdd;
+  uint8_t protocol;
+};
+
+int16_t barrierBruteIndex = 4095;
+volatile uint32_t barrierCodeMain, barrierCodeAdd;
+volatile uint8_t barrierProtocol;
+volatile uint8_t barrierBit;
+
+uint8_t selectedSlotBarrier = 0;
+uint8_t lastUsedSlotBarrier = 0;
+
+volatile uint32_t lastEdgeMicros;
+volatile uint32_t lowDurationMicros, highDurationMicros, barrierCurrentLevel;
+
+// AN Motors
+volatile byte anMotorsCounter = 0;
+volatile long code1 = 0;
+volatile long code2 = 0;
+volatile bool anMotorsCaptured = false;
+// CAME
+volatile byte cameCounter = 0;
+volatile uint32_t cameCode = 0;
+volatile bool cameCaptured = false;
+// NICE
+volatile byte niceCounter = 0;
+volatile uint32_t niceCode = 0;
+volatile bool niceCaptured = false;
+
 /* ================= IR ================== */
 #define DELAY_AFTER_SEND 50
 #define IR_N_REPEATS 0
@@ -234,17 +274,20 @@ struct Tube
 /*=================== EEPROM ==========================*/
 #define MAX_IR_SIGNALS 10
 #define MAX_RA_SIGNALS 10
+#define MAX_BARRIER_SIGNALS 10
 #define MAX_RFID 5
 
 #define SLOT_IR_SIZE sizeof(SimpleIRData)
 #define SLOT_RA_SIZE sizeof(SimpleRAData)
+#define SLOT_BARRIER_SIZE sizeof(SimpleBarrierData)
 #define SLOT_SCORE_SIZE sizeof(GameScores)
 #define SLOT_SETTINGS_SIZE sizeof(Settings)
 #define SLOT_RFID_SIZE sizeof(RFID)
 
 #define EEPROM_IR_START 0
 #define EEPROM_RA_START (EEPROM_IR_START + MAX_IR_SIGNALS * SLOT_IR_SIZE)
-#define EEPROM_SCORE_START (EEPROM_RA_START + MAX_RA_SIGNALS * SLOT_RA_SIZE)
+#define EEPROM_BARRIER_START (EEPROM_RA_START + MAX_RA_SIGNALS * SLOT_RA_SIZE)
+#define EEPROM_SCORE_START (EEPROM_BARRIER_START + MAX_BARRIER_SIGNALS * SLOT_BARRIER_SIZE)
 #define EEPROM_SETTINGS_START (EEPROM_SCORE_START + SLOT_SCORE_SIZE)
 #define EEPROM_RFID_START (EEPROM_SETTINGS_START + SLOT_RFID_SIZE * MAX_RFID)
 #define EEPROM_STARTCONN_ADDR (EEPROM_RFID_START + MAX_RFID * SLOT_RFID_SIZE)
@@ -674,9 +717,18 @@ void clearAllRAData()
     int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
     EEPROM.put(addr, empty);
   }
+
+  for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
+  {
+    SimpleRAData empty = {0, 0, 0};
+    int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+    EEPROM.put(addr, empty);
+  }
+
   EEPROM.commit();
 
   lastUsedSlotRA = 0;
+  lastUsedSlotBarrier = 0;
 }
 
 void clearRAData(uint8_t slot)
@@ -710,6 +762,62 @@ bool isDuplicateRA(const SimpleRAData &newData)
     SimpleRAData existingData = readRAData(i);
     if (newData.code == existingData.code &&
         newData.length == existingData.length &&
+        newData.protocol == existingData.protocol)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+/*********************** Barriers ****************************/
+
+void writeBarrierData(uint8_t slot, const SimpleBarrierData &data)
+{
+  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  EEPROM.put(addr, data);
+  EEPROM.commit();
+}
+
+SimpleBarrierData readBarrierData(uint8_t slot)
+{
+  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  SimpleBarrierData data;
+  EEPROM.get(addr, data);
+  return data;
+}
+
+void clearBarrierData(uint8_t slot)
+{
+  SimpleRAData empty = {0, 0, 0};
+  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  EEPROM.put(addr, empty);
+  EEPROM.commit();
+
+  lastUsedSlotBarrier = slot;
+}
+
+void findLastUsedSlotBarrier()
+{
+  for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
+  {
+    SimpleBarrierData data = readBarrierData(slot);
+    if (data.protocol == 0 && data.codeMain == 0 && data.codeAdd == 0)
+    {
+      lastUsedSlotBarrier = slot;
+      return;
+    }
+  }
+  lastUsedSlotBarrier = 0;
+}
+
+bool isDuplicateBarrier(const SimpleBarrierData &newData)
+{
+  for (uint8_t i = 0; i < lastUsedSlotBarrier; i++)
+  {
+    SimpleBarrierData existingData = readBarrierData(i);
+    if (newData.codeMain == existingData.codeMain &&
+        newData.codeAdd == existingData.codeAdd &&
         newData.protocol == existingData.protocol)
     {
       return true;
@@ -1324,6 +1432,244 @@ bool scanChannels(uint8_t channel)
     return true;
   }
   return false;
+}
+
+/********************************** BARRIER TRANSMISSION (HF) **************************************/
+
+void SendBit(byte b, int pulse)
+{
+  if (b == 0)
+  {
+    digitalWrite(GD0_PIN_CC, HIGH);
+    delayMicroseconds(pulse * 2);
+    digitalWrite(GD0_PIN_CC, LOW);
+    delayMicroseconds(pulse);
+  }
+  else
+  {
+    digitalWrite(GD0_PIN_CC, HIGH);
+    delayMicroseconds(pulse);
+    digitalWrite(GD0_PIN_CC, LOW);
+    delayMicroseconds(pulse * 2);
+  }
+}
+
+// AN-MOTORS
+void sendANMotors(uint32_t c1, uint32_t c2)
+{
+  for (int j = 0; j < 4; j++)
+  {
+    // First 12 bits
+    for (int i = 0; i < 12; i++)
+    {
+      delayMicroseconds(AN_MOTORS_PULSE);
+      digitalWrite(GD0_PIN_CC, HIGH);
+      delayMicroseconds(AN_MOTORS_PULSE);
+      digitalWrite(GD0_PIN_CC, LOW);
+    }
+    delayMicroseconds(AN_MOTORS_PULSE * 10);
+    // First part
+    for (int i = 32; i > 0; i--)
+    {
+      SendBit(bitRead(c1, i - 1), AN_MOTORS_PULSE);
+    }
+    // Second part
+    for (int i = 32; i > 0; i--)
+    {
+      SendBit(bitRead(c2, i - 1), AN_MOTORS_PULSE);
+    }
+    // Battery and repeat flags
+    SendBit(1, AN_MOTORS_PULSE);
+    SendBit(1, AN_MOTORS_PULSE);
+    delayMicroseconds(AN_MOTORS_PULSE * 38);
+  }
+}
+
+// CAME
+void sendCame(uint32_t Code)
+{
+  int bits = (Code >> 12) ? 24 : 12;
+  for (int j = 0; j < 4; j++)
+  {
+    digitalWrite(GD0_PIN_CC, HIGH);
+    delayMicroseconds(320);
+    digitalWrite(GD0_PIN_CC, LOW);
+    for (int i = bits; i > 0; i--)
+    {
+      byte b = bitRead(Code, i - 1);
+      if (b)
+      {
+        digitalWrite(GD0_PIN_CC, LOW); // 1
+        delayMicroseconds(640);
+        digitalWrite(GD0_PIN_CC, HIGH);
+        delayMicroseconds(320);
+      }
+      else
+      {
+        digitalWrite(GD0_PIN_CC, LOW); // 0
+        delayMicroseconds(320);
+        digitalWrite(GD0_PIN_CC, HIGH);
+        delayMicroseconds(640);
+      }
+    }
+    digitalWrite(GD0_PIN_CC, LOW);
+    if (bits == 24)
+      delayMicroseconds(23040);
+    else
+      delayMicroseconds(11520);
+  }
+}
+
+// NICE
+void sendNice(uint32_t Code)
+{
+  int bits = (Code >> 12) ? 24 : 12;
+  for (int j = 0; j < 4; j++)
+  {
+    digitalWrite(GD0_PIN_CC, HIGH);
+    delayMicroseconds(700);
+    digitalWrite(GD0_PIN_CC, LOW);
+    for (int i = bits; i > 0; i--)
+    {
+      byte b = bitRead(Code, i - 1);
+      if (b)
+      {
+        digitalWrite(GD0_PIN_CC, LOW); // 1
+        delayMicroseconds(1400);
+        digitalWrite(GD0_PIN_CC, HIGH);
+        delayMicroseconds(700);
+      }
+      else
+      {
+        digitalWrite(GD0_PIN_CC, LOW); // 0
+        delayMicroseconds(700);
+        digitalWrite(GD0_PIN_CC, HIGH);
+        delayMicroseconds(1400);
+      }
+    }
+    digitalWrite(GD0_PIN_CC, LOW);
+    if (bits == 24)
+      delayMicroseconds(50400);
+    else
+      delayMicroseconds(25200);
+  }
+}
+
+/********************************** BARRIER SIGNAL RECEIVE (HF) ***************************************/
+
+boolean CheckValue(uint16_t base, uint16_t value)
+{
+  return ((value == base) || ((value > base) && ((value - base) < MAX_DELTA_T_BARRIER)) || ((value < base) && ((base - value) < MAX_DELTA_T_BARRIER)));
+}
+
+void captureBarrierCode()
+{
+  barrierCurrentLevel = digitalRead(GD0_PIN_CC);
+  if (barrierCurrentLevel == HIGH)
+    lowDurationMicros = micros() - lastEdgeMicros;
+  else
+    highDurationMicros = micros() - lastEdgeMicros;
+
+  lastEdgeMicros = micros();
+
+  // AN-MOTORS
+  if (barrierCurrentLevel == HIGH)
+  {
+    if (CheckValue(AN_MOTORS_PULSE, highDurationMicros) && CheckValue(AN_MOTORS_PULSE * 2, lowDurationMicros))
+    { // valid 1
+      if (anMotorsCounter < 32)
+        code1 = (code1 << 1) | 1;
+      else if (anMotorsCounter < 64)
+        code2 = (code2 << 1) | 1;
+      anMotorsCounter++;
+    }
+    else if (CheckValue(AN_MOTORS_PULSE * 2, highDurationMicros) && CheckValue(AN_MOTORS_PULSE, lowDurationMicros))
+    { // valid 0
+      if (anMotorsCounter < 32)
+        code1 = (code1 << 1) | 0;
+      else if (anMotorsCounter < 64)
+        code2 = (code2 << 1) | 0;
+      anMotorsCounter++;
+    }
+    else
+    {
+      anMotorsCounter = 0;
+      code1 = 0;
+      code2 = 0;
+    }
+    if (anMotorsCounter >= 65 && code2 != -1)
+    {
+      anMotorsCaptured = true;
+      barrierProtocol = 0;
+      barrierCodeMain = code1;
+      barrierCodeAdd = code2;
+      barrierBit = anMotorsCounter;
+
+      code1 = 0;
+      code2 = 0;
+      anMotorsCounter = 0;
+    }
+  }
+
+  // CAME
+  if (barrierCurrentLevel == LOW)
+  {
+    if (CheckValue(320, highDurationMicros) && CheckValue(640, lowDurationMicros))
+    { // valid 1
+      cameCode = (cameCode << 1) | 1;
+      cameCounter++;
+    }
+    else if (CheckValue(640, highDurationMicros) && CheckValue(320, lowDurationMicros))
+    { // valid 0
+      cameCode = (cameCode << 1) | 0;
+      cameCounter++;
+    }
+    else
+    {
+      cameCounter = 0;
+      cameCode = 0;
+    }
+  }
+  else if ((cameCounter == 12 || cameCounter == 24) && lowDurationMicros > 1000)
+  {
+    cameCaptured = true;
+    barrierProtocol = 2;
+    barrierCodeMain = cameCode;
+    barrierBit = cameCounter;
+
+    cameCode = 0;
+    cameCounter = 0;
+  }
+
+  // NICE
+  if (barrierCurrentLevel == LOW)
+  {
+    if (CheckValue(700, highDurationMicros) && CheckValue(1400, lowDurationMicros))
+    { // valid 1
+      niceCode = (niceCode << 1) | 1;
+      niceCounter++;
+    }
+    else if (CheckValue(1400, highDurationMicros) && CheckValue(700, lowDurationMicros))
+    { // valid 0
+      niceCode = (niceCode << 1) | 0;
+      niceCounter++;
+    }
+    else
+    {
+      niceCounter = 0;
+      niceCode = 0;
+    }
+  }
+  else if ((niceCounter == 12 || niceCounter == 24) && lowDurationMicros > 2000)
+  {
+    niceCaptured = true;
+    barrierProtocol = 1;
+    barrierCodeMain = niceCode;
+    barrierBit = niceCounter;
+
+    niceCode = 0;
+    niceCounter = 0;
+  }
 }
 
 /* ============================= 125 kHz RFID EMULATION =============================== */

@@ -18,6 +18,7 @@ enum MenuState
 
   HF_AIR_MENU,
   HF_COMMON_MENU,
+  HF_BARRIER_MENU,
   HF_JAMMER,
   HF_TESLA,
 
@@ -26,6 +27,12 @@ enum MenuState
 
   HF_SCAN,
   HF_REPLAY,
+
+  HF_BARRIER_SCAN,
+  HF_BARRIER_REPLAY,
+  HF_BARRIER_BRUTE_MENU,
+  HF_BARRIER_BRUTE_CAME,
+  HF_BARRIER_BRUTE_NICE,
 
   IR_SCAN,
   IR_REPLAY,
@@ -60,6 +67,7 @@ const char PROGMEM *mainMenuItems[] = {
 const char PROGMEM *hfMenuItems[] = {
     "Air Scan",
     "Common",
+    "Gates",
     "Jammer",
     "Tesla",
 };
@@ -103,6 +111,17 @@ const char PROGMEM *gamesMenuItems[] = {
 const char PROGMEM *RAsignalMenuItems[] = {
     "Spectrum",
     "Activity",
+};
+
+const char PROGMEM *barrierMenuItems[] = {
+    "Capture",
+    "Replay",
+    "Brute",
+};
+
+const char PROGMEM *barrierBruteMenuItems[] = {
+    "CAME",
+    "NICE",
 };
 
 MenuState currentMenu = MAIN_MENU;
@@ -647,6 +666,150 @@ void DrawRSSISpectrum_HF()
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
   oled.print(Text);
+}
+
+/*============================= HF BARRIERS VISUALIZATION ============================================*/
+
+void ShowCapturedBarrier_HF()
+{
+  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
+
+  if (barrierProtocol == 0)
+  {
+    char Text[25];
+    sprintf(Text, "RF Signal: %d dBm", currentRssi);
+    oled.setScale(1);
+    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+    oled.print(Text);
+
+    char Text2[20];
+    sprintf(Text2, "Code1: 0x%04X", barrierCodeMain);
+    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+    oled.print(Text2);
+
+    char Text3[20];
+    sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
+    oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+    oled.print(Text3);
+
+    char Text4[20];
+    sprintf(Text4, "Protocol: %s", protocols[barrierProtocol]);
+    oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+    oled.print(Text4);
+
+    char Text5[20];
+    sprintf(Text5, "Length: %d Bit", barrierBit);
+    oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
+    oled.print(Text5);
+  }
+  else
+  {
+    char Text[25];
+    sprintf(Text, "RF Signal: %d dBm", currentRssi);
+    oled.setScale(1);
+    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+    oled.print(Text);
+
+    char Text2[20];
+    sprintf(Text2, "Code: %d", barrierCodeMain);
+    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+    oled.print(Text2);
+
+    char Text4[20];
+    sprintf(Text4, "Protocol: %s", protocols[barrierProtocol]);
+    oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 35);
+    oled.print(Text4);
+
+    char Text5[20];
+    sprintf(Text5, "Length: %d Bit", barrierBit);
+    oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 45);
+    oled.print(Text5);
+  }
+}
+
+void ShowSavedSignalBarrier_HF()
+{
+  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
+  const char *protocol_ = protocols[barrierProtocol];
+
+  if (barrierCodeMain == 0)
+  {
+    protocol_ = "None";
+    barrierBit = 0;
+  }
+  else
+  {
+    barrierBit = 65;
+  }
+
+  if (barrierProtocol == 0)
+  {
+    char Text[25];
+    sprintf(Text, "Saved RF, slot: %d", selectedSlotBarrier);
+    oled.setScale(1);
+    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+    oled.print(Text);
+
+    char Text2[20];
+    sprintf(Text2, "Code1: 0x%04X", barrierCodeMain);
+    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+    oled.print(Text2);
+
+    char Text3[20];
+    sprintf(Text3, "Code2: 0x%04X", barrierCodeAdd);
+    oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+    oled.print(Text3);
+
+    char Text4[20];
+    sprintf(Text4, "Protocol: %s", protocol_);
+    oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+    oled.print(Text4);
+
+    char Text5[20];
+    sprintf(Text5, "Length: %d Bit", barrierBit);
+    oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
+    oled.print(Text5);
+  }
+  else
+  {
+    barrierBit = (barrierCodeMain >> 12) ? 24 : 12;
+
+    char Text[25];
+    sprintf(Text, "Saved RF, slot: %d", selectedSlotBarrier);
+    oled.setScale(1);
+    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
+    oled.print(Text);
+
+    char Text2[20];
+    sprintf(Text2, "Code: %d", barrierCodeMain);
+    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+    oled.print(Text2);
+
+    char Text4[20];
+    sprintf(Text4, "Protocol: %s", protocol_);
+    oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 35);
+    oled.print(Text4);
+
+    char Text5[20];
+    sprintf(Text5, "Length: %d Bit", barrierBit);
+    oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 45);
+    oled.print(Text5);
+  }
+}
+
+void ShowBarrierBrute_HF(uint8_t protocol)
+{
+  const char *protocols[] = {"AN-MOTORS", "NICE", "CAME"};
+
+  char Text1[20];
+  sprintf(Text1, "Protocol: %s", protocols[protocol]);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 25);
+  oled.print(Text1);
+
+  char Text2[20];
+  sprintf(Text2, "Command: %d", barrierBruteIndex);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
+  oled.print(Text2);
 }
 
 /*============================= UHF VISUALIZATION ============================================*/
