@@ -1410,6 +1410,7 @@ void loop()
     {
       isSimpleMenuExit = true;
       attackIsActive = false;
+      bruteState = BRUTE_IDLE;
       break;
     }
     case UHF_SPECTRUM:
