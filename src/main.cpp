@@ -1194,7 +1194,7 @@ void loop1()
   {
     static uint32_t lastCheck125kHz = 0;
 
-    if (!initialized)
+    if (initialized)
     {
       /********************* 125 kHz *******************/
       if (millis() - lastCheck125kHz >= 10)
@@ -1293,7 +1293,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
