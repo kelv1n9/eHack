@@ -11,7 +11,7 @@
 
 To enhance its capabilities, **eHack** can be paired with the **eHack-portable-module**. This compact RF module connects wirelessly to the main unit and is controlled directly from its menu. It allows you to perform attacks and research from a distance, adding significant flexibility to your operations.
 
-Find more information on the portable module in its dedicated repository: [eHack-portable-module](https://github.com/Mr-Proxy/eHack-portable-module)
+Find more information on the portable module in its dedicated repository: [eHack-portable-module](https://github.com/kelv1n9/eHack_Portable_Module)
 
 ---
 
