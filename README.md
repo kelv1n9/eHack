@@ -1,19 +1,34 @@
-# eHack v3.2.0
-
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Pico-blue?logo=raspberry-pi)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-**eHack** is a pocket‑sized, multi‑band penetration‑testing toolkit powered by a **Raspberry Pi Pico**,  
-a **CC1101** sub‑GHz transceiver, an **NRF24L01+** 2.4 GHz radio, a **PN532** RFID/NFC front‑end,  
-and a 128 × 64 OLED display.  
-Everything is written for the Arduino framework and built with **PlatformIO** for fast recompiles and easy hacking.
+# 🚀 eHack Project
+
+**eHack** is a versatile, all-in-one tool built on the **Raspberry Pi Pico**, designed for radio frequency analysis, penetration testing, and hardware research enthusiasts. The project integrates a wide array of tools for interacting with various wireless technologies, all housed in a compact form factor with a user-friendly OLED interface.
+
+---
+
+## 🛰️ Portable Module
+
+To enhance its capabilities, **eHack** can be paired with the **eHack-portable-module**. This compact RF module connects wirelessly to the main unit and is controlled directly from its menu. It allows you to perform attacks and research from a distance, adding significant flexibility to your operations.
+
+Find more information on the portable module in its dedicated repository: [eHack-portable-module](https://github.com/Mr-Proxy/eHack-portable-module)
+
+---
+
+## 🤝 Contributor Wanted!
+
+> For the **eHack** project, we are looking for a developer who can help with the software implementation for the **PN532 NFC module**. The goal is to add full tag reading, writing, and emulation capabilities.
+>
+> Your contribution to this feature would be highly appreciated! If you have the experience and a desire to contribute, please feel free to reach out.
+
 
 | &nbsp; | Bands&nbsp;/&nbsp;Tech | What you can do |
 |---|---|---|
-| **Sub‑GHz (315 – 915 MHz)** | CC1101 | • Live spectrum scan<br>• Capture & replay OOK/ASK 433 MHz packets (RCSwitch‑style)<br>• Gate / Barrier toolkit (capture, replay, brute‑force **CAME** & **NICE** codes)<br>• **Tesla** charge‑port opener<br>• Wide‑band noise jammer |
-| **2.4 GHz** | NRF24L01+ | • Channel‑map spectrum viewer<br>• Jammers: All / Wi‑Fi‑only / BT‑only / BLE‑only<br>• BLE advertising spammer |
-| **Infra‑Red** | IR LED + receiver | • Capture & replay NEC/RC5/Samsung…<br>• Built‑in brute‑force tables for TVs & projectors |
-| **RFID / NFC** | PN532 | • Read, emulate, and write 13.56 MHz (MIFARE / NFC‑A) tags |
+| **Sub‑GHz (315 – 915 MHz)** | CC1101 | • Live spectrum and activity scan<br>• Capture & replay OOK/ASK packets <br>• Gate / Barrier toolkit (capture, replay, brute‑force **CAME** & **NICE** codes)<br>• **Tesla** charge‑port opener<br>• Wide‑band noise jammer |
+| **2.4 GHz** | NRF24L01+ | • Channel‑map spectrum viewer<br>• Jammers: All / Wi‑Fi / BT / BLE / USB / VIDEO / RC  <br> |
+| **BLE Spam** | ESP32 C3 | • BLE Spam (iOS) |
+| **Infra‑Red** | IR LED + receiver | • Capture & replay<br>• Built‑in brute‑force tables for TVs & projectors |
+| **RFID / NFC** | rdm6300 + PN532 | • Read, emulate (only RFID) tags |
 | **Games** | — | Falling Dots, Snake, Flappy Bird |
 | **Quality‑of‑Life** | — | OLED UI with 3‑button navigation • vibration feedback • battery monitor • auto‑dimming • settings saved to EEPROM |
 
@@ -25,12 +40,15 @@ Everything is written for the Arduino framework and built with **PlatformIO** fo
 Main
 ├─ SubGHz
 │   ├─ Air Scan
+│   │   ├─ Spectrum
+│   │   └─ Activity
+│   ├─ Common
+│   │   ├─ Capture
+│   │   └─ Replay
 │   ├─ Barriers
 │   │   ├─ Capture
 │   │   ├─ Replay
 │   │   └─ Brute (CAME / NICE)
-│   ├─ Capture
-│   ├─ Replay
 │   ├─ Jammer
 │   └─ Tesla
 ├─ 2.4 GHz
@@ -39,6 +57,9 @@ Main
 │   ├─ Wi‑Fi Jam
 │   ├─ BT Jam
 │   ├─ BLE Jam
+│   ├─ USB Jam
+│   ├─ VIDEO Jam
+│   ├─ RC Jam
 │   └─ BLE Spam
 ├─ IR Tools
 │   ├─ Capture
@@ -53,6 +74,7 @@ Main
 │   ├─ Falling Dots
 │   ├─ Snake
 │   └─ Flappy Bird
+├─ Connect
 └─ Settings
 ```
 ---
