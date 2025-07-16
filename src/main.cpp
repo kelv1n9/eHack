@@ -11,14 +11,20 @@ void setup()
   Wire.begin();
 
   // SPI
-  SPI.setSCK(6);
-  SPI.setMOSI(7);
-  SPI.setMISO(4);
+  SPI.setSCK(SCK_PIN_NRF);
+  SPI.setTX(MOSI_PIN_NRF);
+  SPI.setRX(MISO_PIN_NRF);
   SPI.begin();
 
-  cc1101Init();
   radio.begin();
   radio.powerDown();
+
+  SPI1.setSCK(SCK_PIN_CC);
+  SPI1.setTX(MOSI_PIN_CC);
+  SPI1.setRX(MISO_PIN_CC);
+  SPI1.begin();
+
+  cc1101Init();
 
   oled.init();
   oled.clear();

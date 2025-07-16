@@ -111,9 +111,13 @@ cc1101 Driver for RC Switch. Mod by Little Satan. With permission to modify and 
 #define CC1101_RXFIFO       0x3F
 
 //************************************* class **************************************************//
+#include <SPI.h>
+#define _SPI SPIClass
+
 class ELECHOUSE_CC1101
 {
 private:
+  _SPI* _spi;
   void SpiStart(void);
   void SpiEnd(void);
   void GDO_Set (void);
@@ -128,7 +132,7 @@ private:
   void Split_MDMCFG2(void);
   void Split_MDMCFG4(void);
 public:
-  void Init(void);
+  void Init(_SPI* spiBus);
   byte SpiReadStatus(byte addr);
   void setSpiPin(byte sck, byte miso, byte mosi, byte ss);
   void addSpiPin(byte sck, byte miso, byte mosi, byte ss, byte modul);

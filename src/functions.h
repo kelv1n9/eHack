@@ -2,7 +2,7 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
-// #define DEBUG_eHack
+#define DEBUG_eHack
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
@@ -36,15 +36,15 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v4.0.0"
+#define APP_VERSION "v4.1.0"
 
 #define BLE_PIN 18
 
 #define VIBRO 16
 
 #define BTN_DOWN 9
-#define BTN_OK 10
-#define BTN_UP 11
+#define BTN_OK 8
+#define BTN_UP 5
 
 #define IR_TX 2
 #define IR_RX 3
@@ -125,12 +125,15 @@ uint32_t brightnessTimer;
 #define transmissions 5
 
 /* =================== SubGHz MHz ================== */
-#define CSN_PIN_CC 17
+#define SCK_PIN_CC 10
+#define MOSI_PIN_CC 11
+#define MISO_PIN_CC 12
+#define CSN_PIN_CC 13
+#define GD0_PIN_CC 19
+
 #define RSSI_WINDOW_MS 100
 #define RSSI_STEP_MS 50
 #define RSSI_BUFFER_SIZE 90
-
-const byte GD0_PIN_CC = 19;
 
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
@@ -303,8 +306,12 @@ Settings settings;
 
 const uint8_t settingsMenuCount = 5;
 // ================= 2.4 GHZ ===========================/
+#define SCK_PIN_NRF 6
+#define MOSI_PIN_NRF 7
+#define MISO_PIN_NRF 4
 #define CE_PIN_NRF 21
 #define CSN_PIN_NRF 20
+
 #define START_CHANNEL 45
 #define NUM_CHANNELS 126
 
@@ -572,14 +579,14 @@ void resetSpectrum_HF()
 
 void cc1101Init()
 {
-  ELECHOUSE_cc1101.setSpiPin(6, 4, 7, CSN_PIN_CC);
+  ELECHOUSE_cc1101.setSpiPin(SCK_PIN_CC, MISO_PIN_CC, MOSI_PIN_CC, CSN_PIN_CC);
 
   ELECHOUSE_cc1101.setClb(1, 11, 13);
   ELECHOUSE_cc1101.setClb(2, 14, 17);
   ELECHOUSE_cc1101.setClb(3, 29, 33);
   ELECHOUSE_cc1101.setClb(4, 33, 34);
 
-  ELECHOUSE_cc1101.Init();
+  ELECHOUSE_cc1101.Init(&SPI1);
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
   ELECHOUSE_cc1101.setDcFilterOff(0);
   ELECHOUSE_cc1101.setRxBW(135);
