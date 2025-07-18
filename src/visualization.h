@@ -1188,26 +1188,24 @@ void ShowSavedSignal_RFID()
 }
 
 /* ============================= CONNECTION ============================================ */
-void showConnectionStatus()
+void showConnectionStatus(uint8_t menuIndex)
 {
   oled.setScale(1);
-
   char buf[20];
   sprintf(buf, "Connect: %s", startConnection ? "ON" : "OFF");
   oled.setCursorXY((128 - getTextWidth(buf)) / 2, 25);
+  oled.invertText(successfullyConnected && menuIndex == 0);
   oled.print(buf);
 
   const char *txt;
-
   if (!startConnection)
-  {
     txt = "Click OK to enable";
-  }
   else
-  {
-    txt = successfullyConnected ? "Connected!" : "Connecting...";
-  }
+    txt = successfullyConnected ? "Turn off module" : "Connecting...";
 
   oled.setCursorXY((128 - getTextWidth(txt)) / 2, 45);
+  oled.invertText(successfullyConnected && menuIndex == 1);
   oled.print(txt);
+
+  oled.invertText(false);
 }

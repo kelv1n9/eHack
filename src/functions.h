@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v4.1.0"
+#define APP_VERSION "v4.1.1"
 
 #define BLE_PIN 18
 
@@ -394,6 +394,7 @@ uint32_t pongTimeoutTimer = 0;
 
 byte ping[4] = {'P', 'I', 'N', 'G'};
 byte pong[4] = {'P', 'O', 'N', 'G'};
+byte disableModule[4] = {'O', 'F', 'F'};
 
 DataTransmission communication(&radio);
 

@@ -1260,34 +1260,6 @@ void loop1()
   {
     break;
   }
-  /********************************** CONNECTION **************************************/
-  case CONNECTION:
-  {
-    if (!initialized)
-    {
-      ok.reset();
-      communication.setMasterMode();
-      communication.init();
-
-      initialized = true;
-    }
-    if (!locked && ok.click())
-    {
-      startConnection = !startConnection;
-
-      if (!startConnection)
-      {
-        successfullyConnected = false;
-        showLocalVoltage = true;
-        // isPortableInited = false;
-        connState = CONN_IDLE;
-        DBG("Connection attempts STOPPED by user.\n");
-      }
-
-      vibro(255, 30);
-    }
-    break;
-  }
   }
 }
 
@@ -1966,7 +1938,62 @@ void loop()
   }
   case CONNECTION:
   {
-    showConnectionStatus();
+    static uint8_t settingsMenuIndex = 0;
+
+    if (!initialized)
+    {
+      ok.reset();
+      communication.setMasterMode();
+      communication.init();
+
+      initialized = true;
+    }
+    if (!locked && ok.click())
+    {
+      if (settingsMenuIndex == 0)
+      {
+        startConnection = !startConnection;
+
+        if (!startConnection)
+        {
+          successfullyConnected = false;
+          showLocalVoltage = true;
+          // isPortableInited = false;
+          connState = CONN_IDLE;
+          DBG("Connection attempts STOPPED by user.\n");
+        }
+
+        vibro(255, 30);
+      }
+      else if (settingsMenuIndex == 1)
+      {
+        for (int i = 0; i < 3; i++)
+          communication.sendPacket(disableModule, sizeof(disableModule));
+        successfullyConnected = false;
+        startConnection = false;
+        showLocalVoltage = true;
+        connState = CONN_IDLE;
+        settingsMenuIndex = 0;
+        DBG("Remote device turned off by user.\n");
+        vibro(255, 30);
+      }
+    }
+
+    if (!locked && (down.click() || down.step()) && successfullyConnected)
+    {
+      settingsMenuIndex = (settingsMenuIndex + 1) % 2;
+      vibro(255, 20);
+    }
+    if (!locked && (up.click() || up.step()) && successfullyConnected)
+    {
+      if (settingsMenuIndex == 0)
+        settingsMenuIndex = 1;
+      else
+        settingsMenuIndex = 0;
+      vibro(255, 20);
+    }
+
+    showConnectionStatus(settingsMenuIndex);
     break;
   }
   }
