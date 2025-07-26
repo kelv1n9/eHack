@@ -61,6 +61,14 @@ void setup()
 
   loadSettings();
   loadAllScores();
+  loadStartConnection();
+
+  if (startConnection)
+  {
+    communication.setMasterMode();
+    communication.init();
+    connectionInited = true;
+  }
 
   for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++)
   {
@@ -1331,6 +1339,7 @@ void loop()
     {
       initialized = false;
       isSimpleMenuExit = true;
+      saveStartConnection();
       break;
     }
     case UHF_MENU:
@@ -1373,7 +1382,7 @@ void loop()
       // isPortableInited = false;
       if (successfullyConnected)
       {
-        sendStopCommandToSlave();
+        sendStopCommandToSlave(6);
       }
       vibro(255, 50);
       break;
@@ -1408,6 +1417,7 @@ void loop()
       stopRadioAttack();
       communication.setMasterMode();
       communication.init();
+      connectionInited = true;
       initialized = false;
       // isPortableInited = false;
       vibro(255, 50);
@@ -1424,6 +1434,7 @@ void loop()
       stopRadioAttack();
       communication.setMasterMode();
       communication.init();
+      connectionInited = true;
       initialized = false;
       // isPortableInited = false;
       if (successfullyConnected)
@@ -1940,13 +1951,12 @@ void loop()
   {
     static uint8_t settingsMenuIndex = 0;
 
-    if (!initialized)
+    if (!connectionInited)
     {
       ok.reset();
       communication.setMasterMode();
       communication.init();
-
-      initialized = true;
+      connectionInited = true;
     }
     if (!locked && ok.click())
     {
@@ -2051,7 +2061,7 @@ void loop()
 
     drawRadioConnected();
   }
-  else if (!successfullyConnected && startConnection && currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
+  else if (!successfullyConnected && startConnection && !isUltraHighFrequencyMode())
   {
     switch (connState)
     {

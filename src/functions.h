@@ -2,7 +2,7 @@
 #define EB_HOLD_TIME 300
 #define NFC_INTERFACE_I2C
 
-#define DEBUG_eHack
+// #define DEBUG_eHack
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v4.1.1"
+#define APP_VERSION "v4.1.2"
 
 #define BLE_PIN 18
 
@@ -317,6 +317,8 @@ const uint8_t settingsMenuCount = 5;
 
 RF24 radio(CE_PIN_NRF, CSN_PIN_NRF, 16000000);
 
+bool connectionInited = false;
+
 const uint8_t cacheMax = 15;
 const uint16_t margin = 1;
 const uint16_t barWidth = (SCREEN_WIDTH - (margin * 2)) / NUM_CHANNELS;
@@ -422,10 +424,12 @@ void sendStopCommandToSlave(int coeff = 1)
 
   radio.stopListening();
 
+  bool success = false;
   while (millis() - spamStartTime < spamDuration)
   {
-    communication.sendPacket(outgoingData, outgoingDataLen);
-    delay(5);
+    success = communication.sendPacket(outgoingData, outgoingDataLen);
+    if (success)
+      break;
   }
 
   radio.startListening();
@@ -973,6 +977,12 @@ void saveSettings()
   EEPROM.commit();
 }
 
+void saveStartConnection()
+{
+  EEPROM.put(EEPROM_STARTCONN_ADDR, startConnection);
+  EEPROM.commit();
+}
+
 void loadSettings()
 {
   EEPROM.get(EEPROM_SETTINGS_START, settings);
@@ -981,6 +991,11 @@ void loadSettings()
 void loadAllScores()
 {
   EEPROM.get(EEPROM_SCORE_START, gameScores);
+}
+
+void loadStartConnection()
+{
+  EEPROM.get(EEPROM_STARTCONN_ADDR, startConnection);
 }
 
 void saveAllScores()
