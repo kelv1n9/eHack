@@ -643,6 +643,8 @@ void loop1()
   {
     static uint32_t spectrumTimer = 0;
     static bool waitingForSettle = false;
+    static uint32_t lastReceivedTime = millis();
+    static bool lastConnectionStatus = successfullyConnected;
 
     if (!initialized)
     {
@@ -658,9 +660,28 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_SPECTRUM, &currentScanFreq, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+        lastReceivedTime = millis();
       }
 
       initialized = true;
+    }
+
+    if (lastConnectionStatus != successfullyConnected)
+    {
+      initialized = false;
+      lastConnectionStatus = successfullyConnected;
+      DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
+      return;
+    }
+
+    if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
+    {
+      successfullyConnected = false;
+      initialized = false;
+      connState = CONN_IDLE;
+      vibro(255, 30, 1);
+      DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
+      return;
     }
 
     if (!successfullyConnected && waitingForSettle)
@@ -728,6 +749,8 @@ void loop1()
       {
         rssiAbsoluteMax[currentScanFreq] = currentRssi;
       }
+
+      lastReceivedTime = millis();
     }
 
     break;
@@ -736,6 +759,8 @@ void loop1()
   case HF_ACTIVITY:
   {
     static uint32_t lastStepMs = millis();
+    static uint32_t lastReceivedTime = millis();
+    static bool lastConnectionStatus = false;
 
     if (!initialized)
     {
@@ -748,9 +773,28 @@ void loop1()
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_ACTIVITY, &currentFreqIndex, 1, outgoingData);
         communication.sendPacket(outgoingData, outgoingDataLen);
+        lastReceivedTime = millis();
       }
 
       initialized = true;
+    }
+
+    if (lastConnectionStatus != successfullyConnected)
+    {
+      initialized = false;
+      lastConnectionStatus = successfullyConnected;
+      DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
+      return;
+    }
+
+    if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
+    {
+      successfullyConnected = false;
+      initialized = false;
+      connState = CONN_IDLE;
+      vibro(255, 30, 1);
+      DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
+      return;
     }
 
     if (checkFreqButtons())
@@ -793,6 +837,7 @@ void loop1()
         rssiIndex = 0;
 
       lastStepMs = millis();
+      lastReceivedTime = millis();
     }
     break;
   }
@@ -1351,6 +1396,7 @@ void loop()
     case HF_COMMON_MENU:
     case HF_BARRIER_MENU:
     case HF_BARRIER_BRUTE_MENU:
+    case TORCH:
     {
       vibro(255, 50);
       break;
@@ -1895,6 +1941,35 @@ void loop()
   {
     break;
   }
+  case TORCH:
+  {
+    static bool solidMode = true;
+    static uint32_t lastToggle = 0;
+    static bool ledOn = true;
+
+    if (ok.click())
+    {
+      solidMode = !solidMode;
+      vibro(255, 50);
+      DBG("Torch mode: %s\n", solidMode ? "SOLID" : "BLINKING");
+    }
+
+    if (solidMode)
+    {
+      oled.rect(0, 0, 128, 64, 1);
+    }
+    else
+    {
+      if (millis() - lastToggle > 1000)
+      { 
+        lastToggle = millis();
+        ledOn = !ledOn;
+      }
+      oled.rect(0, 0, 128, 64, ledOn ? 1 : 0); 
+    }
+
+    break;
+  }
   case DOTS_GAME:
   {
 
@@ -1977,8 +2052,14 @@ void loop()
       }
       else if (settingsMenuIndex == 1)
       {
-        for (int i = 0; i < 3; i++)
-          communication.sendPacket(disableModule, sizeof(disableModule));
+        unsigned long spamStartTime = millis();
+        bool success = false;
+        while (millis() - spamStartTime < 1000)
+        {
+          success = communication.sendPacket(disableModule, sizeof(disableModule));
+          if (success)
+            break;
+        }
         successfullyConnected = false;
         startConnection = false;
         showLocalVoltage = true;
@@ -2107,7 +2188,7 @@ void loop()
     handleBatteryTasks();
   }
 
-  if (!isHighFrequencyMode())
+  if (!isHighFrequencyMode() && currentMenu != TORCH)
   {
     setMinBrightness();
   }

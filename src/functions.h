@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v4.1.2"
+#define APP_VERSION "v4.1.3"
 
 #define BLE_PIN 18
 
@@ -56,7 +56,7 @@ Button down(BTN_DOWN);
 volatile bool initialized = false;
 volatile bool locked = false;
 
-uint8_t mainMenuCount = 7;
+uint8_t mainMenuCount = 8;
 uint8_t hfMenuCount = 5;
 uint8_t irMenuCount = 4;
 uint8_t uhfMenuCount = 9;
@@ -378,6 +378,7 @@ uint8_t tagIDLength_NFC;                     // Length of the UID (4 or 7 bytes 
 bool nfcDataValid = false;
 
 /*======================= COMMUNICATION ============================*/
+#define CONNECTION_TIMEOUT_MS 1500
 #define CONNECTION_DELAY 2000
 #define PONG_WAIT_MS 1000
 #define SEND_DURATION_MS 20

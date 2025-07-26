@@ -9,6 +9,7 @@ enum MenuState
   IR_MENU,
   RFID_MENU,
   GAMES,
+  TORCH,
   CONNECTION,
   SETTINGS,
 
@@ -60,6 +61,7 @@ const char PROGMEM *mainMenuItems[] = {
     "IR Tools",
     "RFID",
     "Games",
+    "Torch",
     "Connect",
     "Settings",
 };
@@ -134,7 +136,8 @@ bool isGameOrFullScreenActivity()
   return (currentMenu == DOTS_GAME ||
           currentMenu == SNAKE_GAME ||
           currentMenu == FLAPPY_GAME ||
-          currentMenu == HF_ACTIVITY);
+          currentMenu == HF_ACTIVITY ||
+          currentMenu == TORCH);
 }
 
 bool isHighFrequencyMode()
