@@ -380,7 +380,7 @@ bool nfcDataValid = false;
 /*======================= COMMUNICATION ============================*/
 #define CONNECTION_DELAY 2000
 #define PONG_WAIT_MS 1000
-#define SEND_DURATION_MS 200
+#define SEND_DURATION_MS 20
 #define LISTEN_DURATION_MS 20
 #define N_CONNECTIONS_ATTEMPTS 3
 uint8_t connectionAttempts = 0;

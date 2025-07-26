@@ -675,11 +675,11 @@ void loop1()
         }
         else
         {
-          if (rssiMaxPeak[currentScanFreq] > -100)
+          if (rssiMaxPeak[currentScanFreq] > -95)
           {
             rssiMaxPeak[currentScanFreq] -= 3;
-            if (rssiMaxPeak[currentScanFreq] < -100)
-              rssiMaxPeak[currentScanFreq] = -100;
+            if (rssiMaxPeak[currentScanFreq] < -95)
+              rssiMaxPeak[currentScanFreq] = -95;
           }
         }
 
@@ -716,11 +716,11 @@ void loop1()
       }
       else
       {
-        if (rssiMaxPeak[currentScanFreq] > -100)
+        if (rssiMaxPeak[currentScanFreq] > -95)
         {
           rssiMaxPeak[currentScanFreq] -= 3;
-          if (rssiMaxPeak[currentScanFreq] < -100)
-            rssiMaxPeak[currentScanFreq] = -100;
+          if (rssiMaxPeak[currentScanFreq] < -95)
+            rssiMaxPeak[currentScanFreq] = -95;
         }
       }
 
