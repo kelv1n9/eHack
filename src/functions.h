@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v5.0.0b"
+#define APP_VERSION "v5.0.0"
 
 #define BLE_PIN 18
 
