@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v4.1.3"
+#define APP_VERSION "v5.0.0b"
 
 #define BLE_PIN 18
 
@@ -56,7 +56,7 @@ Button down(BTN_DOWN);
 volatile bool initialized = false;
 volatile bool locked = false;
 
-uint8_t mainMenuCount = 8;
+uint8_t mainMenuCount = 9;
 uint8_t hfMenuCount = 5;
 uint8_t irMenuCount = 4;
 uint8_t uhfMenuCount = 9;
@@ -435,6 +435,14 @@ void sendStopCommandToSlave(int coeff = 1)
 
   radio.startListening();
 }
+
+/*======================= FM RADIO ============================*/
+#define FM_FREQUENCY_MIN 7600  // 76 MHz
+#define FM_FREQUENCY_MAX 10800 // 108 MHz
+#define FM_STEP 10             // 0.10 MHz
+
+uint16_t fmFrequency = 10000; // 100 MHz
+int8_t FmSoundLevel = -100;   // dB
 
 /*======================= FUNCTIONS ============================*/
 
@@ -1804,4 +1812,18 @@ void nfcPool()
       vibro(255, 30);
     }
   }
+}
+
+/********************************** FM RADIO ***************************************/
+void fmTouch(int delta, int vibroMs, bool &fmDirty, uint32_t &lastEditMs)
+{
+  int32_t f = (int32_t)fmFrequency + delta;
+  if (f > (int32_t)FM_FREQUENCY_MAX)
+    f = FM_FREQUENCY_MIN;
+  if (f < (int32_t)FM_FREQUENCY_MIN)
+    f = FM_FREQUENCY_MAX;
+  fmFrequency = (uint16_t)f;
+  vibro(255, vibroMs, 1, 10);
+  fmDirty = true;
+  lastEditMs = millis();
 }

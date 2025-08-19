@@ -7,6 +7,7 @@ enum MenuState
   HF_MENU,
   UHF_MENU,
   IR_MENU,
+  FM_RADIO,
   RFID_MENU,
   GAMES,
   TORCH,
@@ -59,6 +60,7 @@ const char PROGMEM *mainMenuItems[] = {
     "SubGHz",
     "2.4 GHz",
     "IR Tools",
+    "FM Radio",
     "RFID",
     "Games",
     "Torch",
@@ -150,13 +152,13 @@ bool isHighFrequencyMode()
 bool isUltraHighFrequencyMode()
 {
   return (currentMenu == UHF_SPECTRUM ||
-          currentMenu ==  UHF_ALL_JAMMER ||
-          currentMenu ==  UHF_WIFI_JAMMER ||
-          currentMenu ==  UHF_BT_JAMMER ||
-          currentMenu ==  UHF_BLE_JAMMER ||
-          currentMenu ==  UHF_USB_JAMMER || 
-          currentMenu ==  UHF_VIDEO_JAMMER ||
-          currentMenu ==  UHF_RC_JAMMER);
+          currentMenu == UHF_ALL_JAMMER ||
+          currentMenu == UHF_WIFI_JAMMER ||
+          currentMenu == UHF_BT_JAMMER ||
+          currentMenu == UHF_BLE_JAMMER ||
+          currentMenu == UHF_USB_JAMMER ||
+          currentMenu == UHF_VIDEO_JAMMER ||
+          currentMenu == UHF_RC_JAMMER);
 }
 
 /*============================= MAIN APPEARANCE ============================================*/
@@ -623,7 +625,7 @@ void DrawRSSIPlot_HF()
   drawDashedLine(18, 25, 115, 1, 5);
 
   char Text[10];
-  int cursorStart = successfullyConnected ? 85: 102;
+  int cursorStart = successfullyConnected ? 85 : 102;
   sprintf(Text, "%d", findMaxValue(rssiBuffer, RSSI_BUFFER_SIZE));
   oled.setCursorXY(cursorStart - getTextWidth(Text), 0);
   oled.print(Text);
@@ -1211,4 +1213,60 @@ void showConnectionStatus(uint8_t menuIndex)
   oled.print(txt);
 
   oled.invertText(false);
+}
+
+/* ============================= FM RADIO ============================================ */
+void ShowFMFrequency()
+{
+  static const int X0 = 4, X1 = 124, Y = 58, Ys = 15;
+
+  oled.setScale(1);
+  int fm_w = getTextWidth("FM");
+  oled.setCursorXY((128 - fm_w) / 2, 0);
+  oled.print("FM");
+
+  char txt[20];
+  sprintf(txt, "%d.%02d", fmFrequency / 100, fmFrequency % 100);
+  oled.setScale(3);
+  int w = getTextWidth(txt) * 3;
+  int nx = -10 + (128 - w) / 2, ny = 23;
+  oled.setCursorXY(nx, ny);
+  oled.print(txt);
+
+  oled.setScale(1);
+  oled.setCursorXY(nx + w + 2, ny + 2);
+  oled.print("MHz");
+
+  auto fx = [&](uint16_t f)
+  {
+    if (f < FM_FREQUENCY_MIN)
+      f = FM_FREQUENCY_MIN;
+    if (f > FM_FREQUENCY_MAX)
+      f = FM_FREQUENCY_MAX;
+    return X0 + (int)((long)(f - FM_FREQUENCY_MIN) * (X1 - X0) / (FM_FREQUENCY_MAX - FM_FREQUENCY_MIN));
+  };
+
+  for (uint16_t f = ((FM_FREQUENCY_MIN + 50) / 100) * 100; f <= FM_FREQUENCY_MAX; f += 100)
+  {
+    int x = fx(f);
+    oled.line(x, Y - 5, x, Y - 2);
+  }
+
+  int cx = fx(fmFrequency), ty = Y;
+  oled.line(cx, ty, cx - 3, ty + 4);
+  oled.line(cx, ty, cx + 3, ty + 4);
+  oled.line(cx - 3, ty + 4, cx + 3, ty + 4);
+
+  int8_t lvl = FmSoundLevel;
+  if (lvl > 0)
+    lvl = 0;
+  if (lvl < -10)
+    lvl = -10;
+  const int N = 30;
+  int on = ((10 + lvl) * N) / 10;
+  for (int i = 0; i < on; i++)
+  {
+    int x = X0 + (int)((long)i * (X1 - X0) / (N - 1));
+    oled.line(x, Ys - 3, x, Ys - 1);
+  }
 }

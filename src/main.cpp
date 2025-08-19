@@ -1313,6 +1313,35 @@ void loop1()
   {
     break;
   }
+  case FM_RADIO:
+  {
+    static bool fmDirty = false;
+    static uint32_t lastEditMs = 0;
+
+    if (!initialized)
+    {
+      initialized = true;
+      fmDirty = false;
+    }
+
+    if (!locked && down.click())
+      fmTouch(+FM_STEP, 20, fmDirty, lastEditMs);
+    else if (!locked && down.step())
+      fmTouch(+FM_STEP * 5, 10, fmDirty, lastEditMs);
+    if (!locked && up.click())
+      fmTouch(-FM_STEP, 20, fmDirty, lastEditMs);
+    else if (!locked && up.step())
+      fmTouch(-FM_STEP * 5, 10, fmDirty, lastEditMs);
+
+    if (fmDirty && (millis() - lastEditMs) >= 500)
+    {
+      outgoingDataLen = communication.buildPacket(0x19, (uint8_t *)&fmFrequency, sizeof(fmFrequency), outgoingData);
+      communication.sendPacket(outgoingData, outgoingDataLen);
+      fmDirty = false;
+    }
+
+    break;
+  }
   }
 }
 
@@ -1516,6 +1545,11 @@ void loop()
     case FLAPPY_GAME:
     {
       vibro(255, 50);
+      break;
+    }
+    case FM_RADIO:
+    {
+      isSimpleMenuExit = true;
       break;
     }
     }
@@ -1941,6 +1975,11 @@ void loop()
   {
     break;
   }
+  case FM_RADIO:
+  {
+    ShowFMFrequency();
+    break;
+  }
   case TORCH:
   {
     static bool solidMode = true;
@@ -1961,11 +2000,11 @@ void loop()
     else
     {
       if (millis() - lastToggle > 1000)
-      { 
+      {
         lastToggle = millis();
         ledOn = !ledOn;
       }
-      oled.rect(0, 0, 128, 64, ledOn ? 1 : 0); 
+      oled.rect(0, 0, 128, 64, ledOn ? 1 : 0);
     }
 
     break;
@@ -2104,6 +2143,13 @@ void loop()
         // {
         // isPortableInited = true;
         // }
+        else if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == 0x19)
+        {
+          int8_t fmLevel;
+          memcpy(&fmLevel, &recievedData[2], sizeof(fmLevel));
+          DBG("FM input level: %d dB\n", fmLevel);
+          FmSoundLevel = fmLevel;
+        }
         else if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
         {
           DBG("Master: PONG received! Connection OK.\n");
@@ -2135,6 +2181,7 @@ void loop()
             connState = CONN_IDLE;
             vibro(255, 100, 3, 20);
             connectionAttempts = 0;
+            FmSoundLevel = -100;
           }
         }
       }
