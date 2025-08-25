@@ -9,9 +9,21 @@
 
 ## 🛰️ Portable Module
 
-To enhance its capabilities, **eHack** can be paired with the **eHack-portable-module**. This compact RF module connects wirelessly to the main unit and is controlled directly from its menu. It allows you to perform attacks and research from a distance, adding significant flexibility to your operations.
+The ***eHack Portable Module*** expands the reach of **eHack** beyond the main device.  
+It is a lightweight RF companion that links wirelessly and can be fully managed through the interface of the primary unit.  
+With it, you can launch experiments and carry out attacks remotely, bringing extra versatility to your toolkit.
 
-Find more information on the portable module in its dedicated repository: [eHack-portable-module](https://github.com/kelv1n9/eHack_Portable_Module)
+More details about the portable module are available in its own repository: [eHack Portable Module](https://github.com/kelv1n9/eHack_Portable_Module)
+
+---
+
+## 📡 Radio Module
+
+The ***eHack FM Radio Module*** adds radio-focused features to **eHack**.  
+It supports FM transmission with RDS, periodically sends battery level information, and communicates with the master via NRF24L01.  
+The module integrates into the system menu, enabling remote operation and expanding the scope of your research.
+
+Learn more in the dedicated repository: [eHack Radio](https://github.com/kelv1n9/eHack_Radio/)
 
 ---
 
@@ -29,8 +41,9 @@ Find more information on the portable module in its dedicated repository: [eHack
 | **BLE Spam** | ESP32 C3 | • BLE Spam (iOS) |
 | **Infra‑Red** | IR LED + receiver | • Capture & replay<br>• Built‑in brute‑force tables for TVs & projectors |
 | **RFID / NFC** | rdm6300 + PN532 | • Read, emulate (only RFID) tags |
-| **Games** | — | Falling Dots, Snake, Flappy Bird |
-| **Quality‑of‑Life** | — | OLED UI with 3‑button navigation • vibration feedback • battery monitor • auto‑dimming • settings saved to EEPROM |
+| **FM Radio** (***Not embedded***) | Si4713 | • Transmit FM signals with RDS<br>|
+| **Games** | — | • Falling Dots, Snake, Flappy Bird |
+| **Quality‑of‑Life** | — | • OLED UI with 3‑button navigation<br> • Vibration feedback<br> • Battery monitor<br> • Auto‑dimming<br> • Settings saved to EEPROM |
 
 ---
 
