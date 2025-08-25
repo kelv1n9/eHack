@@ -767,6 +767,10 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, INPUT);
+        if (settings.activeScan)
+        {
+          mySwitch.enableReceive(GD0_PIN_CC);
+        }
         ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
       }
       else
@@ -812,6 +816,44 @@ void loop1()
           delay(5);
         }
       }
+    }
+
+    // Capture code
+    if (settings.activeScan && mySwitch.available())
+    {
+      // Check if the signal is valid
+      if (mySwitch.getReceivedBitlength() < 10)
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      capturedCode = mySwitch.getReceivedValue();
+      capturedLength = mySwitch.getReceivedBitlength();
+      capturedProtocol = mySwitch.getReceivedProtocol();
+      capturedDelay = mySwitch.getReceivedDelay();
+
+      SimpleRAData data;
+      data.code = capturedCode;
+      data.length = capturedLength;
+      data.protocol = capturedProtocol;
+      data.delay = capturedDelay;
+
+      vibro(255, 200, 3, 80);
+
+      if (isDuplicateRA(data))
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      if (settings.saveRA)
+      {
+        writeRAData(lastUsedSlotRA, data);
+      }
+
+      lastUsedSlotRA = (lastUsedSlotRA + 1) % MAX_RA_SIGNALS;
+      mySwitch.resetAvailable();
     }
 
     if (!successfullyConnected && millis() - lastStepMs >= RSSI_STEP_MS)
@@ -1459,6 +1501,13 @@ void loop()
       {
         sendStopCommandToSlave(6);
       }
+      if (settings.activeScan)
+      {
+        mySwitch.disableReceive();
+        mySwitch.disableTransmit();
+        //! Add also exit for eHack_Portable
+        //! isSimpleMenuExit = true;
+      }
       vibro(255, 50);
       break;
     }
@@ -1678,25 +1727,38 @@ void loop()
     {
       switch (settingsMenuIndex)
       {
+      // Save IR
       case 0:
         settings.saveIR = !settings.saveIR;
         break;
+      // Save RA
       case 1:
         settings.saveRA = !settings.saveRA;
         break;
+      // Vibro
       case 2:
+        settings.vibroOn = !settings.vibroOn;
+        break;
+      // Active Scan
+      case 3:
+        settings.activeScan = !settings.activeScan;
+        break;
+      // Clear IR
+      case 4:
         clearAllIRData();
         showClearConfirmation("IR");
         vibro(255, 80);
         delay(500);
         break;
-      case 3:
+      // Clear RA
+      case 5:
         clearAllRAData();
         showClearConfirmation("RA");
         vibro(255, 80);
         delay(500);
         break;
-      case 4:
+      // Clear All
+      case 6:
         clearAllRAData();
         clearAllIRData();
         showClearConfirmation("All");

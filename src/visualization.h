@@ -358,43 +358,79 @@ void setMinBrightness()
 
 void drawSettingsMenu(uint8_t selectedIndex)
 {
-  oled.setScale(1);
+  const char *labels[] = {"Save IR:", "Save RA:", "Vibro:", "Active Scan:"};
+  bool values[] = {settings.saveIR, settings.saveRA, settings.vibroOn, settings.activeScan};
 
-  const char *labels[] = {"Save IR:", "Save RA:"};
-  const char *labelsAdditional[] = {"Remove IR Data", "Remove RA Data", "Remove ALL Data"};
-
-  bool values[] = {settings.saveIR, settings.saveRA};
+  const char *labelsAdditional[] = {
+      "Remove IR Data",
+      "Remove RA Data",
+      "Remove ALL Data"};
 
   const uint8_t itemCount = sizeof(labels) / sizeof(labels[0]);
   const uint8_t itemCountAdd = sizeof(labelsAdditional) / sizeof(labelsAdditional[0]);
+  const uint8_t totalCount = itemCount + itemCountAdd;
 
-  for (uint8_t i = 0; i < itemCount; i++)
+  const uint8_t SCREEN_W = 128;
+  const uint8_t SCREEN_H = 64;
+  const uint8_t ROW_H = 10;
+  const uint8_t FIRST_Y = 10;
+  const uint8_t VISIBLE_ROWS = 5;
+
+  static uint8_t topIndex = 0;
+  if (selectedIndex < topIndex)
   {
-    if (i == selectedIndex)
-      oled.invertText(true);
-
-    oled.setCursorXY(0, (i + 1) * 10);
-    oled.print(labels[i]);
-
-    oled.setCursorXY(128 - 24, (i + 1) * 10);
-    oled.print(values[i] ? "ON" : "OFF");
-
-    if (i == selectedIndex)
-      oled.invertText(false);
+    topIndex = selectedIndex;
+  }
+  else if (selectedIndex > topIndex + VISIBLE_ROWS - 1)
+  {
+    topIndex = selectedIndex - (VISIBLE_ROWS - 1);
+  }
+  if (totalCount > VISIBLE_ROWS && topIndex > totalCount - VISIBLE_ROWS)
+  {
+    topIndex = totalCount - VISIBLE_ROWS;
   }
 
-  for (uint8_t i = 0; i < itemCountAdd; i++)
-  {
-    uint8_t menuIndex = itemCount + i;
+  oled.textMode(BUF_ADD);
+  oled.setScale(1);
 
-    if (menuIndex == selectedIndex)
+  if (topIndex > 0)
+  {
+    oled.setCursorXY(SCREEN_W - 6, 0);
+    oled.print("^");
+  }
+  if (topIndex + VISIBLE_ROWS < totalCount)
+  {
+    oled.setCursorXY(SCREEN_W - 6, SCREEN_H - 8);
+    oled.print("v");
+  }
+
+  const uint8_t last = min<uint8_t>(totalCount, topIndex + VISIBLE_ROWS);
+  for (uint8_t global = topIndex; global < last; global++)
+  {
+    const bool selected = (global == selectedIndex);
+    if (selected)
       oled.invertText(true);
 
-    int textWidth = getTextWidth(labelsAdditional[i]);
-    oled.setCursorXY((128 - textWidth) / 2, (menuIndex + 1) * 10);
-    oled.print(labelsAdditional[i]);
+    const uint8_t row = global - topIndex;
+    const uint8_t y = FIRST_Y + row * ROW_H;
 
-    if (menuIndex == selectedIndex)
+    if (global < itemCount)
+    {
+      oled.setCursorXY(0, y);
+      oled.print(labels[global]);
+
+      oled.setCursorXY(SCREEN_W - 24, y);
+      oled.print(values[global] ? "ON" : "OFF");
+    }
+    else
+    {
+      const uint8_t j = global - itemCount;
+      int tw = getTextWidth(labelsAdditional[j]);
+      oled.setCursorXY((SCREEN_W - tw) / 2, y);
+      oled.print(labelsAdditional[j]);
+    }
+
+    if (selected)
       oled.invertText(false);
   }
 }

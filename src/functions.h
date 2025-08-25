@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v5.0.0"
+#define APP_VERSION "v5.1.0"
 
 #define BLE_PIN 18
 
@@ -293,7 +293,7 @@ struct Tube
 #define EEPROM_BARRIER_START (EEPROM_RA_START + MAX_RA_SIGNALS * SLOT_RA_SIZE)
 #define EEPROM_SCORE_START (EEPROM_BARRIER_START + MAX_BARRIER_SIGNALS * SLOT_BARRIER_SIZE)
 #define EEPROM_SETTINGS_START (EEPROM_SCORE_START + SLOT_SCORE_SIZE)
-#define EEPROM_RFID_START (EEPROM_SETTINGS_START + SLOT_RFID_SIZE * MAX_RFID)
+#define EEPROM_RFID_START (EEPROM_SETTINGS_START + SLOT_SETTINGS_SIZE)
 #define EEPROM_STARTCONN_ADDR (EEPROM_RFID_START + MAX_RFID * SLOT_RFID_SIZE)
 
 /*=================== SETTINGS ==========================*/
@@ -301,10 +301,12 @@ struct Settings
 {
   bool saveIR;
   bool saveRA;
+  bool vibroOn;
+  bool activeScan;
 };
 Settings settings;
 
-const uint8_t settingsMenuCount = 5;
+const uint8_t settingsMenuCount = 7;
 // ================= 2.4 GHZ ===========================/
 #define SCK_PIN_NRF 6
 #define MOSI_PIN_NRF 7
@@ -479,6 +481,9 @@ int getTextWidth(const char *text)
 
 void vibro(uint8_t intensity = 120, uint16_t duration = 100, uint8_t repeat = 1, uint32_t pause = 150)
 {
+  if (!settings.vibroOn)
+    return;
+
   IrReceiver.stopTimer();
   for (uint8_t i = 0; i < repeat; i++)
   {
