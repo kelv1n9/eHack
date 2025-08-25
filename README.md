@@ -79,6 +79,7 @@ Main
 │   ├─ Replay
 │   ├─ TV Brute
 │   └─ Projector Brute
+├─ FM Radio
 ├─ RFID
 │   ├─ Read
 │   ├─ Emulate
@@ -87,6 +88,7 @@ Main
 │   ├─ Falling Dots
 │   ├─ Snake
 │   └─ Flappy Bird
+├─ Torch
 ├─ Connect
 └─ Settings
 ```
