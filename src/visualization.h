@@ -626,6 +626,9 @@ void ShowAttack_HF()
 
 void DrawRSSIPlot_HF()
 {
+  static unsigned long lastBlink = 0;
+  static bool visible = false;
+
   const char *label = "RSSI";
 
   char freq[10];
@@ -644,7 +647,7 @@ void DrawRSSIPlot_HF()
 
   for (int i = 0; label[i] != '\0'; i++)
   {
-    oled.setCursorXY(120, 25 + (i * 8));
+    oled.setCursorXY(120, 23 + (i * 8));
     char ch[2] = {label[i], '\0'};
     oled.print(ch);
   }
@@ -667,6 +670,17 @@ void DrawRSSIPlot_HF()
   oled.print(Text);
   oled.setCursorXY(cursorStart, 0);
   oled.print(" dBm");
+
+  if ((long)(signalIndicatorUntil - millis()) > 0) {
+    if (millis() - lastBlink > 200) {     
+      lastBlink = millis();
+      visible = !visible;
+    }
+    if (visible)
+      oled.circle(122, 60, 2, 1);
+  } else {
+    visible = false;
+  }
 }
 
 void DrawRSSISpectrum_HF()

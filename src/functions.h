@@ -166,6 +166,7 @@ uint16_t capturedDelay;
 
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
+uint32_t signalIndicatorUntil = 0;
 
 /* ================ Barrier =================== */
 #define MAX_DELTA_T_BARRIER 200

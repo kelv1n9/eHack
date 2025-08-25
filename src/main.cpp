@@ -839,7 +839,8 @@ void loop1()
       data.protocol = capturedProtocol;
       data.delay = capturedDelay;
 
-      vibro(255, 200, 3, 80);
+      signalCaptured_433MHZ = true;
+      signalIndicatorUntil = millis() + 20000UL;
 
       if (isDuplicateRA(data))
       {
@@ -1505,8 +1506,6 @@ void loop()
       {
         mySwitch.disableReceive();
         mySwitch.disableTransmit();
-        //! Add also exit for eHack_Portable
-        //! isSimpleMenuExit = true;
       }
       vibro(255, 50);
       break;
