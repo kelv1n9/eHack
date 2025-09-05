@@ -1358,6 +1358,8 @@ void loop1()
   }
   case FM_RADIO:
   {
+    static bool step;
+    static uint8_t alpha;
     static bool fmDirty = false;
     static uint32_t lastEditMs = 0;
 
@@ -1367,14 +1369,23 @@ void loop1()
       fmDirty = false;
     }
 
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      step = !step;
+      alpha = step ? 1 : 10;
+      vibro(255, 20, 1, 10);
+      DBG("Step: %u, alpha: %u\n", step, alpha);
+    }
+
     if (!locked && down.click())
-      fmTouch(+FM_STEP, 20, fmDirty, lastEditMs);
+      fmTouch(+FM_STEP * alpha, 20, fmDirty, lastEditMs);
     else if (!locked && down.step())
-      fmTouch(+FM_STEP * 5, 10, fmDirty, lastEditMs);
+      fmTouch(+FM_STEP * 5 * alpha, 10, fmDirty, lastEditMs);
     if (!locked && up.click())
-      fmTouch(-FM_STEP, 20, fmDirty, lastEditMs);
+      fmTouch(-FM_STEP * alpha, 20, fmDirty, lastEditMs);
     else if (!locked && up.step())
-      fmTouch(-FM_STEP * 5, 10, fmDirty, lastEditMs);
+      fmTouch(-FM_STEP * 5 * alpha, 10, fmDirty, lastEditMs);
 
     if (fmDirty && (millis() - lastEditMs) >= 500)
     {

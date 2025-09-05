@@ -442,7 +442,7 @@ void sendStopCommandToSlave(int coeff = 1)
 /*======================= FM RADIO ============================*/
 #define FM_FREQUENCY_MIN 7600  // 76 MHz
 #define FM_FREQUENCY_MAX 10800 // 108 MHz
-#define FM_STEP 10             // 0.10 MHz
+#define FM_STEP 1             // 0.10 MHz
 
 uint16_t fmFrequency = 10000; // 100 MHz
 int8_t FmSoundLevel = -100;   // dB
