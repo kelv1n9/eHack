@@ -445,6 +445,7 @@ void sendStopCommandToSlave(int coeff = 1)
 #define FM_STEP 1             // 0.10 MHz
 
 uint16_t fmFrequency = 10000; // 100 MHz
+uint8_t gFmAlpha = 1;
 int8_t FmSoundLevel = -100;   // dB
 
 /*======================= FUNCTIONS ============================*/

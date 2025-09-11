@@ -671,14 +671,18 @@ void DrawRSSIPlot_HF()
   oled.setCursorXY(cursorStart, 0);
   oled.print(" dBm");
 
-  if ((long)(signalIndicatorUntil - millis()) > 0) {
-    if (millis() - lastBlink > 200) {     
+  if ((long)(signalIndicatorUntil - millis()) > 0)
+  {
+    if (millis() - lastBlink > 200)
+    {
       lastBlink = millis();
       visible = !visible;
     }
     if (visible)
       oled.circle(122, 60, 2, 1);
-  } else {
+  }
+  else
+  {
     visible = false;
   }
 }
@@ -1302,10 +1306,13 @@ void ShowFMFrequency()
     oled.line(x, Y - 5, x, Y - 2);
   }
 
-  int cx = fx(fmFrequency), ty = Y;
-  oled.line(cx, ty, cx - 3, ty + 4);
-  oled.line(cx, ty, cx + 3, ty + 4);
-  oled.line(cx - 3, ty + 4, cx + 3, ty + 4);
+  int cx = fx(fmFrequency), ty = Y-7;
+  int hw = 2 + (int)(gFmAlpha / 2); 
+  int top = ty;
+  int bot = ty + 7;
+  int left = cx - hw;
+  int right = cx + hw;
+  oled.rect(left, top, right, bot, 2);
 
   int8_t lvl = FmSoundLevel;
   if (lvl > 0)
