@@ -24,8 +24,8 @@ enum MenuState
   HF_JAMMER,
   HF_TESLA,
 
-  HF_SPECTRUM,
   HF_ACTIVITY,
+  HF_SPECTRUM,
 
   HF_SCAN,
   HF_REPLAY,
@@ -113,8 +113,8 @@ const char PROGMEM *gamesMenuItems[] = {
 };
 
 const char PROGMEM *RAsignalMenuItems[] = {
-    "Spectrum",
     "Activity",
+    "Spectrum",
 };
 
 const char PROGMEM *barrierMenuItems[] = {
@@ -126,6 +126,19 @@ const char PROGMEM *barrierMenuItems[] = {
 const char PROGMEM *barrierBruteMenuItems[] = {
     "CAME",
     "NICE",
+};
+
+const char PROGMEM *settingsItems[] = {
+    "Save IR:",
+    "Save RA:",
+    "Vibro:",
+    "Active Scan:",
+};
+
+const char PROGMEM *settingsItemsAdditional[] = {
+    "Remove IR Data",
+    "Remove RA Data",
+    "Remove ALL Data",
 };
 
 MenuState currentMenu = MAIN_MENU;
@@ -358,16 +371,10 @@ void setMinBrightness()
 
 void drawSettingsMenu(uint8_t selectedIndex)
 {
-  const char *labels[] = {"Save IR:", "Save RA:", "Vibro:", "Active Scan:"};
   bool values[] = {settings.saveIR, settings.saveRA, settings.vibroOn, settings.activeScan};
 
-  const char *labelsAdditional[] = {
-      "Remove IR Data",
-      "Remove RA Data",
-      "Remove ALL Data"};
-
-  const uint8_t itemCount = sizeof(labels) / sizeof(labels[0]);
-  const uint8_t itemCountAdd = sizeof(labelsAdditional) / sizeof(labelsAdditional[0]);
+  const uint8_t itemCount = sizeof(settingsItems) / sizeof(settingsItems[0]);
+  const uint8_t itemCountAdd = sizeof(settingsItemsAdditional) / sizeof(settingsItemsAdditional[0]);
   const uint8_t totalCount = itemCount + itemCountAdd;
 
   const uint8_t SCREEN_W = 128;
@@ -417,7 +424,7 @@ void drawSettingsMenu(uint8_t selectedIndex)
     if (global < itemCount)
     {
       oled.setCursorXY(0, y);
-      oled.print(labels[global]);
+      oled.print(settingsItems[global]);
 
       oled.setCursorXY(SCREEN_W - 24, y);
       oled.print(values[global] ? "ON" : "OFF");
@@ -425,9 +432,9 @@ void drawSettingsMenu(uint8_t selectedIndex)
     else
     {
       const uint8_t j = global - itemCount;
-      int tw = getTextWidth(labelsAdditional[j]);
+      int tw = getTextWidth(settingsItemsAdditional[j]);
       oled.setCursorXY((SCREEN_W - tw) / 2, y);
-      oled.print(labelsAdditional[j]);
+      oled.print(settingsItemsAdditional[j]);
     }
 
     if (selected)
@@ -441,11 +448,11 @@ void showLock()
   oled.print("L");
 }
 
-void showPortableInited()
-{
-  oled.setCursorXY(108, 0);
-  oled.print("I");
-}
+// void showPortableInited()
+// {
+//   oled.setCursorXY(108, 0);
+//   oled.print("I");
+// }
 
 void showCharging()
 {
@@ -475,39 +482,53 @@ void ShowReboot()
 void ShowScanning_HF()
 {
   char Text[20];
-  sprintf(Text, "Capturing...");
+  sprintf(Text, "Listening...");
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
   oled.print(Text);
 
   char Text1[30];
   sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 29);
   oled.print(Text1);
 
   char Text2[20];
-  sprintf(Text2, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  sprintf(Text2, "Click < > to set freq");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 42);
   oled.print(Text2);
+
+  char Text3[20];
+  sprintf(Text3, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 55);
+  oled.print(Text3);
 }
 
 void ShowJamming_HF()
 {
-  char Text[20];
-  sprintf(Text, "Jamming...");
+  char Text1[20];
+  sprintf(Text1, "HF Jammer: %.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Frequency: %.2f MHz", raFrequencies[currentFreqIndex]);
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 16);
   oled.print(Text1);
 
   char Text2[20];
   sprintf(Text2, "Hold OK to stop");
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
   oled.print(Text2);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
 }
 
 void ShowCapturedSignal_HF()
@@ -870,21 +891,30 @@ void ShowBarrierBrute_HF(uint8_t protocol)
 
 void ShowJamming_UHF()
 {
-  char Text[20];
-  sprintf(Text, "Jamming...");
+  char Text1[20];
+  sprintf(Text1, "UHF Jammer: %d ch", radioChannel);
   oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
-  oled.print(Text);
-
-  char Text1[30];
-  sprintf(Text1, "Frequency: 2.4 GHz");
-  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 30);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 16);
   oled.print(Text1);
 
   char Text2[20];
-  sprintf(Text2, "Channel: %d", radioChannel);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 44);
+  sprintf(Text2, "Hold OK to stop");
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 30);
   oled.print(Text2);
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset) / (float)10) * 8;
+    oled.dot(x, y);
+  }
+
+  for (int x = 10; x < 118; x++)
+  {
+    int y = 50 + sin((x + sineOffset + 12) / (float)12) * 8;
+    oled.dot(x, y);
+  }
+
+  sineOffset += 2;
 }
 
 void ShowBLESpam_UHF()
@@ -963,7 +993,7 @@ void DrawSpectrum_UHF()
 void ShowScanning_IR()
 {
   char Text[20];
-  sprintf(Text, "Capturing...");
+  sprintf(Text, "Listening...");
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 16);
   oled.print(Text);
@@ -1306,8 +1336,8 @@ void ShowFMFrequency()
     oled.line(x, Y - 5, x, Y - 2);
   }
 
-  int cx = fx(fmFrequency), ty = Y-7;
-  int hw = 2 + (int)(gFmAlpha / 2); 
+  int cx = fx(fmFrequency), ty = Y - 7;
+  int hw = 2 + (int)(gFmAlpha / 2);
   int top = ty;
   int bot = ty + 7;
   int left = cx - hw;

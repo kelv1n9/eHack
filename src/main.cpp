@@ -1833,7 +1833,7 @@ void loop()
     {
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
-      currentMenu = static_cast<MenuState>(HF_SPECTRUM + RAsignalMenuIndex);
+      currentMenu = static_cast<MenuState>(HF_ACTIVITY + RAsignalMenuIndex);
       vibro(255, 50);
     }
     break;
