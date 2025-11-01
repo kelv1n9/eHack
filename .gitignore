@@ -3,8 +3,6 @@
 .pio
 .vscode
 unused
-include
-test
 
 ### macOS ###
 # General
