@@ -36,7 +36,7 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #define APP_NAME "eHack"
-#define APP_VERSION "v5.1.1"
+#define APP_VERSION "v5.2.0"
 
 #define BLE_PIN 18
 
@@ -111,6 +111,7 @@ float remoteVoltage;
 #define MIN_BRIGHTNESS 5
 #define MAX_BRIGHTNESS 255
 #define BRIGHTNESS_TIME 30000
+#define SCREENOFF_TIME 60000
 #define SPECTRUM_TOP_LIMIT 10
 #define SCREEN_BOTTOM 63
 
@@ -118,6 +119,9 @@ GyverOLED<SSD1306_128x64, OLED_BUFFER> oled;
 
 bool peaksDynamic = true;
 uint32_t brightnessTimer;
+
+bool isScreenOff;
+uint32_t offTimer;
 
 /* ==================== Tesla ================== */
 #define pulseWidth 400     // µs
@@ -275,6 +279,8 @@ struct Tube
   int16_t x;
   int8_t gapY;
 };
+
+bool gamesOnlyMode;
 
 /*=================== EEPROM ==========================*/
 #define MAX_IR_SIGNALS 10
@@ -442,11 +448,11 @@ void sendStopCommandToSlave(int coeff = 1)
 /*======================= FM RADIO ============================*/
 #define FM_FREQUENCY_MIN 7600  // 76 MHz
 #define FM_FREQUENCY_MAX 10800 // 108 MHz
-#define FM_STEP 1             // 0.10 MHz
+#define FM_STEP 1              // 0.10 MHz
 
 uint16_t fmFrequency = 10000; // 100 MHz
 uint8_t gFmAlpha = 1;
-int8_t FmSoundLevel = -100;   // dB
+int8_t FmSoundLevel = -100; // dB
 
 /*======================= FUNCTIONS ============================*/
 
@@ -455,6 +461,12 @@ void resetBrightness()
 {
   brightnessTimer = millis();
   oled.setContrast(MAX_BRIGHTNESS);
+}
+
+void resetScreenOff()
+{
+  isScreenOff = false;
+  offTimer = millis();
 }
 
 template <typename T>

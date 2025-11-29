@@ -174,6 +174,42 @@ bool isUltraHighFrequencyMode()
           currentMenu == UHF_RC_JAMMER);
 }
 
+bool isActiveMode()
+{
+  return (
+      currentMenu == HF_JAMMER ||
+      currentMenu == HF_TESLA ||
+      currentMenu == HF_ACTIVITY ||
+      currentMenu == HF_SPECTRUM ||
+      currentMenu == HF_SCAN ||
+      currentMenu == HF_REPLAY ||
+
+      currentMenu == HF_BARRIER_SCAN ||
+      currentMenu == HF_BARRIER_REPLAY ||
+      currentMenu == HF_BARRIER_BRUTE_MENU ||
+      currentMenu == HF_BARRIER_BRUTE_CAME ||
+      currentMenu == HF_BARRIER_BRUTE_NICE ||
+
+      currentMenu == IR_SCAN ||
+      currentMenu == IR_REPLAY ||
+      currentMenu == IR_BRUTE_TV ||
+      currentMenu == IR_BRUTE_PROJECTOR ||
+
+      currentMenu == UHF_SPECTRUM ||
+      currentMenu == UHF_ALL_JAMMER ||
+      currentMenu == UHF_WIFI_JAMMER ||
+      currentMenu == UHF_BT_JAMMER ||
+      currentMenu == UHF_BLE_JAMMER ||
+      currentMenu == UHF_USB_JAMMER ||
+      currentMenu == UHF_VIDEO_JAMMER ||
+      currentMenu == UHF_RC_JAMMER ||
+      currentMenu == UHF_BLE_SPAM ||
+
+      currentMenu == RFID_SCAN ||
+      currentMenu == RFID_EMULATE ||
+      currentMenu == RFID_WRITE);
+}
+
 /*============================= MAIN APPEARANCE ============================================*/
 const static uint8_t radioConnectedIcon[7] PROGMEM = {
     0x60, 0x00, 0x70, 0x00, 0x7c, 0x00, 0x7f};

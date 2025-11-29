@@ -32,6 +32,12 @@ void setup()
   oled.update();
   ShowSplashScreen();
 
+  if (ok.read())
+  {
+    gamesOnlyMode = true;
+    currentMenu = GAMES;
+  }
+
   delay(500);
 
   analogReadResolution(12);
@@ -1374,7 +1380,7 @@ void loop1()
       step = !step;
       gFmAlpha = step ? 1 : 10;
       vibro(255, 20, 1, 10);
-      DBG("Step: %u, alpha: %u\n", step, alpha);
+      DBG("Step: %u, alpha: %u\n", step, gFmAlpha);
     }
 
     if (!locked && down.click())
@@ -1438,6 +1444,7 @@ void loop()
   if (!locked && (up.press() || ok.press() || down.press()))
   {
     resetBrightness();
+    resetScreenOff();
   }
 
   if (!locked && ok.hold())
@@ -1447,12 +1454,20 @@ void loop()
 
     if (currentMenu == MAIN_MENU)
     {
+      vibro(255, 50, 3, 100);
       return;
     }
 
-    currentMenu = parentMenu;
-    parentMenu = grandParentMenu;
-    grandParentMenu = MAIN_MENU;
+    if (gamesOnlyMode)
+    {
+      currentMenu = GAMES;
+    }
+    else
+    {
+      currentMenu = parentMenu;
+      parentMenu = grandParentMenu;
+      grandParentMenu = MAIN_MENU;
+    }
 
     switch (lastMenu)
     {
@@ -1469,10 +1484,17 @@ void loop()
       saveStartConnection();
       break;
     }
+    case GAMES:
+    {
+      if (gamesOnlyMode)
+      {
+        vibro(255, 50, 3, 100);
+        return;
+      }
+    }
     case UHF_MENU:
     case IR_MENU:
     case RFID_MENU:
-    case GAMES:
     case HF_MENU:
     case HF_AIR_MENU:
     case HF_COMMON_MENU:
@@ -1630,6 +1652,12 @@ void loop()
   {
   case MAIN_MENU:
   {
+    if (gamesOnlyMode)
+    {
+      currentMenu = GAMES;
+      break;
+    }
+
     menuButtons(MAINmenuIndex, mainMenuCount);
     drawMenu(mainMenuItems, mainMenuCount, MAINmenuIndex);
 
@@ -2309,6 +2337,20 @@ void loop()
   if (!isHighFrequencyMode() && currentMenu != TORCH)
   {
     setMinBrightness();
+  }
+
+  if (!isScreenOff && isActiveMode() && millis() - offTimer > SCREENOFF_TIME)
+  {
+    isScreenOff = true;
+  }
+  else if (isScreenOff)
+  {
+    oled.clear();
+
+    if ((millis() / 1000) % 2)
+    {
+      oled.circle(122, 4, 1, 1);
+    }
   }
 
   oled.update();
