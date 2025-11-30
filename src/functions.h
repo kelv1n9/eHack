@@ -139,6 +139,8 @@ uint32_t offTimer;
 #define RSSI_STEP_MS 50
 #define RSSI_BUFFER_SIZE 90
 
+#define NAME_MAX_LEN 10
+
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
 uint8_t currentScanFreq = 0;
@@ -158,6 +160,7 @@ struct SimpleRAData
   uint16_t length;
   uint16_t protocol;
   uint16_t delay;
+  char name[NAME_MAX_LEN + 1];
 };
 
 uint8_t lastUsedSlotRA = 0;
@@ -171,6 +174,19 @@ uint16_t capturedDelay;
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
 uint32_t signalIndicatorUntil = 0;
+
+const char PROGMEM *hfReplayMenuItems[] = {
+    "Label",
+    "Remove",
+};
+
+uint8_t RANamePos;
+uint8_t RAMenuIndex;
+bool RAMenu;
+bool RANameEdit;
+
+const char nameChars[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+char slotName[NAME_MAX_LEN + 1];
 
 /* ================ Barrier =================== */
 #define MAX_DELTA_T_BARRIER 200
@@ -763,7 +779,7 @@ void clearAllRAData()
 
   for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
   {
-    SimpleRAData empty = {0, 0, 0};
+    SimpleBarrierData empty = {0, 0, 0};
     int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
     EEPROM.put(addr, empty);
   }
@@ -832,7 +848,7 @@ SimpleBarrierData readBarrierData(uint8_t slot)
 
 void clearBarrierData(uint8_t slot)
 {
-  SimpleRAData empty = {0, 0, 0};
+  SimpleBarrierData empty = {0, 0, 0};
   int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
@@ -901,7 +917,7 @@ void clearAllIRData()
 
 void clearIRData(uint8_t slot)
 {
-  SimpleRAData empty = {0, 0, 0};
+  SimpleIRData empty = {0, 0, 0};
   int addr = EEPROM_IR_ADDR + slot * SLOT_IR_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
@@ -932,7 +948,7 @@ void findLastUsedSlotIR()
 
 bool isDuplicateIR(const SimpleIRData &newData)
 {
-  for (uint8_t i = 0; i < lastUsedSlotRA; i++)
+  for (uint8_t i = 0; i < lastUsedSlotIR; i++)
   {
     SimpleIRData existingData = readIRData(i);
     if (newData.protocol == existingData.protocol &&

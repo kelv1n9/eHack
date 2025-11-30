@@ -154,6 +154,9 @@ void loop1()
       data.protocol = capturedProtocol;
       data.delay = capturedDelay;
 
+      strncpy(data.name, "NEW", NAME_MAX_LEN);
+      data.name[NAME_MAX_LEN] = '\0';
+
       vibro(255, 200, 3, 80);
 
       // Check for duplicates
@@ -177,6 +180,11 @@ void loop1()
   case HF_REPLAY:
   {
     static uint32_t attackTimer = 0;
+
+    if (RANameEdit || RAMenu)
+    {
+      return;
+    }
 
     if (!initialized)
     {
@@ -901,7 +909,7 @@ void loop1()
   {
     if (!initialized)
     {
-      protocol, address, command = 0;
+      protocol = address = command = 0;
       IrReceiver.enableIRIn();
       initialized = true;
     }
@@ -1883,25 +1891,109 @@ void loop()
   }
   case HF_REPLAY:
   {
-    if (ok.click() && capturedCode != 0)
+    if (!locked && up.hold() && down.hold() && capturedCode != 0)
+    {
+      RAMenu = true;
+      RAMenuIndex = 0;
+      vibro(255, 50);
+    }
+
+    if (RANameEdit)
+    {
+      if (!locked && (down.click() || down.step()))
+      {
+        slotName[RANamePos] = nextChar(slotName[RANamePos]);
+        vibro(255, 20);
+      }
+
+      if (!locked && (up.click() || up.step()))
+      {
+        slotName[RANamePos] = prevChar(slotName[RANamePos]);
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        RANamePos++;
+        vibro(255, 60);
+
+        if (RANamePos >= NAME_MAX_LEN)
+        {
+          slotName[NAME_MAX_LEN] = '\0';
+
+          SimpleRAData d = readRAData(selectedSlotRA);
+          memcpy(d.name, slotName, NAME_MAX_LEN + 1);
+
+          writeRAData(selectedSlotRA, d);
+
+          RANameEdit = false;
+          RAMenu = false;
+          RANamePos = 0;
+          vibro(255, 60, 2);
+        }
+      }
+
+      ShowRANameEdit();
+      break;
+    }
+    else
+    {
+      SimpleRAData data = readRAData(selectedSlotRA);
+      // memcpy(slotName, data.name, NAME_MAX_LEN + 1);
+      // slotName[NAME_MAX_LEN] = '\0';
+      if (data.code == 0)
+      {
+        strcpy(slotName, "empty");
+      }
+      else
+      {
+        memcpy(slotName, data.name, NAME_MAX_LEN + 1);
+        slotName[NAME_MAX_LEN] = '\0';
+      }
+    }
+
+    if (!locked && ok.click() && capturedCode != 0 && !RAMenu && !RANameEdit)
     {
       attackIsActive = !attackIsActive;
       vibro(255, 50);
     }
 
-    if (up.hold() && down.hold())
+    if (RAMenu)
     {
-      clearRAData(selectedSlotRA);
-      vibro(255, 50);
-    }
+      if (!locked && (up.click() || up.step() || down.click() || down.step()))
+      {
+        RAMenuIndex = (RAMenuIndex == 0) ? 1 : 0;
+        vibro(255, 20);
+      }
 
-    if (attackIsActive)
-    {
-      ShowAttack_HF();
+      if (!locked && ok.click())
+      {
+        if (RAMenuIndex == 0)
+        {
+          RANamePos = 0;
+          RANameEdit = true;
+        }
+        else
+        {
+          clearRAData(selectedSlotRA);
+        }
+
+        RAMenu = false;
+        vibro(255, 50);
+      }
+
+      ShowRAMenu();
     }
     else
     {
-      ShowSavedSignal_HF();
+      if (attackIsActive)
+      {
+        ShowAttack_HF();
+      }
+      else
+      {
+        ShowSavedSignal_HF();
+      }
     }
     break;
   }

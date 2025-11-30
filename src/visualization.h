@@ -604,25 +604,25 @@ void ShowSavedSignal_HF()
   oled.setCursorXY((128 - getTextWidth(Text)) / 2, 15);
   oled.print(Text);
 
+  char Text1[50];
+  sprintf(Text1, "Name: %s", slotName);
+  oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 25);
+  oled.print(Text1);
+
   char Text2[20];
   sprintf(Text2, "Code: %d", capturedCode);
-  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 25);
+  oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
   oled.print(Text2);
 
   char Text3[20];
   sprintf(Text3, "Length: %d Bit", capturedLength);
-  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 35);
+  oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 45);
   oled.print(Text3);
 
   char Text4[20];
   sprintf(Text4, "Protocol: %d", capturedProtocol);
-  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 45);
+  oled.setCursorXY((128 - getTextWidth(Text4)) / 2, 55);
   oled.print(Text4);
-
-  char Text5[20];
-  sprintf(Text5, "Delay: %d ms", capturedDelay);
-  oled.setCursorXY((128 - getTextWidth(Text5)) / 2, 55);
-  oled.print(Text5);
 }
 
 void ShowSendingTesla_HF()
@@ -782,6 +782,123 @@ void DrawRSSISpectrum_HF()
   oled.setScale(1);
   oled.setCursorXY((128 - getTextWidth(Text)) / 2 + 6, 0);
   oled.print(Text);
+}
+
+char nextChar(char c)
+{
+  uint8_t n = sizeof(nameChars) - 1;
+  uint8_t idx = 0;
+  bool found = false;
+
+  for (uint8_t i = 0; i < n; i++)
+  {
+    if (nameChars[i] == c)
+    {
+      idx = i;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+    idx = 0;
+
+  idx = (idx + 1) % n;
+  return nameChars[idx];
+}
+
+char prevChar(char c)
+{
+  uint8_t n = sizeof(nameChars) - 1;
+  uint8_t idx = 0;
+  bool found = false;
+
+  for (uint8_t i = 0; i < n; i++)
+  {
+    if (nameChars[i] == c)
+    {
+      idx = i;
+      found = true;
+      break;
+    }
+  }
+
+  if (!found)
+    idx = 0;
+
+  idx = (idx == 0) ? (n - 1) : (idx - 1);
+  return nameChars[idx];
+}
+
+void ShowRANameEdit()
+{
+  oled.clear();
+  oled.textMode(BUF_ADD);
+
+  const char *title = "Edit name";
+  oled.setScale(1);
+  int titleW = getTextWidth(title);
+  oled.setCursorXY((128 - titleW) / 2, 8);
+  oled.print(title);
+
+  oled.setScale(2);
+  const int charW = 6 * 2; 
+  const int totalWidth = NAME_MAX_LEN * charW;
+  const int startX = (128 - totalWidth) / 2;
+  const int y = 30;
+
+  for (uint8_t i = 0; i < NAME_MAX_LEN; i++)
+  {
+    char c = slotName[i];
+    if (c == '\0')
+      c = ' ';
+
+    int x = startX + i * charW;
+
+    if (i == RANamePos)
+    {
+      oled.rect(x - 1, y - 2, x + charW - 2, y + 16, OLED_STROKE);
+    }
+
+    char buf[2] = {c, '\0'};
+    oled.setCursorXY(x, y);
+    oled.print(buf);
+  }
+}
+
+void ShowRAMenu()
+{
+  oled.textMode(BUF_ADD);
+
+  const char *title = "HF Replay";
+  oled.setScale(1);
+  int titleW = getTextWidth(title);
+  oled.setCursorXY((128 - titleW) / 2, 8);
+  oled.print(title);
+
+  for (uint8_t i = 0; i < 2; i++)
+  {
+    const char *txt = hfReplayMenuItems[i];
+
+    oled.setScale(2);
+    int w = getTextWidth(txt) * 2;
+    int y = 24 + i * 20;
+    int x = (128 - w) / 2;
+
+    if (i == RAMenuIndex)
+    {
+      int ax = x - 8;
+      int ay = y + 6;
+
+      oled.line(ax, ay - 4, ax + 4, ay);
+      oled.line(ax + 4, ay, ax, ay + 4);
+      oled.line(ax, ay - 3, ax + 3, ay);
+      oled.line(ax + 3, ay, ax, ay + 3);
+    }
+
+    oled.setCursorXY(x, y);
+    oled.print(txt);
+  }
 }
 
 /*============================= HF BARRIERS VISUALIZATION ============================================*/
