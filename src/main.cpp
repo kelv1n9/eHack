@@ -4,6 +4,8 @@ void handleBatteryTasks();
 
 void setup()
 {
+  EEPROM.begin(512);
+
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
@@ -24,6 +26,16 @@ void setup()
   SPI1.setRX(MISO_PIN_CC);
   SPI1.begin();
 
+  loadStartMode();
+
+  if (ok.read())
+  {
+    gamesOnlyMode = !gamesOnlyMode;
+    if (gamesOnlyMode)
+      currentMenu = GAMES;
+    saveStartMode();
+  }
+
   cc1101Init();
 
   oled.init();
@@ -32,17 +44,10 @@ void setup()
   oled.update();
   ShowSplashScreen();
 
-  if (ok.read())
-  {
-    gamesOnlyMode = true;
-    currentMenu = GAMES;
-  }
-
   delay(500);
 
   analogReadResolution(12);
   batVoltage = readBatteryVoltage();
-  EEPROM.begin(512);
 
   IrReceiver.begin(IR_RX, DISABLE_LED_FEEDBACK);
   IrSender.begin(IR_TX, DISABLE_LED_FEEDBACK, USE_DEFAULT_FEEDBACK_LED_PIN);

@@ -294,14 +294,16 @@ bool gamesOnlyMode;
 #define SLOT_SCORE_SIZE sizeof(GameScores)
 #define SLOT_SETTINGS_SIZE sizeof(Settings)
 #define SLOT_RFID_SIZE sizeof(RFID)
+#define SLOT_START_MODE_SIZE sizeof(gamesOnlyMode)
 
-#define EEPROM_IR_START 0
-#define EEPROM_RA_START (EEPROM_IR_START + MAX_IR_SIGNALS * SLOT_IR_SIZE)
-#define EEPROM_BARRIER_START (EEPROM_RA_START + MAX_RA_SIGNALS * SLOT_RA_SIZE)
-#define EEPROM_SCORE_START (EEPROM_BARRIER_START + MAX_BARRIER_SIGNALS * SLOT_BARRIER_SIZE)
-#define EEPROM_SETTINGS_START (EEPROM_SCORE_START + SLOT_SCORE_SIZE)
-#define EEPROM_RFID_START (EEPROM_SETTINGS_START + SLOT_SETTINGS_SIZE)
-#define EEPROM_STARTCONN_ADDR (EEPROM_RFID_START + MAX_RFID * SLOT_RFID_SIZE)
+#define EEPROM_IR_ADDR 0
+#define EEPROM_RA_ADDR (EEPROM_IR_ADDR + MAX_IR_SIGNALS * SLOT_IR_SIZE)
+#define EEPROM_BARRIER_ADDR (EEPROM_RA_ADDR + MAX_RA_SIGNALS * SLOT_RA_SIZE)
+#define EEPROM_SCORE_ADDR (EEPROM_BARRIER_ADDR + MAX_BARRIER_SIGNALS * SLOT_BARRIER_SIZE)
+#define EEPROM_SETTINGS_ADDR (EEPROM_SCORE_ADDR + SLOT_SCORE_SIZE)
+#define EEPROM_RFID_ADDR (EEPROM_SETTINGS_ADDR + SLOT_SETTINGS_SIZE)
+#define EEPROM_STARTCONN_ADDR (EEPROM_RFID_ADDR + MAX_RFID * SLOT_RFID_SIZE)
+#define EEPROM_START_MODE_ADDR (EEPROM_STARTCONN_ADDR + SLOT_START_MODE_SIZE)
 
 /*=================== SETTINGS ==========================*/
 struct Settings
@@ -744,7 +746,7 @@ void sendTeslaSignal_v2()
 
 SimpleRAData readRAData(uint8_t slot)
 {
-  int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
+  int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
   SimpleRAData data;
   EEPROM.get(addr, data);
   return data;
@@ -755,14 +757,14 @@ void clearAllRAData()
   for (uint8_t slot = 0; slot < MAX_RA_SIGNALS; slot++)
   {
     SimpleRAData empty = {0, 0, 0, 0};
-    int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
+    int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
     EEPROM.put(addr, empty);
   }
 
   for (uint8_t slot = 0; slot < MAX_BARRIER_SIGNALS; slot++)
   {
     SimpleRAData empty = {0, 0, 0};
-    int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+    int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
     EEPROM.put(addr, empty);
   }
 
@@ -775,7 +777,7 @@ void clearAllRAData()
 void clearRAData(uint8_t slot)
 {
   SimpleRAData empty = {0, 0, 0, 0};
-  int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
+  int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
 
@@ -815,14 +817,14 @@ bool isDuplicateRA(const SimpleRAData &newData)
 
 void writeBarrierData(uint8_t slot, const SimpleBarrierData &data)
 {
-  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
   EEPROM.put(addr, data);
   EEPROM.commit();
 }
 
 SimpleBarrierData readBarrierData(uint8_t slot)
 {
-  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
   SimpleBarrierData data;
   EEPROM.get(addr, data);
   return data;
@@ -831,7 +833,7 @@ SimpleBarrierData readBarrierData(uint8_t slot)
 void clearBarrierData(uint8_t slot)
 {
   SimpleRAData empty = {0, 0, 0};
-  int addr = EEPROM_BARRIER_START + slot * SLOT_BARRIER_SIZE;
+  int addr = EEPROM_BARRIER_ADDR + slot * SLOT_BARRIER_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
 
@@ -871,14 +873,14 @@ bool isDuplicateBarrier(const SimpleBarrierData &newData)
 
 void writeIRData(uint8_t slot, const SimpleIRData &data)
 {
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  int addr = EEPROM_IR_ADDR + slot * SLOT_IR_SIZE;
   EEPROM.put(addr, data);
   EEPROM.commit();
 }
 
 SimpleIRData readIRData(uint8_t slot)
 {
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  int addr = EEPROM_IR_ADDR + slot * SLOT_IR_SIZE;
   SimpleIRData data;
   EEPROM.get(addr, data);
   return data;
@@ -889,7 +891,7 @@ void clearAllIRData()
   for (uint8_t slot = 0; slot < MAX_IR_SIGNALS; slot++)
   {
     SimpleIRData empty = {0, 0, 0};
-    int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+    int addr = EEPROM_IR_ADDR + slot * SLOT_IR_SIZE;
     EEPROM.put(addr, empty);
   }
   EEPROM.commit();
@@ -900,7 +902,7 @@ void clearAllIRData()
 void clearIRData(uint8_t slot)
 {
   SimpleRAData empty = {0, 0, 0};
-  int addr = EEPROM_IR_START + slot * SLOT_IR_SIZE;
+  int addr = EEPROM_IR_ADDR + slot * SLOT_IR_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
 
@@ -909,7 +911,7 @@ void clearIRData(uint8_t slot)
 
 void writeRAData(uint8_t slot, const SimpleRAData &data)
 {
-  int addr = EEPROM_RA_START + slot * SLOT_RA_SIZE;
+  int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
   EEPROM.put(addr, data);
   EEPROM.commit();
 }
@@ -947,14 +949,14 @@ bool isDuplicateIR(const SimpleIRData &newData)
 
 void writeRFIDData(uint8_t slot, const RFID &data)
 {
-  int addr = EEPROM_RFID_START + slot * SLOT_RFID_SIZE;
+  int addr = EEPROM_RFID_ADDR + slot * SLOT_RFID_SIZE;
   EEPROM.put(addr, data);
   EEPROM.commit();
 }
 
 RFID readRFIDData(uint8_t slot)
 {
-  int addr = EEPROM_RFID_START + slot * SLOT_RFID_SIZE;
+  int addr = EEPROM_RFID_ADDR + slot * SLOT_RFID_SIZE;
   RFID data;
   EEPROM.get(addr, data);
   return data;
@@ -963,7 +965,7 @@ RFID readRFIDData(uint8_t slot)
 void clearRFIDData(uint8_t slot)
 {
   RFID empty = {0};
-  int addr = EEPROM_RFID_START + slot * SLOT_RFID_SIZE;
+  int addr = EEPROM_RFID_ADDR + slot * SLOT_RFID_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
 
@@ -1001,7 +1003,7 @@ bool isDuplicateRFID(const RFID &newData)
 
 void saveSettings()
 {
-  EEPROM.put(EEPROM_SETTINGS_START, settings);
+  EEPROM.put(EEPROM_SETTINGS_ADDR, settings);
   EEPROM.commit();
 }
 
@@ -1013,12 +1015,12 @@ void saveStartConnection()
 
 void loadSettings()
 {
-  EEPROM.get(EEPROM_SETTINGS_START, settings);
+  EEPROM.get(EEPROM_SETTINGS_ADDR, settings);
 }
 
 void loadAllScores()
 {
-  EEPROM.get(EEPROM_SCORE_START, gameScores);
+  EEPROM.get(EEPROM_SCORE_ADDR, gameScores);
 }
 
 void loadStartConnection()
@@ -1028,8 +1030,19 @@ void loadStartConnection()
 
 void saveAllScores()
 {
-  EEPROM.put(EEPROM_SCORE_START, gameScores);
+  EEPROM.put(EEPROM_SCORE_ADDR, gameScores);
   EEPROM.commit();
+}
+
+void saveStartMode()
+{
+  EEPROM.put(EEPROM_START_MODE_ADDR, gamesOnlyMode);
+  EEPROM.commit();
+}
+
+void loadStartMode()
+{
+  EEPROM.get(EEPROM_START_MODE_ADDR, gamesOnlyMode);
 }
 
 /*================================== GAMES ======================================*/
