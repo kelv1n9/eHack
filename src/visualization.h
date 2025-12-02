@@ -1463,7 +1463,7 @@ void ShowFMFrequency()
   oled.print("FM");
 
   char txt[20];
-  sprintf(txt, "%d.%02d", fmFrequency / 100, fmFrequency % 100);
+  sprintf(txt, "%d.%02d", FrequencyFM / 100, FrequencyFM % 100);
   oled.setScale(3);
   int w = getTextWidth(txt) * 3;
   int nx = -10 + (128 - w) / 2, ny = 23;
@@ -1489,8 +1489,8 @@ void ShowFMFrequency()
     oled.line(x, Y - 5, x, Y - 2);
   }
 
-  int cx = fx(fmFrequency), ty = Y - 7;
-  int hw = 2 + (int)(gFmAlpha / 2);
+  int cx = fx(FrequencyFM), ty = Y - 7;
+  int hw = 2 + (int)(AlphaFM / 2);
   int top = ty;
   int bot = ty + 7;
   int left = cx - hw;
@@ -1509,4 +1509,12 @@ void ShowFMFrequency()
     int x = X0 + (int)((long)i * (X1 - X0) / (N - 1));
     oled.line(x, Ys - 3, x, Ys - 1);
   }
+
+  if (FMblink)
+    {
+      if (millis() - FMblinkTimer < 500)
+        oled.circle(nx + w + 5, ny + 16, 3, 1);
+      else
+        FMblink = false;
+    }
 }

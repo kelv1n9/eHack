@@ -468,8 +468,13 @@ void sendStopCommandToSlave(int coeff = 1)
 #define FM_FREQUENCY_MAX 10800 // 108 MHz
 #define FM_STEP 1              // 0.10 MHz
 
-uint16_t fmFrequency = 10000; // 100 MHz
-uint8_t gFmAlpha = 1;
+bool FMStep;
+bool FMReady;
+bool FMblink;
+uint16_t FMblinkTimer;
+uint32_t FMLastEditMs = 0;
+uint16_t FrequencyFM = 10000; // 100 MHz
+uint8_t AlphaFM = 1;
 int8_t FmSoundLevel = -100; // dB
 
 /*======================= FUNCTIONS ============================*/
@@ -1863,15 +1868,21 @@ void nfcPool()
 }
 
 /********************************** FM RADIO ***************************************/
-void fmTouch(int delta, int vibroMs, bool &fmDirty, uint32_t &lastEditMs)
+void fmTouch(int delta, int vibroMs)
 {
-  int32_t f = (int32_t)fmFrequency + delta;
+  int32_t f = (int32_t)FrequencyFM + delta;
+
   if (f > (int32_t)FM_FREQUENCY_MAX)
+  {
     f = FM_FREQUENCY_MIN;
+  }
   if (f < (int32_t)FM_FREQUENCY_MIN)
+  {
     f = FM_FREQUENCY_MAX;
-  fmFrequency = (uint16_t)f;
+  }
+
+  FrequencyFM = (uint16_t)f;
   vibro(255, vibroMs, 1, 10);
-  fmDirty = true;
-  lastEditMs = millis();
+  FMReady = true;
+  FMLastEditMs = millis();
 }

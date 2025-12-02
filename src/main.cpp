@@ -1374,39 +1374,28 @@ void loop1()
   }
   case FM_RADIO:
   {
-    static bool step;
-    static bool fmDirty = false;
-    static uint32_t lastEditMs = 0;
-
     if (!initialized)
     {
       initialized = true;
-      fmDirty = false;
+      FMReady = false;
     }
 
     if (!locked && ok.click())
     {
       ok.reset();
-      step = !step;
-      gFmAlpha = step ? 1 : 10;
+      FMStep = !FMStep;
+      AlphaFM = FMStep ? 1 : 10;
       vibro(255, 20, 1, 10);
-      DBG("Step: %u, alpha: %u\n", step, gFmAlpha);
+      DBG("Step: %u, alpha: %u\n", FMStep, AlphaFM);
     }
 
-    if (!locked && down.click())
-      fmTouch(+FM_STEP * gFmAlpha, 20, fmDirty, lastEditMs);
-    else if (!locked && down.step())
-      fmTouch(+FM_STEP * 5 * gFmAlpha, 10, fmDirty, lastEditMs);
-    if (!locked && up.click())
-      fmTouch(-FM_STEP * gFmAlpha, 20, fmDirty, lastEditMs);
-    else if (!locked && up.step())
-      fmTouch(-FM_STEP * 5 * gFmAlpha, 10, fmDirty, lastEditMs);
-
-    if (fmDirty && (millis() - lastEditMs) >= 500)
+    if (FMReady && (millis() - FMLastEditMs) >= 1000)
     {
-      outgoingDataLen = communication.buildPacket(0x19, (uint8_t *)&fmFrequency, sizeof(fmFrequency), outgoingData);
+      outgoingDataLen = communication.buildPacket(0x19, (uint8_t *)&FrequencyFM, sizeof(FrequencyFM), outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
-      fmDirty = false;
+      FMblink = true;
+      FMblinkTimer = millis();
+      FMReady = false;
     }
 
     break;
@@ -2174,6 +2163,25 @@ void loop()
   }
   case FM_RADIO:
   {
+    if (!locked && down.click())
+    {
+      fmTouch(+FM_STEP * AlphaFM, 20);
+    }
+
+    else if (!locked && down.step())
+    {
+      fmTouch(+FM_STEP * 5 * AlphaFM, 10);
+    }
+
+    if (!locked && up.click())
+    {
+      fmTouch(-FM_STEP * AlphaFM, 20);
+    }
+    else if (!locked && up.step())
+    {
+      fmTouch(-FM_STEP * 5 * AlphaFM, 10);
+    }
+
     ShowFMFrequency();
     break;
   }
