@@ -31,9 +31,12 @@ void setup()
   if (ok.read())
   {
     gamesOnlyMode = !gamesOnlyMode;
-    if (gamesOnlyMode)
-      currentMenu = GAMES;
     saveStartMode();
+  }
+  if (gamesOnlyMode)
+  {
+    currentMenu = GAMES;
+    APP_NAME = "eGames";
   }
 
   cc1101Init();
@@ -216,12 +219,6 @@ void loop1()
       selectedSlotRA = (selectedSlotRA + 1) % MAX_RA_SIGNALS;
       vibro(255, 20);
     }
-
-    SimpleRAData data = readRAData(selectedSlotRA);
-    capturedCode = data.code;
-    capturedLength = data.length;
-    capturedProtocol = data.protocol;
-    capturedDelay = data.delay;
 
     mySwitch.setProtocol(capturedProtocol);
 
@@ -1939,11 +1936,14 @@ void loop()
     else
     {
       SimpleRAData data = readRAData(selectedSlotRA);
-      // memcpy(slotName, data.name, NAME_MAX_LEN + 1);
-      // slotName[NAME_MAX_LEN] = '\0';
+      capturedCode = data.code;
+      capturedLength = data.length;
+      capturedProtocol = data.protocol;
+      capturedDelay = data.delay;
+
       if (data.code == 0)
       {
-        strcpy(slotName, "empty");
+        strcpy(slotName, "None");
       }
       else
       {
@@ -1976,6 +1976,7 @@ void loop()
         else
         {
           clearRAData(selectedSlotRA);
+          vibro(255, 200);
         }
 
         RAMenu = false;

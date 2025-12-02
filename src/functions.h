@@ -35,8 +35,8 @@
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
-#define APP_NAME "eHack"
-#define APP_VERSION "v5.2.0"
+#define APP_VERSION "v5.2.1"
+const char *APP_NAME = "eHack";
 
 #define BLE_PIN 18
 
@@ -185,7 +185,7 @@ uint8_t RAMenuIndex;
 bool RAMenu;
 bool RANameEdit;
 
-const char nameChars[] = " ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const char PROGMEM nameChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ";
 char slotName[NAME_MAX_LEN + 1];
 
 /* ================ Barrier =================== */

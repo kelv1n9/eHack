@@ -838,11 +838,11 @@ void ShowRANameEdit()
   const char *title = "Edit name";
   oled.setScale(1);
   int titleW = getTextWidth(title);
-  oled.setCursorXY((128 - titleW) / 2, 8);
+  oled.setCursorXY((128 - titleW) / 2, 12);
   oled.print(title);
 
   oled.setScale(2);
-  const int charW = 6 * 2; 
+  const int charW = 6 * 2;
   const int totalWidth = NAME_MAX_LEN * charW;
   const int startX = (128 - totalWidth) / 2;
   const int y = 30;
@@ -873,7 +873,7 @@ void ShowRAMenu()
   const char *title = "HF Replay";
   oled.setScale(1);
   int titleW = getTextWidth(title);
-  oled.setCursorXY((128 - titleW) / 2, 8);
+  oled.setCursorXY((128 - titleW) / 2, 12);
   oled.print(title);
 
   for (uint8_t i = 0; i < 2; i++)
