@@ -26,6 +26,8 @@ void setup()
   SPI1.setRX(MISO_PIN_CC);
   SPI1.begin();
 
+  cc1101Init();
+
   loadStartMode();
 
   if (ok.read())
@@ -38,8 +40,6 @@ void setup()
     currentMenu = GAMES;
     APP_NAME = "eGames";
   }
-
-  cc1101Init();
 
   oled.init();
   oled.clear();
@@ -1376,6 +1376,12 @@ void loop1()
   {
     if (!initialized)
     {
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_FM_RADIO, 0, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
+
       initialized = true;
       FMReady = false;
     }
@@ -1391,7 +1397,7 @@ void loop1()
 
     if (FMReady && (millis() - FMLastEditMs) >= 1000)
     {
-      outgoingDataLen = communication.buildPacket(0x19, (uint8_t *)&FrequencyFM, sizeof(FrequencyFM), outgoingData);
+      outgoingDataLen = communication.buildPacket(COMMAND_FM_RADIO, (uint8_t *)&FrequencyFM, sizeof(FrequencyFM), outgoingData);
       communication.sendPacket(outgoingData, outgoingDataLen);
       FMblink = true;
       FMblinkTimer = millis();

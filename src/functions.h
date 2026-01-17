@@ -35,7 +35,7 @@
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
-#define APP_VERSION "v5.2.1"
+#define APP_VERSION "v5.2.2"
 const char *APP_NAME = "eHack";
 
 #define BLE_PIN 18
@@ -43,7 +43,7 @@ const char *APP_NAME = "eHack";
 #define VIBRO 16
 
 #define BTN_DOWN 9
-#define BTN_OK 8
+#define BTN_OK 8 
 #define BTN_UP 5
 
 #define IR_TX 2
