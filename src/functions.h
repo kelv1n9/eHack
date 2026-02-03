@@ -637,10 +637,10 @@ void cc1101Init()
 {
   ELECHOUSE_cc1101.setSpiPin(SCK_PIN_CC, MISO_PIN_CC, MOSI_PIN_CC, CSN_PIN_CC);
 
-  ELECHOUSE_cc1101.setClb(1, 11, 13);
-  ELECHOUSE_cc1101.setClb(2, 14, 17);
-  ELECHOUSE_cc1101.setClb(3, 29, 33);
-  ELECHOUSE_cc1101.setClb(4, 33, 34);
+  ELECHOUSE_cc1101.setClb(1, 1, 1);
+  ELECHOUSE_cc1101.setClb(2, 1, 1);
+  ELECHOUSE_cc1101.setClb(3, 2, 2);
+  ELECHOUSE_cc1101.setClb(4, 2, 1);
 
   ELECHOUSE_cc1101.Init(&SPI1);
   ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
