@@ -29,7 +29,7 @@ void DataTransmission::init()
     radioNRF24->setAutoAck(true);
     radioNRF24->setDataRate(RF24_2MBPS);
     radioNRF24->setCRCLength(RF24_CRC_16);
-    radioNRF24->setChannel(40);
+    radioNRF24->setChannel(1);
     radioNRF24->setPALevel(RF24_PA_MAX);
     radioNRF24->setRetries(0, 15);
     radioNRF24->setAddressWidth(5);
@@ -50,7 +50,7 @@ uint8_t DataTransmission::buildPacket(uint8_t mode, const uint8_t *payload, uint
         packetOut[index++] = payload[i];
     }
 
-#ifdef DEBUG
+#ifdef DEBUG_DT
     DBG_DT("Packet built with mode: %d, payload length: %d\n", mode, payloadLen);
     DBG_DT("Packet length: %d\n", index);
 
@@ -66,7 +66,7 @@ uint8_t DataTransmission::buildPacket(uint8_t mode, const uint8_t *payload, uint
 bool DataTransmission::sendPacket(uint8_t *data, uint8_t len)
 {
 
-#ifdef DEBUG
+#ifdef DEBUG_DT
     for (uint8_t i = 0; i < len; i++)
     {
         DBG_DT("Packet to send %d: %02X\n", i, data[i]);
@@ -90,7 +90,7 @@ bool DataTransmission::receivePacket(uint8_t *data, uint8_t *len)
         *len = size;
         radioNRF24->read(data, *len);
 
-#ifdef DEBUG
+#ifdef DEBUG_DT
         DBG_DT("Packet received via NRF24, length: %d\n", *len);
         for (uint8_t i = 0; i < *len; i++)
         {
