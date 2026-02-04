@@ -17,6 +17,8 @@
   } while (0)
 #endif
 
+#define MASTER_DEVICE 1
+
 #include <Wire.h>
 #include <SPI.h>
 #include <EEPROM.h>
@@ -43,7 +45,7 @@ const char *APP_NAME = "eHack";
 #define VIBRO 16
 
 #define BTN_DOWN 9
-#define BTN_OK 8 
+#define BTN_OK 8
 #define BTN_UP 5
 
 #define IR_TX 2

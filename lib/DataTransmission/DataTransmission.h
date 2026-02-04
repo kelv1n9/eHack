@@ -3,21 +3,30 @@
 // #define DEBUG_DT
 
 #ifdef DEBUG_DT
-#define DBG_DT(...)                \
+#define DBG_DT(...)             \
   do                            \
   {                             \
     Serial.printf(__VA_ARGS__); \
   } while (0)
 #else
 #define DBG_DT(...) \
-  do             \
-  {              \
+  do                \
+  {                 \
   } while (0)
 #endif
 
 #include <Arduino.h>
 #include "RF24.h"
 #include <ELECHOUSE_CC1101_SRC_DRV.h>
+
+#ifndef MASTER_DEVICE
+#define MASTER_DEVICE 0
+#endif
+
+#define DT_ADDR_MASTER 0x11223344EELL
+#define DT_ADDR_SLAVE 0xA1B2C3D4E5LL
+
+#define RADIO_CHANNEL 100
 
 #define PROTOCOL_HEADER 0xA5
 #define COMMAND_IDLE 0xCC

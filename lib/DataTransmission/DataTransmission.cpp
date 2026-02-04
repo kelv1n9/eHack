@@ -29,12 +29,17 @@ void DataTransmission::init()
     radioNRF24->setAutoAck(true);
     radioNRF24->setDataRate(RF24_2MBPS);
     radioNRF24->setCRCLength(RF24_CRC_16);
-    radioNRF24->setChannel(1);
+    radioNRF24->setChannel(RADIO_CHANNEL);
     radioNRF24->setPALevel(RF24_PA_MAX);
     radioNRF24->setRetries(0, 15);
     radioNRF24->setAddressWidth(5);
-    radioNRF24->openWritingPipe(0x11223344EELL);
-    radioNRF24->openReadingPipe(0, 0x11223344EELL);
+#if MASTER_DEVICE
+    radioNRF24->openWritingPipe(DT_ADDR_SLAVE);
+    radioNRF24->openReadingPipe(0, DT_ADDR_MASTER);
+#else
+    radioNRF24->openWritingPipe(DT_ADDR_MASTER);
+    radioNRF24->openReadingPipe(0, DT_ADDR_SLAVE);
+#endif
     radioNRF24->startListening();
     DBG_DT("NRF24 radio initialized\n");
 }
