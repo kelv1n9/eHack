@@ -17,8 +17,6 @@
   } while (0)
 #endif
 
-#define MASTER_DEVICE 1
-
 #include <Wire.h>
 #include <SPI.h>
 #include <EEPROM.h>
