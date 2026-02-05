@@ -1786,25 +1786,36 @@ void loop()
       case 3:
         settings.activeScan = !settings.activeScan;
         break;
-      // Clear IR
+      // Battery display (percent/voltage)
       case 4:
+        settings.showPercent = !settings.showPercent;
+        break;
+      // Clear IR
+      case 5:
         clearAllIRData();
         showClearConfirmation("IR");
         vibro(255, 80);
         delay(500);
         break;
       // Clear RA
-      case 5:
+      case 6:
         clearAllRAData();
         showClearConfirmation("RA");
         vibro(255, 80);
         delay(500);
         break;
       // Clear All
-      case 6:
+      case 7:
         clearAllRAData();
         clearAllIRData();
         showClearConfirmation("All");
+        vibro(255, 80);
+        delay(500);
+        break;
+      // Reset Settings
+      case 8:
+        resetSettings();
+        showClearConfirmation("SET");
         vibro(255, 80);
         delay(500);
         break;

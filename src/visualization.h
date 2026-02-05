@@ -133,12 +133,14 @@ const char PROGMEM *settingsItems[] = {
     "Save RA:",
     "Vibro:",
     "Active Scan:",
+    "Battery:",
 };
 
 const char PROGMEM *settingsItemsAdditional[] = {
     "Remove IR Data",
     "Remove RA Data",
     "Remove ALL Data",
+    "Reset Settings",
 };
 
 MenuState currentMenu = MAIN_MENU;
@@ -225,17 +227,34 @@ void drawRadioConnected()
 
 void drawBattery(float batVoltage, const char *suffix = "")
 {
-  uint8_t percentage = round((batVoltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100.0);
+  int16_t percentage = round((batVoltage - BATTERY_MIN_VOLTAGE) / (BATTERY_MAX_VOLTAGE - BATTERY_MIN_VOLTAGE) * 100.0);
+  if (percentage < 0)
+    percentage = 0;
+  if (percentage > 100)
+    percentage = 100;
 
   char voltageText[10];
   oled.setCursorXY(4, 0);
-  sprintf(voltageText, "%.2f", batVoltage);
-  oled.setScale(1);
-  oled.print(voltageText);
+  if (settings.showPercent)
+  {
+    sprintf(voltageText, "%u", percentage);
+    oled.setScale(1);
+    oled.print(voltageText);
 
-  oled.setCursorXY(5 + getTextWidth(voltageText), 0);
-  oled.print("V");
-  oled.print(suffix);
+    oled.setCursorXY(5 + getTextWidth(voltageText), 0);
+    oled.print("%");
+    oled.print(suffix);
+  }
+  else
+  {
+    sprintf(voltageText, "%.2f", batVoltage);
+    oled.setScale(1);
+    oled.print(voltageText);
+
+    oled.setCursorXY(5 + getTextWidth(voltageText), 0);
+    oled.print("V");
+    oled.print(suffix);
+  }
 }
 
 void drawDashedLine(int y, int startX, int endX, int dashLength = 3, int gapLength = 3)
@@ -407,7 +426,7 @@ void setMinBrightness()
 
 void drawSettingsMenu(uint8_t selectedIndex)
 {
-  bool values[] = {settings.saveIR, settings.saveRA, settings.vibroOn, settings.activeScan};
+  bool values[] = {settings.saveIR, settings.saveRA, settings.vibroOn, settings.activeScan, settings.showPercent};
 
   const uint8_t itemCount = sizeof(settingsItems) / sizeof(settingsItems[0]);
   const uint8_t itemCountAdd = sizeof(settingsItemsAdditional) / sizeof(settingsItemsAdditional[0]);
@@ -463,7 +482,14 @@ void drawSettingsMenu(uint8_t selectedIndex)
       oled.print(settingsItems[global]);
 
       oled.setCursorXY(SCREEN_W - 24, y);
-      oled.print(values[global] ? "ON" : "OFF");
+      if (global == 4)
+      {
+        oled.print(values[global] ? "%" : "V");
+      }
+      else
+      {
+        oled.print(values[global] ? "ON" : "OFF");
+      }
     }
     else
     {

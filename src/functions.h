@@ -328,10 +328,11 @@ struct Settings
   bool saveRA;
   bool vibroOn;
   bool activeScan;
+  bool showPercent;
 };
 Settings settings;
 
-const uint8_t settingsMenuCount = 7;
+const uint8_t settingsMenuCount = 9;
 // ================= 2.4 GHZ ===========================/
 #define SCK_PIN_NRF 6
 #define MOSI_PIN_NRF 7
@@ -1038,6 +1039,16 @@ void saveStartConnection()
 void loadSettings()
 {
   EEPROM.get(EEPROM_SETTINGS_ADDR, settings);
+}
+
+void resetSettings()
+{
+  settings.saveIR = true;
+  settings.saveRA = true;
+  settings.vibroOn = true;
+  settings.activeScan = true;
+  settings.showPercent = false;
+  saveSettings();
 }
 
 void loadAllScores()
