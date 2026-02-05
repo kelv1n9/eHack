@@ -67,7 +67,7 @@ void setup()
   digitalWrite(BLE_PIN, LOW);
 
   pinMode(RFID_POWER_PIN, OUTPUT);
-  digitalWrite(RFID_POWER_PIN, LOW);
+  digitalWrite(RFID_POWER_PIN, HIGH);
 
   pinMode(VIBRO, OUTPUT);
 
@@ -1622,12 +1622,9 @@ void loop()
       nfc.powerDownMode();
       rdm6300.end();
       digitalWrite(RFID_COIL_PIN, LOW);
-      digitalWrite(RFID_POWER_PIN, LOW);
-      ShowReboot();
+      digitalWrite(RFID_POWER_PIN, HIGH);
       vibro(255, 50);
-      while (1)
-      {
-      }
+      break;
     }
     case DOTS_GAME:
     case SNAKE_GAME:
@@ -2123,7 +2120,7 @@ void loop()
   {
     if (!initialized)
     {
-      digitalWrite(BLE_PIN, HIGH);
+      digitalWrite(RFID_POWER_PIN, LOW);
       rdm6300.begin(RFID_RX_PIN);
       nfc.begin();
       nfc.setPassiveActivationRetries(0xFF);
