@@ -379,6 +379,7 @@ uint8_t radioChannel = 0;
 /*========================== RFID ==============================*/
 #define RFID_COIL_PIN 14
 #define RFID_RX_PIN 15
+#define RFID_POWER_PIN 18
 
 Rdm6300 rdm6300;
 

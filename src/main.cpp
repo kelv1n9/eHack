@@ -66,6 +66,9 @@ void setup()
   pinMode(BLE_PIN, OUTPUT);
   digitalWrite(BLE_PIN, LOW);
 
+  pinMode(RFID_POWER_PIN, OUTPUT);
+  digitalWrite(RFID_POWER_PIN, LOW);
+
   pinMode(VIBRO, OUTPUT);
 
   findLastUsedSlotRA();
@@ -1619,6 +1622,7 @@ void loop()
       nfc.powerDownMode();
       rdm6300.end();
       digitalWrite(RFID_COIL_PIN, LOW);
+      digitalWrite(RFID_POWER_PIN, LOW);
       ShowReboot();
       vibro(255, 50);
       while (1)
@@ -2119,6 +2123,7 @@ void loop()
   {
     if (!initialized)
     {
+      digitalWrite(BLE_PIN, HIGH);
       rdm6300.begin(RFID_RX_PIN);
       nfc.begin();
       nfc.setPassiveActivationRetries(0xFF);
