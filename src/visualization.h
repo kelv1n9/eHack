@@ -29,6 +29,7 @@ enum MenuState
 
   HF_SCAN,
   HF_REPLAY,
+  HF_MONITOR,
 
   HF_BARRIER_SCAN,
   HF_BARRIER_REPLAY,
@@ -79,6 +80,7 @@ const char PROGMEM *hfMenuItems[] = {
 const char PROGMEM *hfCommonMenuItems[] = {
     "Capture",
     "Replay",
+    "Monitor",
 };
 
 const char PROGMEM *irMenuItems[] = {
@@ -154,6 +156,7 @@ bool isGameOrFullScreenActivity()
           currentMenu == SNAKE_GAME ||
           currentMenu == FLAPPY_GAME ||
           currentMenu == HF_ACTIVITY ||
+          currentMenu == HF_MONITOR ||
           currentMenu == TORCH);
 }
 
@@ -161,7 +164,8 @@ bool isHighFrequencyMode()
 {
   return (currentMenu == HF_ACTIVITY ||
           currentMenu == HF_SPECTRUM ||
-          currentMenu == HF_SCAN);
+          currentMenu == HF_SCAN ||
+          currentMenu == HF_MONITOR);
 }
 
 bool isUltraHighFrequencyMode()
@@ -184,6 +188,7 @@ bool isActiveMode()
       currentMenu == HF_ACTIVITY ||
       currentMenu == HF_SPECTRUM ||
       currentMenu == HF_SCAN ||
+      currentMenu == HF_MONITOR ||
       currentMenu == HF_REPLAY ||
 
       currentMenu == HF_BARRIER_SCAN ||
@@ -563,6 +568,59 @@ void ShowScanning_HF()
   sprintf(Text3, "Hold OK to stop");
   oled.setCursorXY((128 - getTextWidth(Text3)) / 2, 55);
   oled.print(Text3);
+}
+
+void ShowMonitor_HF()
+{
+  oled.setScale(1);
+  oled.setCursorXY(0, 0);
+  oled.print("FRQ | Code | RSS | P");
+
+  for (uint8_t row = 0; row < HF_MONITOR_VISIBLE_LINES; row++)
+  {
+    uint8_t logicalIndex = hfMonitorTopIndex + row;
+    if (logicalIndex >= hfMonitorCount)
+    {
+      break;
+    }
+
+    uint8_t ringIndex = (hfMonitorHead + logicalIndex) % MAX_HF_MONITOR_SIGNALS;
+    HFMonitorEntry entry = hfMonitorEntries[ringIndex];
+
+    char codeBuf[5];
+    if (entry.codeValid)
+    {
+      sprintf(codeBuf, "%04lX", entry.code & 0xFFFFUL);
+    }
+    else
+    {
+      strcpy(codeBuf, "----");
+    }
+
+    char protocolBuf[3];
+    if (entry.protocolValid)
+    {
+      uint8_t protocolDisplay = (entry.protocol > 99) ? 99 : entry.protocol;
+      sprintf(protocolBuf, "%02u", protocolDisplay);
+    }
+    else
+    {
+      strcpy(protocolBuf, "--");
+    }
+
+    uint16_t freqRounded = entry.freqMHz100 / 100;
+    int8_t rssiDisplay = entry.rssi;
+    if (rssiDisplay < -99)
+    {
+      rssiDisplay = -99;
+    }
+
+    char line[24];
+    sprintf(line, "%3u | %s | %d | %s", freqRounded, codeBuf, rssiDisplay, protocolBuf);
+
+    oled.setCursorXY(0, (row + 1) * 9);
+    oled.print(line);
+  }
 }
 
 void ShowJamming_HF()

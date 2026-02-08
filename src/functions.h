@@ -35,7 +35,7 @@
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
-#define APP_VERSION "v5.2.2"
+#define APP_VERSION "v5.3.0 beta"
 const char *APP_NAME = "eHack";
 
 #define BLE_PIN 18
@@ -64,7 +64,7 @@ uint8_t RFIDMenuCount = 3;
 uint8_t gamesMenuCount = 3;
 uint8_t barrierMenuCount = 3;
 uint8_t RAsignalMenuCount = 2;
-uint8_t hfCommonMenuCount = 2;
+uint8_t hfCommonMenuCount = 3;
 uint8_t barrierBruteMenuCount = 2;
 
 uint8_t MAINmenuIndex = 0;
@@ -141,6 +141,9 @@ uint32_t offTimer;
 
 #define NAME_MAX_LEN 10
 
+#define MAX_HF_MONITOR_SIGNALS 10
+#define HF_MONITOR_VISIBLE_LINES 6
+
 int currentRssi = -100;
 uint8_t currentFreqIndex = 1;
 uint8_t currentScanFreq = 0;
@@ -174,6 +177,23 @@ uint16_t capturedDelay;
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
 uint32_t signalIndicatorUntil = 0;
+
+struct HFMonitorEntry
+{
+  uint16_t freqMHz100;
+  uint32_t code;
+  int8_t rssi;
+  uint8_t protocol;
+  bool isRemote;
+  bool codeValid;
+  bool protocolValid;
+};
+
+HFMonitorEntry hfMonitorEntries[MAX_HF_MONITOR_SIGNALS];
+uint8_t hfMonitorHead = 0;
+uint8_t hfMonitorCount = 0;
+uint8_t hfMonitorTopIndex = 0;
+uint32_t hfMonitorRemoteLogMs = 0;
 
 const char PROGMEM *hfReplayMenuItems[] = {
     "Label",
@@ -516,6 +536,87 @@ float mapFloat(float x, float in_min, float in_max, float out_min, float out_max
 int getTextWidth(const char *text)
 {
   return strlen(text) * 6;
+}
+
+void addHFMonitorEntry(uint8_t freqIndex, uint32_t code, int16_t rssi, uint16_t protocol, bool isRemote, bool codeValid, bool protocolValid)
+{
+  if (freqIndex >= raFreqCount)
+  {
+    freqIndex = currentFreqIndex;
+  }
+
+  uint8_t oldMaxTop = 0;
+  if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+  {
+    oldMaxTop = hfMonitorCount - HF_MONITOR_VISIBLE_LINES;
+  }
+  bool wasAtBottom = (hfMonitorTopIndex >= oldMaxTop);
+
+  if (rssi > 0)
+  {
+    rssi = -100;
+  }
+  if (rssi < -127)
+  {
+    rssi = -127;
+  }
+
+  HFMonitorEntry entry;
+  entry.freqMHz100 = (uint16_t)(raFrequencies[freqIndex] * 100.0f + 0.5f);
+  entry.code = code;
+  entry.rssi = (int8_t)rssi;
+  entry.protocol = (uint8_t)protocol;
+  entry.isRemote = isRemote;
+  entry.codeValid = codeValid;
+  entry.protocolValid = protocolValid;
+
+  if (hfMonitorCount > 0)
+  {
+    uint8_t lastIndex = (hfMonitorHead + hfMonitorCount - 1) % MAX_HF_MONITOR_SIGNALS;
+    HFMonitorEntry last = hfMonitorEntries[lastIndex];
+
+    bool same = (entry.isRemote == last.isRemote &&
+                 entry.freqMHz100 == last.freqMHz100 &&
+                 entry.codeValid == last.codeValid &&
+                 entry.protocolValid == last.protocolValid);
+
+    if (same && entry.codeValid && entry.code != last.code)
+      same = false;
+    if (same && entry.protocolValid && entry.protocol != last.protocol)
+      same = false;
+    if (same && !entry.codeValid && !entry.protocolValid && entry.rssi != last.rssi)
+      same = false;
+
+    if (same)
+    {
+      return;
+    }
+  }
+
+  uint8_t writeIndex;
+  if (hfMonitorCount < MAX_HF_MONITOR_SIGNALS)
+  {
+    writeIndex = (hfMonitorHead + hfMonitorCount) % MAX_HF_MONITOR_SIGNALS;
+    hfMonitorCount++;
+  }
+  else
+  {
+    hfMonitorHead = (hfMonitorHead + 1) % MAX_HF_MONITOR_SIGNALS;
+    writeIndex = (hfMonitorHead + MAX_HF_MONITOR_SIGNALS - 1) % MAX_HF_MONITOR_SIGNALS;
+  }
+
+  hfMonitorEntries[writeIndex] = entry;
+
+  uint8_t newMaxTop = 0;
+  if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+  {
+    newMaxTop = hfMonitorCount - HF_MONITOR_VISIBLE_LINES;
+  }
+
+  if (wasAtBottom || hfMonitorTopIndex > newMaxTop)
+  {
+    hfMonitorTopIndex = newMaxTop;
+  }
 }
 
 void vibro(uint8_t intensity = 120, uint16_t duration = 100, uint8_t repeat = 1, uint32_t pause = 150)

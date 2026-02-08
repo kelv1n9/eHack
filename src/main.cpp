@@ -154,6 +154,8 @@ void loop1()
       capturedProtocol = mySwitch.getReceivedProtocol();
       capturedDelay = mySwitch.getReceivedDelay();
 
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
+
       SimpleRAData data;
       data.code = capturedCode;
       data.length = capturedLength;
@@ -851,6 +853,7 @@ void loop1()
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
       capturedDelay = mySwitch.getReceivedDelay();
+      currentRssi = ELECHOUSE_cc1101.getRssi();
 
       SimpleRAData data;
       data.code = capturedCode;
@@ -860,6 +863,8 @@ void loop1()
 
       signalCaptured_433MHZ = true;
       signalIndicatorUntil = millis() + 20000UL;
+
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
 
       if (isDuplicateRA(data))
       {
@@ -900,6 +905,84 @@ void loop1()
 
       lastStepMs = millis();
       lastReceivedTime = millis();
+    }
+    break;
+  }
+  /********************************** HF MONITOR **************************************/
+  case HF_MONITOR:
+  {
+    static uint32_t lastReceivedTime = millis();
+    static bool lastConnectionStatus = false;
+
+    if (!initialized)
+    {
+      pinMode(GD0_PIN_CC, INPUT);
+      mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+        lastReceivedTime = millis();
+      }
+
+      initialized = true;
+    }
+
+    if (lastConnectionStatus != successfullyConnected)
+    {
+      initialized = false;
+      lastConnectionStatus = successfullyConnected;
+      DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
+      return;
+    }
+
+    if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
+    {
+      successfullyConnected = false;
+      initialized = false;
+      connState = CONN_IDLE;
+      vibro(255, 30, 1);
+      DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
+      return;
+    }
+
+    if (mySwitch.available())
+    {
+      if (mySwitch.getReceivedBitlength() < 10)
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      currentRssi = ELECHOUSE_cc1101.getRssi();
+      capturedCode = mySwitch.getReceivedValue();
+      capturedLength = mySwitch.getReceivedBitlength();
+      capturedProtocol = mySwitch.getReceivedProtocol();
+      capturedDelay = mySwitch.getReceivedDelay();
+
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
+
+      SimpleRAData data;
+      data.code = capturedCode;
+      data.length = capturedLength;
+      data.protocol = capturedProtocol;
+      data.delay = capturedDelay;
+
+      if (isDuplicateRA(data))
+      {
+        mySwitch.resetAvailable();
+        break;
+      }
+
+      if (settings.saveRA)
+      {
+        writeRAData(lastUsedSlotRA, data);
+      }
+
+      lastUsedSlotRA = (lastUsedSlotRA + 1) % MAX_RA_SIGNALS;
+      mySwitch.resetAvailable();
     }
     break;
   }
@@ -1554,6 +1637,9 @@ void loop()
     {
       attackIsActive = false;
     }
+    case HF_MONITOR:
+    {
+    }
     case HF_SCAN:
     {
       mySwitch.disableReceive();
@@ -2020,6 +2106,34 @@ void loop()
     DrawRSSIPlot_HF();
     break;
   }
+  case HF_MONITOR:
+  {
+    if (!locked && (up.click() || up.step()))
+    {
+      if (hfMonitorTopIndex > 0)
+      {
+        hfMonitorTopIndex--;
+      }
+      vibro(255, 20);
+    }
+
+    if (!locked && (down.click() || down.step()))
+    {
+      uint8_t maxTop = 0;
+      if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+      {
+        maxTop = hfMonitorCount - HF_MONITOR_VISIBLE_LINES;
+      }
+      if (hfMonitorTopIndex < maxTop)
+      {
+        hfMonitorTopIndex++;
+      }
+      vibro(255, 20);
+    }
+
+    ShowMonitor_HF();
+    break;
+  }
   case HF_SPECTRUM:
   {
     if (!locked && ok.click())
@@ -2354,7 +2468,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_MONITOR && !isUltraHighFrequencyMode())
     {
       if (communication.receivePacket(recievedData, &recievedDataLen))
       {
@@ -2411,7 +2525,10 @@ void loop()
       }
     }
 
-    drawRadioConnected();
+    if (currentMenu != HF_MONITOR)
+    {
+      drawRadioConnected();
+    }
   }
   else if (!successfullyConnected && startConnection && !isUltraHighFrequencyMode())
   {
