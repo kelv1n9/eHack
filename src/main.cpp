@@ -148,7 +148,6 @@ void loop1()
       signalCaptured_433MHZ = true;
 
       currentRssi = ELECHOUSE_cc1101.getRssi();
-
       capturedCode = mySwitch.getReceivedValue();
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
@@ -930,23 +929,27 @@ void loop1()
       initialized = true;
     }
 
-    if (lastConnectionStatus != successfullyConnected)
-    {
-      initialized = false;
-      lastConnectionStatus = successfullyConnected;
-      DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
-      return;
-    }
+    // if (lastConnectionStatus != successfullyConnected)
+    // {
+    //   initialized = false;
+    //   lastConnectionStatus = successfullyConnected;
+    //   DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
+    //   return;
+    // }
 
-    if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
-    {
-      successfullyConnected = false;
-      initialized = false;
-      connState = CONN_IDLE;
-      vibro(255, 30, 1);
-      DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
-      return;
-    }
+    // if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
+    // {
+    //   successfullyConnected = false;
+    //   initialized = false;
+    //   connState = CONN_IDLE;
+    //   vibro(255, 30, 1);
+    //   DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
+    //   return;
+    // }
+    // if (successfullyConnected)
+    // {
+    //   lastReceivedTime = millis();
+    // }
 
     if (mySwitch.available())
     {
@@ -963,13 +966,17 @@ void loop1()
       capturedDelay = mySwitch.getReceivedDelay();
 
       addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true, capturedLength);
-      vibro(255, 30);
 
       SimpleRAData data;
       data.code = capturedCode;
       data.length = capturedLength;
       data.protocol = capturedProtocol;
       data.delay = capturedDelay;
+
+      strncpy(data.name, "NEW", NAME_MAX_LEN);
+      data.name[NAME_MAX_LEN] = '\0';
+
+      vibro(255, 30);
 
       if (isDuplicateRA(data))
       {
@@ -2506,7 +2513,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_MONITOR && !isUltraHighFrequencyMode())
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
     {
       if (communication.receivePacket(recievedData, &recievedDataLen))
       {

@@ -35,7 +35,11 @@
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
+#ifdef DEBUG_eHack
+#define APP_VERSION "v5.3.1 DEBUG"
+#else
 #define APP_VERSION "v5.3.1"
+#endif
 const char *APP_NAME = "eHack";
 
 #define BLE_PIN 18
