@@ -154,7 +154,7 @@ void loop1()
       capturedProtocol = mySwitch.getReceivedProtocol();
       capturedDelay = mySwitch.getReceivedDelay();
 
-      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true, capturedLength);
 
       SimpleRAData data;
       data.code = capturedCode;
@@ -864,7 +864,7 @@ void loop1()
       signalCaptured_433MHZ = true;
       signalIndicatorUntil = millis() + 20000UL;
 
-      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true, capturedLength);
 
       if (isDuplicateRA(data))
       {
@@ -962,7 +962,8 @@ void loop1()
       capturedProtocol = mySwitch.getReceivedProtocol();
       capturedDelay = mySwitch.getReceivedDelay();
 
-      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true);
+      addHFMonitorEntry(currentFreqIndex, capturedCode, currentRssi, capturedProtocol, false, true, true, capturedLength);
+      vibro(255, 30);
 
       SimpleRAData data;
       data.code = capturedCode;
@@ -983,6 +984,24 @@ void loop1()
 
       lastUsedSlotRA = (lastUsedSlotRA + 1) % MAX_RA_SIGNALS;
       mySwitch.resetAvailable();
+    }
+
+    if (hfMonitorSendRequested)
+    {
+      mySwitch.disableReceive();
+      pinMode(GD0_PIN_CC, OUTPUT);
+      mySwitch.enableTransmit(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+
+      mySwitch.setProtocol(capturedProtocol);
+      mySwitch.send(capturedCode, capturedLength);
+
+      mySwitch.disableTransmit();
+      pinMode(GD0_PIN_CC, INPUT);
+      mySwitch.enableReceive(GD0_PIN_CC);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+
+      hfMonitorSendRequested = false;
     }
     break;
   }
@@ -1503,7 +1522,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE && currentMenu != HF_MONITOR)
   {
     locked = !locked;
 
@@ -2108,27 +2127,46 @@ void loop()
   }
   case HF_MONITOR:
   {
-    if (!locked && (up.click() || up.step()))
+    if (up.hold() && down.hold())
     {
-      if (hfMonitorTopIndex > 0)
+      currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
+      initialized = false;
+      vibro(255, 30);
+    }
+
+    if (up.click() || up.step())
+    {
+      hfMonitorAutoFollow = false;
+      if (hfMonitorCursorIndex > 0)
       {
-        hfMonitorTopIndex--;
+        hfMonitorCursorIndex--;
       }
       vibro(255, 20);
     }
 
-    if (!locked && (down.click() || down.step()))
+    if (down.click() || down.step())
     {
-      uint8_t maxTop = 0;
-      if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+      hfMonitorAutoFollow = false;
+      if (hfMonitorCount > 0 && hfMonitorCursorIndex < hfMonitorCount - 1)
       {
-        maxTop = hfMonitorCount - HF_MONITOR_VISIBLE_LINES;
-      }
-      if (hfMonitorTopIndex < maxTop)
-      {
-        hfMonitorTopIndex++;
+        hfMonitorCursorIndex++;
       }
       vibro(255, 20);
+    }
+
+    if (ok.click() && hfMonitorCount > 0)
+    {
+      uint8_t ringIndex = (hfMonitorHead + hfMonitorCursorIndex) % MAX_HF_MONITOR_SIGNALS;
+      HFMonitorEntry entry = hfMonitorEntries[ringIndex];
+
+      if (entry.codeValid)
+      {
+        capturedCode = entry.code;
+        capturedProtocol = entry.protocol;
+        capturedLength = entry.bitLength;
+        hfMonitorSendRequested = true;
+        vibro(255, 50);
+      }
     }
 
     ShowMonitor_HF();

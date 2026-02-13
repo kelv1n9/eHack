@@ -35,7 +35,7 @@
 #include "DataTransmission.h"
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
-#define APP_VERSION "v5.3.0 beta"
+#define APP_VERSION "v5.3.1"
 const char *APP_NAME = "eHack";
 
 #define BLE_PIN 18
@@ -141,7 +141,7 @@ uint32_t offTimer;
 
 #define NAME_MAX_LEN 10
 
-#define MAX_HF_MONITOR_SIGNALS 10
+#define MAX_HF_MONITOR_SIGNALS 20
 #define HF_MONITOR_VISIBLE_LINES 6
 
 int currentRssi = -100;
@@ -184,15 +184,19 @@ struct HFMonitorEntry
   uint32_t code;
   int8_t rssi;
   uint8_t protocol;
+  uint8_t bitLength;
   bool isRemote;
   bool codeValid;
   bool protocolValid;
 };
 
 HFMonitorEntry hfMonitorEntries[MAX_HF_MONITOR_SIGNALS];
+bool hfMonitorSendRequested = false;
+bool hfMonitorAutoFollow = true;
 uint8_t hfMonitorHead = 0;
 uint8_t hfMonitorCount = 0;
 uint8_t hfMonitorTopIndex = 0;
+uint8_t hfMonitorCursorIndex = 0;
 uint32_t hfMonitorRemoteLogMs = 0;
 
 const char PROGMEM *hfReplayMenuItems[] = {
@@ -538,7 +542,7 @@ int getTextWidth(const char *text)
   return strlen(text) * 6;
 }
 
-void addHFMonitorEntry(uint8_t freqIndex, uint32_t code, int16_t rssi, uint16_t protocol, bool isRemote, bool codeValid, bool protocolValid)
+void addHFMonitorEntry(uint8_t freqIndex, uint32_t code, int16_t rssi, uint16_t protocol, bool isRemote, bool codeValid, bool protocolValid, uint16_t bitLength = 0)
 {
   if (freqIndex >= raFreqCount)
   {
@@ -566,6 +570,7 @@ void addHFMonitorEntry(uint8_t freqIndex, uint32_t code, int16_t rssi, uint16_t 
   entry.code = code;
   entry.rssi = (int8_t)rssi;
   entry.protocol = (uint8_t)protocol;
+  entry.bitLength = (uint8_t)bitLength;
   entry.isRemote = isRemote;
   entry.codeValid = codeValid;
   entry.protocolValid = protocolValid;

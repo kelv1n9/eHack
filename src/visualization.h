@@ -572,54 +572,156 @@ void ShowScanning_HF()
 
 void ShowMonitor_HF()
 {
-  oled.setScale(1);
-  oled.setCursorXY(0, 0);
-  oled.print("FRQ | Code | RSS | P");
+  static unsigned long lastBlink = 0;
+  static bool blinkState = false;
 
+  oled.setScale(1);
+
+  // Header: current frequency
+  char header[16];
+  sprintf(header, "%.2f MHz", raFrequencies[currentFreqIndex]);
+  oled.setCursorXY(0, 0);
+  oled.print(header);
+
+  // Blinking circle (listening indicator)
+  if (millis() - lastBlink > 500)
+  {
+    lastBlink = millis();
+    blinkState = !blinkState;
+  }
+  if (blinkState)
+  {
+    oled.circle(78, 3, 2, 1);
+  }
+
+  // Entry count
+  if (hfMonitorCount > 0)
+  {
+    char countBuf[8];
+    sprintf(countBuf, "%u/%u", hfMonitorCount, (uint8_t)MAX_HF_MONITOR_SIGNALS);
+    oled.setCursorXY(128 - getTextWidth(countBuf), 0);
+    oled.print(countBuf);
+  }
+
+  // Separator
+  drawDashedLine(9, 0, 128, 2, 2);
+
+  // Empty state
+  if (hfMonitorCount == 0)
+  {
+    const char *txt = "Listening...";
+    oled.setCursorXY((128 - getTextWidth(txt)) / 2, 28);
+    oled.print(txt);
+
+    for (int x = 20; x < 108; x++)
+    {
+      int y = 48 + sin((x + sineOffset) / 10.0f) * 6;
+      oled.dot(x, y);
+    }
+    for (int x = 20; x < 108; x++)
+    {
+      int y = 48 + sin((x + sineOffset + 15) / 12.0f) * 6;
+      oled.dot(x, y);
+    }
+    sineOffset += 2;
+    return;
+  }
+
+  // Auto-follow newest entry
+  if (hfMonitorAutoFollow)
+  {
+    hfMonitorCursorIndex = hfMonitorCount - 1;
+  }
+
+  // Auto-scroll to keep cursor visible
+  if (hfMonitorCursorIndex < hfMonitorTopIndex)
+  {
+    hfMonitorTopIndex = hfMonitorCursorIndex;
+  }
+  else if (hfMonitorCursorIndex >= hfMonitorTopIndex + HF_MONITOR_VISIBLE_LINES)
+  {
+    hfMonitorTopIndex = hfMonitorCursorIndex - HF_MONITOR_VISIBLE_LINES + 1;
+  }
+
+  // Scroll up arrow
+  if (hfMonitorTopIndex > 0)
+  {
+    oled.line(116, 15, 119, 12);
+    oled.line(119, 12, 122, 15);
+  }
+
+  // Entries
   for (uint8_t row = 0; row < HF_MONITOR_VISIBLE_LINES; row++)
   {
     uint8_t logicalIndex = hfMonitorTopIndex + row;
     if (logicalIndex >= hfMonitorCount)
-    {
       break;
-    }
 
     uint8_t ringIndex = (hfMonitorHead + logicalIndex) % MAX_HF_MONITOR_SIGNALS;
     HFMonitorEntry entry = hfMonitorEntries[ringIndex];
 
-    char codeBuf[5];
-    if (entry.codeValid)
+    uint8_t y = 11 + row * 9;
+
+    // Cursor indicator
+    if (logicalIndex == hfMonitorCursorIndex)
     {
-      sprintf(codeBuf, "%04lX", entry.code & 0xFFFFUL);
-    }
-    else
-    {
-      strcpy(codeBuf, "----");
+      oled.setCursorXY(0, y);
+      oled.print(">");
     }
 
-    char protocolBuf[3];
+    // Code (decimal)
+    char codeBuf[12];
+    if (entry.codeValid)
+      sprintf(codeBuf, "%lu", entry.code);
+    else
+      strcpy(codeBuf, "----");
+    oled.setCursorXY(8, y);
+    oled.print(codeBuf);
+
+    // RSSI mini bar outline + fill
+    int8_t rssiVal = entry.rssi;
+    if (rssiVal < -99)
+      rssiVal = -99;
+    uint8_t barMax = 20;
+    uint8_t barW = constrain(map(rssiVal, -100, -20, 0, barMax), 0, barMax);
+    oled.rect(76, y + 2, 76 + barMax, y + 5, OLED_STROKE);
+    if (barW > 0)
+    {
+      oled.rect(76, y + 2, 76 + barW, y + 5, OLED_FILL);
+    }
+
+    // Protocol
     if (entry.protocolValid)
     {
-      uint8_t protocolDisplay = (entry.protocol > 99) ? 99 : entry.protocol;
-      sprintf(protocolBuf, "%02u", protocolDisplay);
+      uint8_t pd = (entry.protocol > 99) ? 99 : entry.protocol;
+      char pBuf[4];
+      sprintf(pBuf, "P%u", pd);
+      oled.setCursorXY(100, y);
+      oled.print(pBuf);
     }
-    else
-    {
-      strcpy(protocolBuf, "--");
-    }
+  }
 
-    uint16_t freqRounded = entry.freqMHz100 / 100;
-    int8_t rssiDisplay = entry.rssi;
-    if (rssiDisplay < -99)
-    {
-      rssiDisplay = -99;
-    }
+  // Scroll down arrow
+  uint8_t maxTop = 0;
+  if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+    maxTop = hfMonitorCount - HF_MONITOR_VISIBLE_LINES;
+  if (hfMonitorTopIndex < maxTop)
+  {
+    oled.line(116, 58, 119, 61);
+    oled.line(119, 61, 122, 58);
+  }
 
-    char line[24];
-    sprintf(line, "%3u | %s | %d | %s", freqRounded, codeBuf, rssiDisplay, protocolBuf);
+  // Scrollbar (between arrows)
+  if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
+  {
+    uint8_t scrollAreaTop = 17;
+    uint8_t scrollAreaBottom = 57;
+    uint8_t trackHeight = scrollAreaBottom - scrollAreaTop;
+    uint8_t thumbHeight = max(4, (HF_MONITOR_VISIBLE_LINES * trackHeight) / hfMonitorCount);
+    uint8_t scrollRange = trackHeight - thumbHeight;
+    uint8_t thumbY = scrollAreaTop + (scrollRange * hfMonitorTopIndex) / maxTop;
 
-    oled.setCursorXY(0, (row + 1) * 9);
-    oled.print(line);
+    oled.rect(118, thumbY, 120, thumbY + thumbHeight, OLED_FILL);
   }
 }
 
