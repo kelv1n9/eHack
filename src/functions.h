@@ -90,7 +90,7 @@ uint8_t barrierBruteMenuIndex = 0;
 #define V_REF 3.3
 
 #define BATTERY_CHECK_INTERVAL 10000
-#define BATTERY_MIN_VOLTAGE 3.5
+#define BATTERY_MIN_VOLTAGE 3.2
 #define BATTERY_MAX_VOLTAGE 4.2
 #define BATTERY_READ_ITERATIONS 10
 
