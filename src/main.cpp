@@ -929,28 +929,6 @@ void loop1()
       initialized = true;
     }
 
-    // if (lastConnectionStatus != successfullyConnected)
-    // {
-    //   initialized = false;
-    //   lastConnectionStatus = successfullyConnected;
-    //   DBG("Connection status changed: %s\n", successfullyConnected ? "EXTERNAL" : "INTERNAL");
-    //   return;
-    // }
-
-    // if (successfullyConnected && millis() - lastReceivedTime > CONNECTION_TIMEOUT_MS)
-    // {
-    //   successfullyConnected = false;
-    //   initialized = false;
-    //   connState = CONN_IDLE;
-    //   vibro(255, 30, 1);
-    //   DBG("Connection lost: no data for %d ms\n", CONNECTION_TIMEOUT_MS);
-    //   return;
-    // }
-    // if (successfullyConnected)
-    // {
-    //   lastReceivedTime = millis();
-    // }
-
     if (mySwitch.available())
     {
       if (mySwitch.getReceivedBitlength() < 10)
@@ -1529,7 +1507,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE && currentMenu != HF_MONITOR)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
@@ -2134,14 +2112,7 @@ void loop()
   }
   case HF_MONITOR:
   {
-    if (up.hold() && down.hold())
-    {
-      currentFreqIndex = (currentFreqIndex + 1) % raFreqCount;
-      initialized = false;
-      vibro(255, 30);
-    }
-
-    if (up.click() || up.step())
+    if (!locked && (up.click() || up.step()) && hfMonitorCount > 0)
     {
       hfMonitorAutoFollow = false;
       if (hfMonitorCursorIndex > 0)
@@ -2151,7 +2122,7 @@ void loop()
       vibro(255, 20);
     }
 
-    if (down.click() || down.step())
+    if (!locked && (down.click() || down.step()) && hfMonitorCount > 0)
     {
       hfMonitorAutoFollow = false;
       if (hfMonitorCount > 0 && hfMonitorCursorIndex < hfMonitorCount - 1)
@@ -2161,7 +2132,7 @@ void loop()
       vibro(255, 20);
     }
 
-    if (ok.click() && hfMonitorCount > 0)
+    if (!locked && ok.click() && hfMonitorCount > 0)
     {
       uint8_t ringIndex = (hfMonitorHead + hfMonitorCursorIndex) % MAX_HF_MONITOR_SIGNALS;
       HFMonitorEntry entry = hfMonitorEntries[ringIndex];
@@ -2570,10 +2541,7 @@ void loop()
       }
     }
 
-    if (currentMenu != HF_MONITOR)
-    {
-      drawRadioConnected();
-    }
+    drawRadioConnected();
   }
   else if (!successfullyConnected && startConnection && !isUltraHighFrequencyMode())
   {

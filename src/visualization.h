@@ -572,9 +572,6 @@ void ShowScanning_HF()
 
 void ShowMonitor_HF()
 {
-  static unsigned long lastBlink = 0;
-  static bool blinkState = false;
-
   oled.setScale(1);
 
   // Header: current frequency
@@ -582,26 +579,6 @@ void ShowMonitor_HF()
   sprintf(header, "%.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setCursorXY(0, 0);
   oled.print(header);
-
-  // Blinking circle (listening indicator)
-  if (millis() - lastBlink > 500)
-  {
-    lastBlink = millis();
-    blinkState = !blinkState;
-  }
-  if (blinkState)
-  {
-    oled.circle(78, 3, 2, 1);
-  }
-
-  // Entry count
-  if (hfMonitorCount > 0)
-  {
-    char countBuf[8];
-    sprintf(countBuf, "%u/%u", hfMonitorCount, (uint8_t)MAX_HF_MONITOR_SIGNALS);
-    oled.setCursorXY(128 - getTextWidth(countBuf), 0);
-    oled.print(countBuf);
-  }
 
   // Separator
   drawDashedLine(9, 0, 128, 2, 2);
