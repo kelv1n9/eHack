@@ -4,7 +4,7 @@ void handleBatteryTasks();
 
 void setup()
 {
-  EEPROM.begin(512);
+  EEPROM.begin(8192);
 
   // I2C
   Wire.setSDA(0);
@@ -990,6 +990,96 @@ void loop1()
     }
     break;
   }
+  /********************************** RAW CAPTURE **************************************/
+  case HF_RAW_CAPTURE:
+  {
+    if (!initialized)
+    {
+      rawCapturing = false;
+      rawRecorded = false;
+      rawReplayRequested = false;
+      rawSignalCount = 0;
+      rawRecordedCount = 0;
+      rawFirstEdge = true;
+      rawOverflow = false;
+
+      for (uint8_t i = 0; i < RSSI_BUFFER_SIZE; i++)
+        rssiBuffer[i] = -100;
+      rssiIndex = 0;
+      currentRssi = -100;
+
+      pinMode(GD0_PIN_CC, INPUT);
+      attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), rawSignalISR, CHANGE);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+
+      rawStartCapture();
+
+      initialized = true;
+    }
+
+    if (rawOverflow)
+    {
+      rawOverflow = false;
+      rawRecorded = true;
+      rawRecordedCount = rawSignalCount;
+    }
+
+    {
+      static uint32_t rawLastStepMs = 0;
+      if (millis() - rawLastStepMs >= RSSI_STEP_MS)
+      {
+        currentRssi = ELECHOUSE_cc1101.getRssi();
+        rssiBuffer[rssiIndex++] = currentRssi;
+        if (rssiIndex >= RSSI_BUFFER_SIZE)
+          rssiIndex = 0;
+        rawLastStepMs = millis();
+      }
+    }
+
+    break;
+  }
+  /********************************** RAW REPLAY **************************************/
+  case HF_RAW_REPLAY:
+  {
+    if (!initialized)
+    {
+      rawReplaying = false;
+      rawReplayRequested = false;
+      rawRecorded = false;
+
+      pinMode(GD0_PIN_CC, INPUT);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+
+      initialized = true;
+    }
+
+    if (rawReplayRequested && rawRecorded && !rawReplaying)
+    {
+      rawReplayRequested = false;
+      rawReplaying = true;
+
+      pinMode(GD0_PIN_CC, OUTPUT);
+      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+
+      bool pinState = true;
+      for (uint16_t i = 0; i < rawRecordedCount; i++)
+      {
+        digitalWrite(GD0_PIN_CC, pinState ? HIGH : LOW);
+        delayMicroseconds(rawSignalBuffer[i]);
+        pinState = !pinState;
+      }
+      digitalWrite(GD0_PIN_CC, LOW);
+
+      rawReplaying = false;
+      rawRecorded = false;
+
+      // Switch back to RX
+      pinMode(GD0_PIN_CC, INPUT);
+      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+    }
+
+    break;
+  }
   /*============================= InfraRed Protocol =================================*/
   /********************************** SCANNING **************************************/
   case IR_SCAN:
@@ -1592,6 +1682,7 @@ void loop()
     case RFID_MENU:
     case HF_MENU:
     case HF_AIR_MENU:
+    case HF_RAW_MENU:
     case HF_COMMON_MENU:
     case HF_BARRIER_MENU:
     case HF_BARRIER_BRUTE_MENU:
@@ -1634,6 +1725,23 @@ void loop()
         mySwitch.disableReceive();
         mySwitch.disableTransmit();
       }
+      vibro(255, 50);
+      break;
+    }
+    case HF_RAW_CAPTURE:
+    {
+      detachInterrupt(digitalPinToInterrupt(GD0_PIN_CC));
+      rawCapturing = false;
+      initialized = false;
+      vibro(255, 50);
+      break;
+    }
+    case HF_RAW_REPLAY:
+    {
+      rawReplaying = false;
+      rawReplayRequested = false;
+      rawRecorded = false;
+      initialized = false;
       vibro(255, 50);
       break;
     }
@@ -1894,16 +2002,24 @@ void loop()
         vibro(255, 80);
         delay(500);
         break;
-      // Clear All
+      // Clear RAW
       case 7:
+        clearAllRawData();
+        showClearConfirmation("RAW");
+        vibro(255, 80);
+        delay(500);
+        break;
+      // Clear All
+      case 8:
         clearAllRAData();
         clearAllIRData();
+        clearAllRawData();
         showClearConfirmation("All");
         vibro(255, 80);
         delay(500);
         break;
       // Reset Settings
-      case 8:
+      case 9:
         resetSettings();
         showClearConfirmation("SET");
         vibro(255, 80);
@@ -1969,6 +2085,21 @@ void loop()
       grandParentMenu = parentMenu;
       parentMenu = currentMenu;
       currentMenu = static_cast<MenuState>(HF_ACTIVITY + RAsignalMenuIndex);
+      vibro(255, 50);
+    }
+    break;
+  }
+  case HF_RAW_MENU:
+  {
+    menuButtons(rawMenuIndex, rawMenuCount);
+    drawMenu(rawMenuItems, rawMenuCount, rawMenuIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      currentMenu = static_cast<MenuState>(HF_RAW_CAPTURE + rawMenuIndex);
       vibro(255, 50);
     }
     break;
@@ -2157,6 +2288,77 @@ void loop()
       resetSpectrum_HF();
     }
     DrawRSSISpectrum_HF();
+    break;
+  }
+  case HF_RAW_CAPTURE:
+  {
+    if (!locked && ok.click())
+    {
+      if (rawCapturing)
+      {
+        rawStopCapture();
+        vibro(255, 50);
+      }
+    }
+
+    if (!locked && up.click())
+    {
+      if (!rawCapturing && rawRecorded)
+      {
+        uint8_t slot = findNextFreeRawSlot();
+        writeRawData(slot, currentFreqIndex);
+        vibro(255, 80);
+
+        rawRecorded = false;
+        rawRecordedCount = 0;
+        rawSignalCount = 0;
+        rawStartCapture();
+      }
+    }
+
+    if (!locked && down.click())
+    {
+      if (!rawCapturing && rawRecorded)
+      {
+        rawRecorded = false;
+        rawRecordedCount = 0;
+        rawSignalCount = 0;
+        rawStartCapture();
+        vibro(255, 30);
+      }
+    }
+
+    DrawRAWOscillogram_HF();
+    break;
+  }
+  case HF_RAW_REPLAY:
+  {
+    if (!locked && up.click())
+    {
+      selectedSlotRAW = (selectedSlotRAW == 0) ? MAX_RAW_SIGNALS - 1 : selectedSlotRAW - 1;
+      vibro(255, 20);
+    }
+    if (!locked && down.click())
+    {
+      selectedSlotRAW = (selectedSlotRAW + 1) % MAX_RAW_SIGNALS;
+      vibro(255, 20);
+    }
+
+    if (!locked && ok.click())
+    {
+      if (isRawSlotOccupied(selectedSlotRAW))
+      {
+        readRawData(selectedSlotRAW);
+        rawReplayRequested = true;
+        vibro(255, 30);
+      }
+      else
+      {
+        vibro(255, 100); 
+      }
+    }
+
+    DrawRAWReplay();
     break;
   }
   case HF_BARRIER_SCAN:
@@ -2484,7 +2686,7 @@ void loop()
 
   if (successfullyConnected)
   {
-    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && !isUltraHighFrequencyMode())
+    if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_RAW_CAPTURE && currentMenu != HF_RAW_REPLAY && !isUltraHighFrequencyMode())
     {
       if (communication.receivePacket(recievedData, &recievedDataLen))
       {

@@ -19,6 +19,7 @@ enum MenuState
   FLAPPY_GAME,
 
   HF_AIR_MENU,
+  HF_RAW_MENU,
   HF_COMMON_MENU,
   HF_BARRIER_MENU,
   HF_JAMMER,
@@ -26,6 +27,9 @@ enum MenuState
 
   HF_ACTIVITY,
   HF_SPECTRUM,
+
+  HF_RAW_CAPTURE,
+  HF_RAW_REPLAY,
 
   HF_SCAN,
   HF_REPLAY,
@@ -71,6 +75,7 @@ const char PROGMEM *mainMenuItems[] = {
 
 const char PROGMEM *hfMenuItems[] = {
     "Air Scan",
+    "RAW",
     "Common",
     "Gates",
     "Jammer",
@@ -119,6 +124,11 @@ const char PROGMEM *RAsignalMenuItems[] = {
     "Spectrum",
 };
 
+const char PROGMEM *rawMenuItems[] = {
+    "Capture",
+    "Replay",
+};
+
 const char PROGMEM *barrierMenuItems[] = {
     "Capture",
     "Replay",
@@ -141,6 +151,7 @@ const char PROGMEM *settingsItems[] = {
 const char PROGMEM *settingsItemsAdditional[] = {
     "Remove IR Data",
     "Remove RA Data",
+    "Remove RAW Data",
     "Remove ALL Data",
     "Reset Settings",
 };
@@ -156,6 +167,7 @@ bool isGameOrFullScreenActivity()
           currentMenu == SNAKE_GAME ||
           currentMenu == FLAPPY_GAME ||
           currentMenu == HF_ACTIVITY ||
+          currentMenu == HF_RAW_CAPTURE ||
           currentMenu == HF_MONITOR ||
           currentMenu == TORCH);
 }
@@ -164,6 +176,8 @@ bool isHighFrequencyMode()
 {
   return (currentMenu == HF_ACTIVITY ||
           currentMenu == HF_SPECTRUM ||
+          currentMenu == HF_RAW_CAPTURE ||
+          currentMenu == HF_RAW_REPLAY ||
           currentMenu == HF_SCAN ||
           currentMenu == HF_MONITOR);
 }
@@ -190,6 +204,8 @@ bool isActiveMode()
       currentMenu == HF_SCAN ||
       currentMenu == HF_MONITOR ||
       currentMenu == HF_REPLAY ||
+      currentMenu == HF_RAW_CAPTURE ||
+      currentMenu == HF_RAW_REPLAY ||
 
       currentMenu == HF_BARRIER_SCAN ||
       currentMenu == HF_BARRIER_REPLAY ||
@@ -947,6 +963,122 @@ void DrawRSSISpectrum_HF()
   oled.print(Text);
 }
 
+void DrawRAWReplay()
+{
+  oled.textMode(BUF_ADD);
+  oled.setScale(1);
+
+  oled.setCursorXY(35, 0);
+  oled.print("RAW Replay");
+
+  for (uint8_t i = 0; i < MAX_RAW_SIGNALS; i++)
+  {
+    uint8_t y = 14 + i * 14;
+    bool occupied = isRawSlotOccupied(i);
+    bool selected = (i == selectedSlotRAW);
+
+    if (selected)
+    {
+      oled.rect(0, y - 1, 127, y + 9, OLED_FILL);
+      oled.textMode(BUF_SUBTRACT);
+    }
+
+    char name[20];
+    if (occupied)
+      sprintf(name, "Signal %d", i + 1);
+    else
+      sprintf(name, "Signal %d [empty]", i + 1);
+
+    oled.setCursorXY(4, y);
+    oled.print(name);
+
+    if (selected)
+      oled.textMode(BUF_ADD);
+  }
+
+  const char *hint = "OK to send";
+  oled.setCursorXY((128 - getTextWidth(hint)) / 2, 56);
+  oled.print(hint);
+}
+
+void DrawRAWOscillogram_HF()
+{
+  const uint8_t centerY = 40;
+  const uint8_t halfH = 28; 
+  const uint8_t plotLeft = 0;
+  const uint8_t plotRight = 128;
+
+  oled.textMode(BUF_ADD);
+  oled.setScale(1);
+
+  char freq[16];
+  sprintf(freq, "%.2f", raFrequencies[currentFreqIndex]);
+  oled.setCursorXY(0, 0);
+  oled.print(freq);
+
+  const char *status;
+  if (rawCapturing)
+    status = "REC";
+  else
+    status = "DONE";
+
+  oled.setCursorXY(128 - getTextWidth(status), 0);
+  oled.print(status);
+
+  if (!rawRecorded)
+    drawDashedLine(centerY, plotLeft, plotRight, 2, 4);
+
+  if (rawCapturing)
+  {
+    uint8_t plotW = plotRight - plotLeft;
+
+    for (int px = 0; px < plotW; px++)
+    {
+      int bufIdx = (int)((long)px * RSSI_BUFFER_SIZE / plotW);
+      if (bufIdx >= RSSI_BUFFER_SIZE)
+        bufIdx = RSSI_BUFFER_SIZE - 1;
+
+      int x = plotLeft + px;
+      int rssiValue = rssiBuffer[(rssiIndex + bufIdx) % RSSI_BUFFER_SIZE];
+      uint8_t h = constrain(map(rssiValue, -100, -20, 0, halfH), 0, halfH);
+
+      if (h > 0)
+      {
+        oled.line(x, centerY - 1, x, centerY - h);
+        oled.line(x, centerY + 1, x, centerY + h);
+      }
+    }
+  }
+  else if (rawRecorded)
+  {
+    oled.setScale(2);
+    const char *msg = "Captured!";
+    oled.setCursorXY((128 - getTextWidth(msg) * 2) / 2, 18);
+    oled.print(msg);
+    oled.setScale(1);
+  }
+
+  if (rawRecorded)
+  {
+    char info[20];
+    sprintf(info, "%d samples", rawRecordedCount);
+    oled.setCursorXY((128 - getTextWidth(info)) / 2, 40);
+    oled.print(info);
+
+    oled.setCursorXY(0, 56);
+    oled.print("save");
+    oled.setCursorXY(128 - getTextWidth("decline"), 56);
+    oled.print("decline");
+  }
+  else
+  {
+    char info[20];
+    sprintf(info, "Samp: %d", rawSignalCount);
+    oled.setCursorXY(5 + (128 - getTextWidth(info)) / 2, 0);
+    oled.print(info);
+  }
+}
+
 char nextChar(char c)
 {
   uint8_t n = sizeof(nameChars) - 1;
@@ -1674,10 +1806,10 @@ void ShowFMFrequency()
   }
 
   if (FMblink)
-    {
-      if (millis() - FMblinkTimer < 500)
-        oled.circle(nx + w + 5, ny + 16, 3, 1);
-      else
-        FMblink = false;
-    }
+  {
+    if (millis() - FMblinkTimer < 500)
+      oled.circle(nx + w + 5, ny + 16, 3, 1);
+    else
+      FMblink = false;
+  }
 }

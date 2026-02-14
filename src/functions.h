@@ -36,9 +36,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.3.2 DEBUG"
+#define APP_VERSION "v5.4.0 DEBUG"
 #else
-#define APP_VERSION "v5.3.2"
+#define APP_VERSION "v5.4.0"
 #endif
 const char *APP_NAME = "eHack";
 
@@ -61,8 +61,9 @@ volatile bool initialized = false;
 volatile bool locked = false;
 
 uint8_t mainMenuCount = 9;
-uint8_t hfMenuCount = 5;
+uint8_t hfMenuCount = 6;
 uint8_t irMenuCount = 4;
+uint8_t rawMenuCount = 2;
 uint8_t uhfMenuCount = 9;
 uint8_t RFIDMenuCount = 3;
 uint8_t gamesMenuCount = 3;
@@ -74,6 +75,7 @@ uint8_t barrierBruteMenuCount = 2;
 uint8_t MAINmenuIndex = 0;
 uint8_t HFmenuIndex = 0;
 uint8_t IRmenuIndex = 0;
+uint8_t rawMenuIndex = 0;
 uint8_t uhfMenuIndex = 0;
 uint8_t RFIDMenuIndex = 0;
 uint8_t gamesMenuIndex = 0;
@@ -216,6 +218,81 @@ bool RANameEdit;
 const char PROGMEM nameChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ";
 char slotName[NAME_MAX_LEN + 1];
 
+/* ================ RAW Signal =================== */
+#define RAW_SIGNAL_MAX_SAMPLES 1024
+#define MAX_RAW_SIGNALS 3
+#define MAX_RAW_SAVE_SAMPLES 512
+
+struct RawSignalSlot
+{
+  uint16_t sampleCount;
+  uint8_t freqIndex;
+  uint16_t samples[MAX_RAW_SAVE_SAMPLES];
+};
+
+uint8_t selectedSlotRAW = 0;
+uint8_t nextRawSlotToWrite = 0;
+uint16_t rawRecordedCount = 0;
+
+bool rawRecorded = false;
+bool rawReplaying = false;
+volatile uint16_t rawSignalBuffer[RAW_SIGNAL_MAX_SAMPLES];
+volatile uint16_t rawSignalCount = 0;
+volatile uint32_t rawLastEdgeMicros = 0;
+volatile bool rawFirstEdge = true;
+volatile bool rawCapturing = false;
+volatile bool rawOverflow = false;
+volatile bool rawReplayRequested = false;
+
+void rawSignalISR()
+{
+  uint32_t now = micros();
+  if (rawFirstEdge)
+  {
+    rawFirstEdge = false;
+    rawLastEdgeMicros = now;
+    return;
+  }
+
+  uint32_t duration = now - rawLastEdgeMicros;
+  rawLastEdgeMicros = now;
+
+  if (duration > 65535)
+    duration = 65535;
+  if (duration < 10)
+    return;
+
+  if (rawCapturing && rawSignalCount < RAW_SIGNAL_MAX_SAMPLES)
+  {
+    rawSignalBuffer[rawSignalCount++] = (uint16_t)duration;
+  }
+  else if (rawCapturing && rawSignalCount >= RAW_SIGNAL_MAX_SAMPLES)
+  {
+    rawOverflow = true;
+    rawCapturing = false;
+  }
+}
+
+void rawStartCapture()
+{
+  noInterrupts();
+  rawSignalCount = 0;
+  rawFirstEdge = true;
+  rawOverflow = false;
+  rawCapturing = true;
+  rawRecorded = false;
+  interrupts();
+}
+
+void rawStopCapture()
+{
+  noInterrupts();
+  rawCapturing = false;
+  rawRecorded = true;
+  rawRecordedCount = rawSignalCount;
+  interrupts();
+}
+
 /* ================ Barrier =================== */
 #define MAX_DELTA_T_BARRIER 200
 #define AN_MOTORS_PULSE 412
@@ -339,6 +416,7 @@ bool gamesOnlyMode;
 #define SLOT_SETTINGS_SIZE sizeof(Settings)
 #define SLOT_RFID_SIZE sizeof(RFID)
 #define SLOT_START_MODE_SIZE sizeof(gamesOnlyMode)
+#define SLOT_RAW_SIZE sizeof(RawSignalSlot)
 
 #define EEPROM_IR_ADDR 0
 #define EEPROM_RA_ADDR (EEPROM_IR_ADDR + MAX_IR_SIGNALS * SLOT_IR_SIZE)
@@ -348,6 +426,7 @@ bool gamesOnlyMode;
 #define EEPROM_RFID_ADDR (EEPROM_SETTINGS_ADDR + SLOT_SETTINGS_SIZE)
 #define EEPROM_STARTCONN_ADDR (EEPROM_RFID_ADDR + MAX_RFID * SLOT_RFID_SIZE)
 #define EEPROM_START_MODE_ADDR (EEPROM_STARTCONN_ADDR + SLOT_START_MODE_SIZE)
+#define EEPROM_RAW_ADDR (EEPROM_START_MODE_ADDR + SLOT_RAW_SIZE)
 
 /*=================== SETTINGS ==========================*/
 struct Settings
@@ -360,7 +439,7 @@ struct Settings
 };
 Settings settings;
 
-const uint8_t settingsMenuCount = 9;
+const uint8_t settingsMenuCount = 10;
 // ================= 2.4 GHZ ===========================/
 #define SCK_PIN_NRF 6
 #define MOSI_PIN_NRF 7
@@ -1130,6 +1209,98 @@ bool isDuplicateRFID(const RFID &newData)
     }
   }
   return false;
+}
+
+/************************** RAW SIGNAL EEPROM *******************************/
+
+void writeRawData(uint8_t slot, uint8_t freqIdx)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+    return;
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE;
+  uint16_t count = rawRecordedCount;
+  if (count > MAX_RAW_SAVE_SAMPLES)
+    count = MAX_RAW_SAVE_SAMPLES;
+
+  EEPROM.put(addr, count);
+  addr += sizeof(uint16_t);
+  EEPROM.put(addr, freqIdx);
+  addr += sizeof(uint8_t);
+
+  for (uint16_t i = 0; i < count; i++)
+  {
+    uint16_t val = rawSignalBuffer[i];
+    EEPROM.put(addr + i * sizeof(uint16_t), val);
+  }
+  EEPROM.commit();
+}
+
+bool readRawData(uint8_t slot)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+    return false;
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE;
+  uint16_t count;
+  EEPROM.get(addr, count);
+  addr += sizeof(uint16_t);
+
+  if (count == 0 || count > MAX_RAW_SAVE_SAMPLES || count == 0xFFFF)
+    return false;
+
+  uint8_t freqIdx;
+  EEPROM.get(addr, freqIdx);
+  addr += sizeof(uint8_t);
+
+  for (uint16_t i = 0; i < count; i++)
+  {
+    uint16_t val;
+    EEPROM.get(addr + i * sizeof(uint16_t), val);
+    rawSignalBuffer[i] = val;
+  }
+  rawRecordedCount = count;
+  rawSignalCount = count;
+  currentFreqIndex = freqIdx;
+  rawRecorded = true;
+  return true;
+}
+
+void clearRawData(uint8_t slot)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+    return;
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE;
+  uint16_t zero = 0;
+  EEPROM.put(addr, zero);
+  EEPROM.commit();
+}
+
+void clearAllRawData()
+{
+  for (uint8_t i = 0; i < MAX_RAW_SIGNALS; i++)
+    clearRawData(i);
+}
+
+bool isRawSlotOccupied(uint8_t slot)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+    return false;
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE;
+  uint16_t count;
+  EEPROM.get(addr, count);
+  return (count > 0 && count <= MAX_RAW_SAVE_SAMPLES && count != 0xFFFF);
+}
+
+uint8_t findNextFreeRawSlot()
+{
+  for (uint8_t i = 0; i < MAX_RAW_SIGNALS; i++)
+  {
+    if (!isRawSlotOccupied(i))
+      return i;
+  }
+
+  uint8_t slot = nextRawSlotToWrite;
+  nextRawSlotToWrite = (nextRawSlotToWrite + 1) % MAX_RAW_SIGNALS;
+  return slot;
 }
 
 /************************** COMMON *******************************/
