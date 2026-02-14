@@ -184,6 +184,7 @@ uint16_t capturedDelay;
 bool attackIsActive = false;
 bool signalCaptured_433MHZ = false;
 uint32_t signalIndicatorUntil = 0;
+uint32_t rawSendIndicatorUntil = 0;
 
 struct HFMonitorEntry
 {
@@ -228,6 +229,7 @@ struct RawSignalSlot
 {
   uint16_t sampleCount;
   uint8_t freqIndex;
+  char name[NAME_MAX_LEN + 1];
   uint16_t samples[MAX_RAW_SAVE_SAMPLES];
 };
 
@@ -1215,7 +1217,7 @@ bool isDuplicateRFID(const RFID &newData)
 
 /************************** RAW SIGNAL EEPROM *******************************/
 
-void writeRawData(uint8_t slot, uint8_t freqIdx)
+void writeRawData(uint8_t slot, uint8_t freqIdx, const char *name = nullptr)
 {
   if (slot >= MAX_RAW_SIGNALS)
     return;
@@ -1229,11 +1231,56 @@ void writeRawData(uint8_t slot, uint8_t freqIdx)
   EEPROM.put(addr, freqIdx);
   addr += sizeof(uint8_t);
 
+  char slotNameBuf[NAME_MAX_LEN + 1];
+  if (name)
+  {
+    strncpy(slotNameBuf, name, NAME_MAX_LEN);
+    slotNameBuf[NAME_MAX_LEN] = '\0';
+  }
+  else
+  {
+    sprintf(slotNameBuf, "RAW %d", slot + 1);
+  }
+  for (uint8_t i = 0; i <= NAME_MAX_LEN; i++)
+    EEPROM.put(addr + i, slotNameBuf[i]);
+  addr += NAME_MAX_LEN + 1;
+
   for (uint16_t i = 0; i < count; i++)
   {
     uint16_t val = rawSignalBuffer[i];
     EEPROM.put(addr + i * sizeof(uint16_t), val);
   }
+  EEPROM.commit();
+}
+
+void readRawSlotName(uint8_t slot, char *outName)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+  {
+    strcpy(outName, "----");
+    return;
+  }
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE;
+  uint16_t count;
+  EEPROM.get(addr, count);
+  if (count == 0 || count > MAX_RAW_SAVE_SAMPLES || count == 0xFFFF)
+  {
+    strcpy(outName, "----");
+    return;
+  }
+  addr += sizeof(uint16_t) + sizeof(uint8_t);
+  for (uint8_t i = 0; i <= NAME_MAX_LEN; i++)
+    EEPROM.get(addr + i, outName[i]);
+  outName[NAME_MAX_LEN] = '\0';
+}
+
+void writeRawSlotName(uint8_t slot, const char *name)
+{
+  if (slot >= MAX_RAW_SIGNALS)
+    return;
+  int addr = EEPROM_RAW_ADDR + slot * SLOT_RAW_SIZE + sizeof(uint16_t) + sizeof(uint8_t);
+  for (uint8_t i = 0; i <= NAME_MAX_LEN; i++)
+    EEPROM.put(addr + i, name[i]);
   EEPROM.commit();
 }
 
@@ -1252,6 +1299,7 @@ bool readRawData(uint8_t slot)
   uint8_t freqIdx;
   EEPROM.get(addr, freqIdx);
   addr += sizeof(uint8_t);
+  addr += NAME_MAX_LEN + 1;
 
   for (uint16_t i = 0; i < count; i++)
   {

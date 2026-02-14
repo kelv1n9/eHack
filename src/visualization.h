@@ -972,9 +972,34 @@ void DrawRAWReplay()
   oled.setCursorXY(35, 0);
   oled.print("RAW Replay");
 
-  for (uint8_t i = 0; i < MAX_RAW_SIGNALS; i++)
+  const uint8_t ROW_H = 10;
+  const uint8_t FIRST_Y = 12;
+  const uint8_t VISIBLE = min((uint8_t)5, (uint8_t)MAX_RAW_SIGNALS);
+
+  static uint8_t topIndex = 0;
+  if (selectedSlotRAW < topIndex)
+    topIndex = selectedSlotRAW;
+  else if (selectedSlotRAW >= topIndex + VISIBLE)
+    topIndex = selectedSlotRAW - VISIBLE + 1;
+
+  if (topIndex > 0)
   {
-    uint8_t y = 14 + i * 14;
+    oled.setCursorXY(122, FIRST_Y);
+    oled.print("^");
+  }
+  if (topIndex + VISIBLE < MAX_RAW_SIGNALS)
+  {
+    oled.setCursorXY(122, FIRST_Y + (VISIBLE - 1) * ROW_H);
+    oled.print("v");
+  }
+
+  for (uint8_t row = 0; row < VISIBLE; row++)
+  {
+    uint8_t i = topIndex + row;
+    if (i >= MAX_RAW_SIGNALS)
+      break;
+
+    uint8_t y = FIRST_Y + row * ROW_H;
     bool occupied = isRawSlotOccupied(i);
     bool selected = (i == selectedSlotRAW);
 
@@ -984,14 +1009,25 @@ void DrawRAWReplay()
       oled.print(">");
     }
 
-    char name[20];
     if (occupied)
-      sprintf(name, "Signal %d", i + 1);
-    else
-      sprintf(name, "Signal %d [empty]", i + 1);
+    {
+      char name[NAME_MAX_LEN + 1];
+      readRawSlotName(i, name);
+      int nx = (128 - getTextWidth(name)) / 2;
+      oled.setCursorXY(nx, y);
+      oled.print(name);
 
-    oled.setCursorXY(8, y);
-    oled.print(name);
+      if (selected && (long)(rawSendIndicatorUntil - millis()) > 0)
+      {
+        oled.circle(nx + getTextWidth(name) + 5, y + 3, 2, OLED_FILL);
+      }
+    }
+    else
+    {
+      const char *empty = "-- empty --";
+      oled.setCursorXY((128 - getTextWidth(empty)) / 2, y);
+      oled.print(empty);
+    }
   }
 
   const char *hint = "OK to send";
@@ -1163,19 +1199,13 @@ void ShowRAMenu()
 {
   oled.textMode(BUF_ADD);
 
-  const char *title = "HF Replay";
-  oled.setScale(1);
-  int titleW = getTextWidth(title);
-  oled.setCursorXY((128 - titleW) / 2, 12);
-  oled.print(title);
-
   for (uint8_t i = 0; i < 2; i++)
   {
     const char *txt = hfReplayMenuItems[i];
 
     oled.setScale(2);
     int w = getTextWidth(txt) * 2;
-    int y = 24 + i * 20;
+    int y = 20 + i * 20;
     int x = (128 - w) / 2;
 
     if (i == RAMenuIndex)

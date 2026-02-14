@@ -1597,7 +1597,7 @@ void loop()
 
   oled.clear();
 
-  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
+  if (up.hold() && down.hold() && currentMenu != DOTS_GAME && currentMenu != SNAKE_GAME && currentMenu != FLAPPY_GAME && currentMenu != HF_REPLAY && currentMenu != HF_RAW_REPLAY && currentMenu != HF_BARRIER_REPLAY && currentMenu != IR_REPLAY && currentMenu != RFID_EMULATE)
   {
     locked = !locked;
 
@@ -1747,6 +1747,9 @@ void loop()
       rawReplaying = false;
       rawReplayRequested = false;
       rawRecorded = false;
+      RAMenu = false;
+      RANameEdit = false;
+      RANamePos = 0;
       initialized = false;
       vibro(255, 50);
       break;
@@ -2339,32 +2342,105 @@ void loop()
   }
   case HF_RAW_REPLAY:
   {
-    if (!locked && up.click())
+    if (!locked && up.hold() && down.hold() && isRawSlotOccupied(selectedSlotRAW))
     {
-      selectedSlotRAW = (selectedSlotRAW == 0) ? MAX_RAW_SIGNALS - 1 : selectedSlotRAW - 1;
-      vibro(255, 20);
-    }
-    if (!locked && down.click())
-    {
-      selectedSlotRAW = (selectedSlotRAW + 1) % MAX_RAW_SIGNALS;
-      vibro(255, 20);
+      RAMenu = true;
+      RAMenuIndex = 0;
+      vibro(255, 50);
     }
 
-    if (!locked && ok.click())
+    if (RANameEdit)
     {
-      if (isRawSlotOccupied(selectedSlotRAW))
+      if (!locked && (down.click() || down.step()))
       {
-        readRawData(selectedSlotRAW);
-        rawReplayRequested = true;
-        vibro(255, 30);
+        slotName[RANamePos] = nextChar(slotName[RANamePos]);
+        vibro(255, 20);
       }
-      else
+
+      if (!locked && (up.click() || up.step()))
       {
-        vibro(255, 100); 
+        slotName[RANamePos] = prevChar(slotName[RANamePos]);
+        vibro(255, 20);
       }
+
+      if (!locked && ok.click())
+      {
+        RANamePos++;
+        vibro(255, 60);
+
+        if (RANamePos >= NAME_MAX_LEN)
+        {
+          slotName[NAME_MAX_LEN] = '\0';
+          writeRawSlotName(selectedSlotRAW, slotName);
+          RANameEdit = false;
+          RAMenu = false;
+          RANamePos = 0;
+          vibro(255, 60, 2);
+        }
+      }
+
+      ShowRANameEdit();
+      break;
     }
 
-    DrawRAWReplay();
+    if (RAMenu)
+    {
+      if (!locked && (up.click() || up.step() || down.click() || down.step()))
+      {
+        RAMenuIndex = (RAMenuIndex == 0) ? 1 : 0;
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        if (RAMenuIndex == 0)
+        {
+          readRawSlotName(selectedSlotRAW, slotName);
+          RANamePos = 0;
+          RANameEdit = true;
+        }
+        else
+        {
+          clearRawData(selectedSlotRAW);
+          vibro(255, 200);
+        }
+
+        RAMenu = false;
+        vibro(255, 50);
+      }
+
+      ShowRAMenu();
+    }
+    else
+    {
+      if (!locked && up.click())
+      {
+        selectedSlotRAW = (selectedSlotRAW == 0) ? MAX_RAW_SIGNALS - 1 : selectedSlotRAW - 1;
+        vibro(255, 20);
+      }
+      if (!locked && down.click())
+      {
+        selectedSlotRAW = (selectedSlotRAW + 1) % MAX_RAW_SIGNALS;
+        vibro(255, 20);
+      }
+
+      if (!locked && ok.click())
+      {
+        if (isRawSlotOccupied(selectedSlotRAW))
+        {
+          readRawData(selectedSlotRAW);
+          rawReplayRequested = true;
+          rawSendIndicatorUntil = millis() + 500;
+          vibro(255, 30);
+        }
+        else
+        {
+          vibro(255, 100);
+        }
+      }
+
+      DrawRAWReplay();
+    }
     break;
   }
   case HF_BARRIER_SCAN:
