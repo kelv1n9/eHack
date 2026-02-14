@@ -1628,6 +1628,12 @@ void loop()
 
   if (!locked && (up.press() || ok.press() || down.press()))
   {
+    if (isScreenDimmed || isScreenOff)
+    {
+      up.skipEvents();
+      ok.skipEvents();
+      down.skipEvents();
+    }
     resetBrightness();
     resetScreenOff();
   }

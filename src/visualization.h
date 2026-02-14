@@ -75,7 +75,7 @@ const char PROGMEM *mainMenuItems[] = {
 
 const char PROGMEM *hfMenuItems[] = {
     "Air Scan",
-    "RAW",
+    "Raw Scan",
     "Common",
     "Gates",
     "Jammer",
@@ -442,6 +442,7 @@ void setMinBrightness()
   {
     brightnessTimer = millis();
     oled.setContrast(MIN_BRIGHTNESS);
+    isScreenDimmed = true;
   }
 }
 
@@ -979,8 +980,8 @@ void DrawRAWReplay()
 
     if (selected)
     {
-      oled.rect(0, y - 1, 127, y + 9, OLED_FILL);
-      oled.textMode(BUF_SUBTRACT);
+      oled.setCursorXY(0, y);
+      oled.print(">");
     }
 
     char name[20];
@@ -989,11 +990,8 @@ void DrawRAWReplay()
     else
       sprintf(name, "Signal %d [empty]", i + 1);
 
-    oled.setCursorXY(4, y);
+    oled.setCursorXY(8, y);
     oled.print(name);
-
-    if (selected)
-      oled.textMode(BUF_ADD);
   }
 
   const char *hint = "OK to send";
@@ -1070,7 +1068,7 @@ void DrawRAWOscillogram_HF()
     oled.setCursorXY(128 - getTextWidth("decline"), 56);
     oled.print("decline");
   }
-  else
+  else if (rawSignalCount >= 2)
   {
     char info[20];
     sprintf(info, "Samp: %d", rawSignalCount);

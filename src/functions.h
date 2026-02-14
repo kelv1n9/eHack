@@ -36,9 +36,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.4.0 DEBUG"
+#define APP_VERSION "v5.4.1 DEBUG"
 #else
-#define APP_VERSION "v5.4.0"
+#define APP_VERSION "v5.4.1"
 #endif
 const char *APP_NAME = "eHack";
 
@@ -127,6 +127,7 @@ bool peaksDynamic = true;
 uint32_t brightnessTimer;
 
 bool isScreenOff;
+bool isScreenDimmed;
 uint32_t offTimer;
 
 /* ==================== Tesla ================== */
@@ -593,6 +594,7 @@ void resetBrightness()
 {
   brightnessTimer = millis();
   oled.setContrast(MAX_BRIGHTNESS);
+  isScreenDimmed = false;
 }
 
 void resetScreenOff()
