@@ -36,9 +36,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.4.2 DEBUG"
+#define APP_VERSION "v5.4.3 DEBUG"
 #else
-#define APP_VERSION "v5.4.2"
+#define APP_VERSION "v5.4.3"
 #endif
 const char *APP_NAME = "eHack";
 
@@ -60,7 +60,7 @@ Button down(BTN_DOWN);
 volatile bool initialized = false;
 volatile bool locked = false;
 
-uint8_t mainMenuCount = 9;
+uint8_t mainMenuCount = 10;
 uint8_t hfMenuCount = 6;
 uint8_t irMenuCount = 4;
 uint8_t rawMenuCount = 2;
@@ -563,6 +563,44 @@ uint8_t outgoingData[32];
 uint8_t outgoingDataLen = 0;
 
 uint32_t checkConnectionTimer;
+
+/*======================= TELEMETRY ============================*/
+#define TELEMETRY_PING_INTERVAL 250
+#define TELEMETRY_PONG_TIMEOUT 150
+
+bool telemetryTestActive = false;
+uint16_t telemetrySent = 0;
+uint16_t telemetryReceived = 0;
+uint32_t telemetryPingTimer = 0;
+uint32_t telemetryPongTimer = 0;
+uint32_t telemetryStartMs = 0;
+
+uint32_t telemetryRttSum = 0;
+uint16_t telemetryRttMax = 0;
+uint8_t telemetryLossStreak = 0;
+uint8_t telemetryLossStreakMax = 0;
+
+enum TelemetryState
+{
+  TELEM_IDLE,
+  TELEM_AWAITING_PONG
+};
+TelemetryState telemetryState = TELEM_IDLE;
+
+void telemetryReset()
+{
+  telemetryTestActive = false;
+  telemetrySent = 0;
+  telemetryReceived = 0;
+  telemetryState = TELEM_IDLE;
+  telemetryPingTimer = 0;
+  telemetryPongTimer = 0;
+  telemetryStartMs = 0;
+  telemetryRttSum = 0;
+  telemetryRttMax = 0;
+  telemetryLossStreak = 0;
+  telemetryLossStreakMax = 0;
+}
 
 void sendStopCommandToSlave(int coeff = 1)
 {

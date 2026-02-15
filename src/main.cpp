@@ -1677,6 +1677,13 @@ void loop()
       saveStartConnection();
       break;
     }
+    case TELEMETRY:
+    {
+      telemetryReset();
+      initialized = false;
+      isSimpleMenuExit = true;
+      break;
+    }
     case GAMES:
     {
       if (gamesOnlyMode)
@@ -2766,9 +2773,92 @@ void loop()
     showConnectionStatus(settingsMenuIndex);
     break;
   }
+  case TELEMETRY:
+  {
+    if (!initialized && successfullyConnected)
+    {
+      telemetryReset();
+      telemetryPingTimer = millis();
+      telemetryStartMs = millis();
+      telemetryTestActive = true;
+      initialized = true;
+    }
+
+    if (telemetryTestActive && successfullyConnected)
+    {
+      switch (telemetryState)
+      {
+      case TELEM_IDLE:
+      {
+        // Drain stale packets before sending next ping
+        while (communication.receivePacket(recievedData, &recievedDataLen))
+        {
+          if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
+            memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
+        }
+
+        if (millis() - telemetryPingTimer >= TELEMETRY_PING_INTERVAL)
+        {
+          if (communication.sendPacket(ping, sizeof(ping)))
+          {
+            telemetrySent++;
+            telemetryState = TELEM_AWAITING_PONG;
+            telemetryPongTimer = millis();
+            DBG("Telemetry: PING #%d sent.\n", telemetrySent);
+          }
+          else
+          {
+            telemetrySent++;
+            telemetryPingTimer = millis();
+            DBG("Telemetry: PING #%d send failed.\n", telemetrySent);
+          }
+        }
+        break;
+      }
+      case TELEM_AWAITING_PONG:
+      {
+        if (communication.receivePacket(recievedData, &recievedDataLen))
+        {
+          if (recievedData[0] == 'P' && recievedData[1] == 'O' && recievedData[2] == 'N' && recievedData[3] == 'G')
+          {
+            telemetryReceived++;
+            uint16_t rtt = millis() - telemetryPongTimer;
+            telemetryRttSum += rtt;
+            if (rtt > telemetryRttMax)
+              telemetryRttMax = rtt;
+            telemetryLossStreak = 0;
+            checkConnectionTimer = millis();
+            telemetryState = TELEM_IDLE;
+            telemetryPingTimer = millis();
+            DBG("Telemetry: PONG #%d received, RTT=%dms.\n", telemetryReceived, rtt);
+          }
+          else if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
+          {
+            memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
+          }
+          // Non-PONG packets: stay in AWAITING_PONG, keep waiting
+        }
+
+        if (millis() - telemetryPongTimer > TELEMETRY_PONG_TIMEOUT)
+        {
+          telemetryLossStreak++;
+          if (telemetryLossStreak > telemetryLossStreakMax)
+            telemetryLossStreakMax = telemetryLossStreak;
+          telemetryState = TELEM_IDLE;
+          telemetryPingTimer = millis();
+          DBG("Telemetry: PONG timeout.\n");
+        }
+        break;
+      }
+      }
+    }
+
+    ShowTelemetry();
+    break;
+  }
   }
 
-  if (successfullyConnected)
+  if (successfullyConnected && currentMenu != TELEMETRY)
   {
     if (currentMenu != HF_ACTIVITY && currentMenu != HF_SPECTRUM && currentMenu != HF_RAW_CAPTURE && currentMenu != HF_RAW_REPLAY && !isUltraHighFrequencyMode())
     {

@@ -13,6 +13,7 @@ enum MenuState
   TORCH,
   CONNECTION,
   SETTINGS,
+  TELEMETRY,
 
   DOTS_GAME,
   SNAKE_GAME,
@@ -71,6 +72,7 @@ const char PROGMEM *mainMenuItems[] = {
     "Torch",
     "Connect",
     "Settings",
+    "Telemetry",
 };
 
 const char PROGMEM *hfMenuItems[] = {
@@ -227,6 +229,8 @@ bool isActiveMode()
       currentMenu == UHF_VIDEO_JAMMER ||
       currentMenu == UHF_RC_JAMMER ||
       currentMenu == UHF_BLE_SPAM ||
+
+      currentMenu == TELEMETRY ||
 
       currentMenu == RFID_SCAN ||
       currentMenu == RFID_EMULATE ||
@@ -1799,6 +1803,66 @@ void showConnectionStatus(uint8_t menuIndex)
   oled.print(txt);
 
   oled.invertText(false);
+}
+
+/* ============================= TELEMETRY ============================================ */
+void ShowTelemetry()
+{
+  oled.setScale(1);
+
+  if (!successfullyConnected)
+  {
+    char Text[20];
+    sprintf(Text, "Not connected");
+    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 20);
+    oled.print(Text);
+
+    char Text2[25];
+    sprintf(Text2, "Go to Connect first");
+    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
+    oled.print(Text2);
+    return;
+  }
+
+  uint16_t lost = (telemetrySent > telemetryReceived) ? (telemetrySent - telemetryReceived) : 0;
+  uint8_t rate = (telemetrySent > 0) ? (uint8_t)((uint32_t)telemetryReceived * 100 / telemetrySent) : 0;
+  uint16_t rttAvg = (telemetryReceived > 0) ? (uint16_t)(telemetryRttSum / telemetryReceived) : 0;
+  uint32_t elapsed = (millis() - telemetryStartMs) / 1000;
+  uint8_t pps = (elapsed > 0) ? (uint8_t)(telemetryReceived / elapsed) : 0;
+
+  char buf[16];
+
+  sprintf(buf, "Sent: %d", telemetrySent);
+  oled.setCursorXY(0, 14);
+  oled.print(buf);
+
+  sprintf(buf, "Recv: %d", telemetryReceived);
+  oled.setCursorXY(0, 28);
+  oled.print(buf);
+
+  sprintf(buf, "Lost: %d", lost);
+  oled.setCursorXY(0, 42);
+  oled.print(buf);
+
+  sprintf(buf, "Rate: %d%%", rate);
+  oled.setCursorXY(0, 56);
+  oled.print(buf);
+
+  sprintf(buf, "RTTa: %dms", rttAvg);
+  oled.setCursorXY(65, 14);
+  oled.print(buf);
+
+  sprintf(buf, "RTTm: %dms", telemetryRttMax);
+  oled.setCursorXY(65, 28);
+  oled.print(buf);
+
+  sprintf(buf, "Strk: %d", telemetryLossStreakMax);
+  oled.setCursorXY(65, 42);
+  oled.print(buf);
+
+  sprintf(buf, "PPS: %d", pps);
+  oled.setCursorXY(65, 56);
+  oled.print(buf);
 }
 
 /* ============================= FM RADIO ============================================ */
