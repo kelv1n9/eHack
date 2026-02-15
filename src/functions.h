@@ -36,9 +36,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.4.1 DEBUG"
+#define APP_VERSION "v5.4.2 DEBUG"
 #else
-#define APP_VERSION "v5.4.1"
+#define APP_VERSION "v5.4.2"
 #endif
 const char *APP_NAME = "eHack";
 
@@ -222,7 +222,6 @@ char slotName[NAME_MAX_LEN + 1];
 
 /* ================ RAW Signal =================== */
 #define RAW_SIGNAL_MAX_SAMPLES 1024
-#define MAX_RAW_SIGNALS 3
 #define MAX_RAW_SAVE_SAMPLES 512
 
 struct RawSignalSlot
@@ -407,8 +406,9 @@ struct Tube
 bool gamesOnlyMode;
 
 /*=================== EEPROM ==========================*/
-#define MAX_IR_SIGNALS 10
-#define MAX_RA_SIGNALS 10
+#define MAX_IR_SIGNALS 20
+#define MAX_RA_SIGNALS 20
+#define MAX_RAW_SIGNALS 5
 #define MAX_BARRIER_SIGNALS 10
 #define MAX_RFID 5
 
@@ -418,6 +418,7 @@ bool gamesOnlyMode;
 #define SLOT_SCORE_SIZE sizeof(GameScores)
 #define SLOT_SETTINGS_SIZE sizeof(Settings)
 #define SLOT_RFID_SIZE sizeof(RFID)
+#define SLOT_STARTCONN_SIZE sizeof(bool)
 #define SLOT_START_MODE_SIZE sizeof(gamesOnlyMode)
 #define SLOT_RAW_SIZE sizeof(RawSignalSlot)
 
@@ -428,8 +429,8 @@ bool gamesOnlyMode;
 #define EEPROM_SETTINGS_ADDR (EEPROM_SCORE_ADDR + SLOT_SCORE_SIZE)
 #define EEPROM_RFID_ADDR (EEPROM_SETTINGS_ADDR + SLOT_SETTINGS_SIZE)
 #define EEPROM_STARTCONN_ADDR (EEPROM_RFID_ADDR + MAX_RFID * SLOT_RFID_SIZE)
-#define EEPROM_START_MODE_ADDR (EEPROM_STARTCONN_ADDR + SLOT_START_MODE_SIZE)
-#define EEPROM_RAW_ADDR (EEPROM_START_MODE_ADDR + SLOT_RAW_SIZE)
+#define EEPROM_START_MODE_ADDR (EEPROM_STARTCONN_ADDR + SLOT_STARTCONN_SIZE)
+#define EEPROM_RAW_ADDR (EEPROM_START_MODE_ADDR + SLOT_START_MODE_SIZE)
 
 /*=================== SETTINGS ==========================*/
 struct Settings
@@ -1407,6 +1408,13 @@ void saveStartMode()
 void loadStartMode()
 {
   EEPROM.get(EEPROM_START_MODE_ADDR, gamesOnlyMode);
+}
+
+void eraseAllEEPROM()
+{
+  for (uint16_t i = 0; i < 8192; i++)
+    EEPROM.write(i, 0xFF);
+  EEPROM.commit();
 }
 
 /*================================== GAMES ======================================*/

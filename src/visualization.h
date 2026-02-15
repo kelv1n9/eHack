@@ -597,9 +597,6 @@ void ShowMonitor_HF()
   oled.setCursorXY(0, 0);
   oled.print(header);
 
-  // Separator
-  drawDashedLine(9, 0, 128, 2, 2);
-
   // Empty state
   if (hfMonitorCount == 0)
   {
@@ -972,7 +969,7 @@ void DrawRAWReplay()
   oled.setCursorXY(35, 0);
   oled.print("RAW Replay");
 
-  const uint8_t ROW_H = 10;
+  const uint8_t ROW_H = 11;
   const uint8_t FIRST_Y = 12;
   const uint8_t VISIBLE = min((uint8_t)5, (uint8_t)MAX_RAW_SIGNALS);
 
@@ -1024,15 +1021,11 @@ void DrawRAWReplay()
     }
     else
     {
-      const char *empty = "-- empty --";
+      const char *empty = "Empty";
       oled.setCursorXY((128 - getTextWidth(empty)) / 2, y);
       oled.print(empty);
     }
   }
-
-  const char *hint = "OK to send";
-  oled.setCursorXY((128 - getTextWidth(hint)) / 2, 56);
-  oled.print(hint);
 }
 
 void DrawRAWOscillogram_HF()

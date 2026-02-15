@@ -97,6 +97,8 @@ void setup()
 #ifdef DEBUG_eHack
   Serial.begin(9600);
 #endif
+
+  // eraseAllEEPROM();
 }
 
 void setup1()
@@ -2413,12 +2415,12 @@ void loop()
     }
     else
     {
-      if (!locked && up.click())
+      if (!locked && (up.click() || up.step()))
       {
         selectedSlotRAW = (selectedSlotRAW == 0) ? MAX_RAW_SIGNALS - 1 : selectedSlotRAW - 1;
         vibro(255, 20);
       }
-      if (!locked && down.click())
+      if (!locked && (down.click() || down.step()))
       {
         selectedSlotRAW = (selectedSlotRAW + 1) % MAX_RAW_SIGNALS;
         vibro(255, 20);
