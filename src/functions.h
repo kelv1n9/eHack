@@ -97,7 +97,7 @@ uint8_t barrierBruteMenuIndex = 0;
 #define BATTERY_READ_ITERATIONS 10
 
 #define HISTORY_SIZE 5
-#define CHARGE_THRESHOLD 0.002
+#define CHARGE_THRESHOLD 0.015
 
 float batVoltage;
 float voltageHistory[HISTORY_SIZE] = {0};
@@ -105,9 +105,16 @@ uint32_t batteryTimer;
 uint32_t remotebatteryTimer;
 uint8_t historyIndex = 0;
 bool isCharging = false;
+bool historyValid = false;
 
 uint32_t batteryDisplayToggleTimer = 0;
 uint32_t batteryCheckTimer = 0;
+
+// Charging animation
+#define CHARGING_ANIM_INTERVAL 500
+#define CHARGING_ANIM_FRAMES 4
+uint8_t chargingAnimFrame = 0;
+uint32_t chargingAnimTimer = 0;
 
 bool showLocalVoltage = true;
 float remoteVoltage;
@@ -731,30 +738,32 @@ void vibro(uint8_t intensity = 120, uint16_t duration = 100, uint8_t repeat = 1,
 
 void checkCharging(float newVoltage)
 {
-  uint8_t growthCount = 0;
+  if (!historyValid)
+  {
+    for (uint8_t i = 0; i < HISTORY_SIZE; i++)
+    {
+      voltageHistory[i] = newVoltage;
+    }
+    historyValid = true;
+    historyIndex = 0;
+    return;
+  }
 
+  float oldestVoltage = voltageHistory[historyIndex];
   voltageHistory[historyIndex] = newVoltage;
   historyIndex = (historyIndex + 1) % HISTORY_SIZE;
 
-  for (uint8_t i = 0; i < HISTORY_SIZE - 1; i++)
-  {
-    uint8_t idx1 = (historyIndex + i) % HISTORY_SIZE;
-    uint8_t idx2 = (historyIndex + i + 1) % HISTORY_SIZE;
+  float totalDelta = newVoltage - oldestVoltage;
 
-    float delta = voltageHistory[idx2] - voltageHistory[idx1];
-    if (delta >= CHARGE_THRESHOLD)
-    {
-      growthCount++;
-    }
-  }
-
-  if (growthCount >= 3)
+  if (isCharging)
   {
-    isCharging = true;
+    if (totalDelta < CHARGE_THRESHOLD * 0.3)
+      isCharging = false;
   }
   else
   {
-    isCharging = false;
+    if (totalDelta >= CHARGE_THRESHOLD)
+      isCharging = true;
   }
 }
 

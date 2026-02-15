@@ -540,8 +540,41 @@ void showLock()
 
 void showCharging()
 {
-  oled.setCursorXY(98, 0);
-  oled.print("*");
+  if (millis() - chargingAnimTimer >= CHARGING_ANIM_INTERVAL)
+  {
+    chargingAnimTimer = millis();
+    chargingAnimFrame = (chargingAnimFrame + 1) % CHARGING_ANIM_FRAMES;
+  }
+
+  const uint8_t bx = 93;
+  const uint8_t by = 1;
+  const uint8_t bw = 9;  
+  const uint8_t bh = 5;  
+
+  oled.rect(bx, by, bx + bw, by + bh, OLED_STROKE);
+  oled.rect(bx + bw + 1, by + 1, bx + bw + 2, by + bh - 1, OLED_FILL);
+
+  uint8_t fillCols = 0;
+  switch (chargingAnimFrame)
+  {
+  case 0:
+    fillCols = 0;
+    break;
+  case 1:
+    fillCols = 3;
+    break;
+  case 2:
+    fillCols = 5;
+    break;
+  case 3:
+    fillCols = 8;
+    break;
+  }
+
+  if (fillCols > 0)
+  {
+    oled.rect(bx + 1, by + 1, bx + fillCols, by + bh - 1, OLED_FILL);
+  }
 }
 
 void ShowReboot()
