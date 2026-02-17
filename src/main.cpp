@@ -1880,8 +1880,11 @@ void loop()
       break;
     }
 
-    menuButtons(MAINmenuIndex, mainMenuCount);
-    drawMenu(mainMenuItems, mainMenuCount, MAINmenuIndex);
+    uint8_t visibleMenuCount = successfullyConnected ? mainMenuCount : mainMenuCount - 1;
+    if (MAINmenuIndex >= visibleMenuCount)
+      MAINmenuIndex = visibleMenuCount - 1;
+    menuButtons(MAINmenuIndex, visibleMenuCount);
+    drawMenu(mainMenuItems, visibleMenuCount, MAINmenuIndex);
 
     if (!locked && ok.click())
     {
@@ -2790,7 +2793,6 @@ void loop()
       {
       case TELEM_IDLE:
       {
-        // Drain stale packets before sending next ping
         while (communication.receivePacket(recievedData, &recievedDataLen))
         {
           if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_BATTERY_VOLTAGE)
@@ -2836,7 +2838,6 @@ void loop()
           {
             memcpy(&remoteVoltage, &recievedData[2], sizeof(float));
           }
-          // Non-PONG packets: stay in AWAITING_PONG, keep waiting
         }
 
         if (millis() - telemetryPongTimer > TELEMETRY_PONG_TIMEOUT)

@@ -98,6 +98,8 @@ uint8_t barrierBruteMenuIndex = 0;
 
 #define HISTORY_SIZE 5
 #define CHARGE_THRESHOLD 0.015
+#define CHARGING_ANIM_INTERVAL 500
+#define CHARGING_ANIM_FRAMES 4
 
 float batVoltage;
 float voltageHistory[HISTORY_SIZE] = {0};
@@ -110,9 +112,6 @@ bool historyValid = false;
 uint32_t batteryDisplayToggleTimer = 0;
 uint32_t batteryCheckTimer = 0;
 
-// Charging animation
-#define CHARGING_ANIM_INTERVAL 500
-#define CHARGING_ANIM_FRAMES 4
 uint8_t chargingAnimFrame = 0;
 uint32_t chargingAnimTimer = 0;
 

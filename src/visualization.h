@@ -697,7 +697,7 @@ void ShowMonitor_HF()
       oled.print(">");
     }
 
-    // Code (decimal)
+    // Code
     char codeBuf[12];
     if (entry.codeValid)
       sprintf(codeBuf, "%lu", entry.code);
@@ -706,7 +706,7 @@ void ShowMonitor_HF()
     oled.setCursorXY(8, y);
     oled.print(codeBuf);
 
-    // RSSI mini bar outline + fill
+    // RSSI mini bar
     int8_t rssiVal = entry.rssi;
     if (rssiVal < -99)
       rssiVal = -99;
@@ -739,7 +739,7 @@ void ShowMonitor_HF()
     oled.line(119, 61, 122, 58);
   }
 
-  // Scrollbar (between arrows)
+  // Scrollbar
   if (hfMonitorCount > HF_MONITOR_VISIBLE_LINES)
   {
     uint8_t scrollAreaTop = 17;
@@ -1677,7 +1677,6 @@ void ShowCapturedData_RFID()
     oled.setCursorXY((128 - getTextWidth(Text1)) / 2, 20);
     oled.print(Text1);
 
-    // ----- UID -----
     if (nfcCardType == 2) // Ultralight
     {
       char Text2_line1[40] = "UID: ";
@@ -1714,7 +1713,6 @@ void ShowCapturedData_RFID()
       oled.print(Text2);
     }
 
-    // ----- DATA -----
     if (nfcDataValid)
     {
       if (nfcCardType == 2) // Ultralight
@@ -1809,20 +1807,6 @@ void showConnectionStatus(uint8_t menuIndex)
 void ShowTelemetry()
 {
   oled.setScale(1);
-
-  if (!successfullyConnected)
-  {
-    char Text[20];
-    sprintf(Text, "Not connected");
-    oled.setCursorXY((128 - getTextWidth(Text)) / 2, 20);
-    oled.print(Text);
-
-    char Text2[25];
-    sprintf(Text2, "Go to Connect first");
-    oled.setCursorXY((128 - getTextWidth(Text2)) / 2, 35);
-    oled.print(Text2);
-    return;
-  }
 
   uint16_t lost = (telemetrySent > telemetryReceived) ? (telemetrySent - telemetryReceived) : 0;
   uint8_t rate = (telemetrySent > 0) ? (uint8_t)((uint32_t)telemetryReceived * 100 / telemetrySent) : 0;
