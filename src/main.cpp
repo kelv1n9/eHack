@@ -2322,6 +2322,14 @@ void loop()
       }
     }
 
+    if (rawCapturing)
+    {
+      if (checkFreqButtons())
+      {
+        ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      }
+    }
+
     if (!locked && up.click())
     {
       if (!rawCapturing && rawRecorded)

@@ -1067,79 +1067,125 @@ void DrawRAWReplay()
 
 void DrawRAWOscillogram_HF()
 {
-  const uint8_t centerY = 40;
-  const uint8_t halfH = 28; 
-  const uint8_t plotLeft = 0;
-  const uint8_t plotRight = 128;
+  const uint8_t headerH = 9;
+  const uint8_t plotTop = headerH + 2;
+  const uint8_t plotBottom = 60;
+  const uint8_t plotH = plotBottom - plotTop;
+  const uint8_t centerY = plotTop + plotH / 2;
+  const uint8_t halfH = plotH / 2 - 1;
+  const uint8_t footerY = 56;
 
   oled.textMode(BUF_ADD);
   oled.setScale(1);
 
   char freq[16];
-  sprintf(freq, "%.2f", raFrequencies[currentFreqIndex]);
+  sprintf(freq, "%.2f MHz", raFrequencies[currentFreqIndex]);
   oled.setCursorXY(0, 0);
   oled.print(freq);
 
-  const char *status;
-  if (rawCapturing)
-    status = "REC";
-  else
-    status = "DONE";
-
-  oled.setCursorXY(128 - getTextWidth(status), 0);
-  oled.print(status);
-
-  if (!rawRecorded)
-    drawDashedLine(centerY, plotLeft, plotRight, 2, 4);
-
   if (rawCapturing)
   {
-    uint8_t plotW = plotRight - plotLeft;
-
-    for (int px = 0; px < plotW; px++)
+    static unsigned long recBlink = 0;
+    static bool recDot = true;
+    if (millis() - recBlink > 400)
     {
-      int bufIdx = (int)((long)px * RSSI_BUFFER_SIZE / plotW);
-      if (bufIdx >= RSSI_BUFFER_SIZE)
-        bufIdx = RSSI_BUFFER_SIZE - 1;
+      recBlink = millis();
+      recDot = !recDot;
+    }
+    const char *rec = "REC";
+    int recX = 128 - getTextWidth(rec);
+    if (recDot)
+      oled.circle(recX - 5, 3, 2, 1);
+    oled.setCursorXY(recX, 0);
+    oled.print(rec);
+  }
+  else
+  {
+    const char *st = rawRecorded ? "DONE" : "IDLE";
+    oled.setCursorXY(128 - getTextWidth(st), 0);
+    oled.print(st);
+  }
 
-      int x = plotLeft + px;
-      int rssiValue = rssiBuffer[(rssiIndex + bufIdx) % RSSI_BUFFER_SIZE];
-      uint8_t h = constrain(map(rssiValue, -100, -20, 0, halfH), 0, halfH);
+  if (rawCapturing && rawSignalCount >= 2)
+  {
+    char sc[12];
+    sprintf(sc, "S:%d", rawSignalCount);
+    oled.setCursorXY(68, 0);
+    oled.print(sc);
+  }
 
-      if (h > 0)
+  if (!rawRecorded)
+  {
+    const uint8_t axisX = 0;
+    const uint8_t axisEndX = 127;
+
+    oled.line(axisX, plotTop, axisX, plotBottom);
+    oled.line(axisX, plotBottom, axisEndX, plotBottom);
+
+    oled.line(axisX, plotTop, axisX + 2, plotTop);
+    oled.line(axisX, centerY, axisX + 2, centerY);
+
+    for (uint8_t tx = 25; tx < 127; tx += 25)
+      oled.line(tx, plotBottom, tx, plotBottom - 2);
+
+    for (uint8_t x = 3; x < 127; x += 3)
+      oled.dot(x, centerY);
+
+    if (rawCapturing)
+    {
+      const uint8_t plotW = 126;
+      int prevH = 0;
+
+      for (int px = 0; px < plotW; px++)
       {
-        oled.line(x, centerY - 1, x, centerY - h);
-        oled.line(x, centerY + 1, x, centerY + h);
+        int bufIdx = (int)((long)px * RSSI_BUFFER_SIZE / plotW);
+        if (bufIdx >= RSSI_BUFFER_SIZE)
+          bufIdx = RSSI_BUFFER_SIZE - 1;
+
+        int rssiValue = rssiBuffer[(rssiIndex + bufIdx) % RSSI_BUFFER_SIZE];
+        int h = constrain(map(rssiValue, -100, -20, 0, halfH), 0, halfH);
+        int x = 1 + px;
+
+        if (h > 0)
+        {
+          oled.line(x, centerY - h, x, centerY - 1);
+          oled.line(x, centerY + 1, x, centerY + h);
+        }
+
+        if (px > 0)
+        {
+          int ph = (prevH == 0) ? 0 : prevH;
+          int ch = (h == 0) ? 0 : h;
+          if (ph > 0 || ch > 0)
+          {
+            oled.line(x - 1, centerY - ph, x, centerY - ch);
+            oled.line(x - 1, centerY + ph, x, centerY + ch);
+          }
+        }
+
+        prevH = h;
       }
     }
   }
-  else if (rawRecorded)
+  else
   {
     oled.setScale(2);
     const char *msg = "Captured!";
-    oled.setCursorXY((128 - getTextWidth(msg) * 2) / 2, 18);
+    oled.setCursorXY((128 - getTextWidth(msg) * 2) / 2, 16);
     oled.print(msg);
     oled.setScale(1);
-  }
 
-  if (rawRecorded)
-  {
     char info[20];
     sprintf(info, "%d samples", rawRecordedCount);
-    oled.setCursorXY((128 - getTextWidth(info)) / 2, 40);
+    oled.setCursorXY((128 - getTextWidth(info)) / 2, 36);
     oled.print(info);
 
-    oled.setCursorXY(0, 56);
-    oled.print("save");
-    oled.setCursorXY(128 - getTextWidth("decline"), 56);
-    oled.print("decline");
-  }
-  else if (rawSignalCount >= 2)
-  {
-    char info[20];
-    sprintf(info, "Samp: %d", rawSignalCount);
-    oled.setCursorXY(5 + (128 - getTextWidth(info)) / 2, 0);
-    oled.print(info);
+    oled.setCursorXY(2, footerY);
+    oled.print("<< SAVE");
+
+    const char *decl = "DROP >>";
+    oled.setCursorXY(128 - getTextWidth(decl) - 2, footerY);
+    oled.print(decl);
   }
 }
 

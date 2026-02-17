@@ -36,9 +36,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.4.3 DEBUG"
+#define APP_VERSION "v5.4.4 DEBUG"
 #else
-#define APP_VERSION "v5.4.3"
+#define APP_VERSION "v5.4.4"
 #endif
 const char *APP_NAME = "eHack";
 
