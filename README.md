@@ -9,11 +9,11 @@
 
 ## 🛰️ Portable Module
 
-The ***eHack Portable Module*** expands the reach of **eHack** beyond the main device.  
+The ***eHack Portable*** expands the reach of **eHack** beyond the main device.  
 It is a lightweight RF companion that links wirelessly and can be fully managed through the interface of the primary unit.  
 With it, you can launch experiments and carry out attacks remotely, bringing extra versatility to your toolkit.
 
-More details about the portable module are available in its own repository: [eHack Portable Module](https://github.com/kelv1n9/eHack_Portable_Module)
+More details about the portable module are available in its own repository: [eHack Portable](https://github.com/kelv1n9/eHack_Portable)
 
 ---
 
