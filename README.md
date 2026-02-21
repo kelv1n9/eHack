@@ -17,16 +17,6 @@ More details about the portable module are available in its own repository: [eHa
 
 ---
 
-## 📡 Radio Module
-
-The ***eHack FM Radio Module*** adds radio-focused features to **eHack**.  
-It supports FM transmission with RDS, periodically sends battery level information, and communicates with the master via NRF24L01.  
-The module integrates into the system menu, enabling remote operation and expanding the scope of your research.
-
-Learn more in the dedicated repository: [eHack Radio](https://github.com/kelv1n9/eHack_Radio/)
-
----
-
 ## 🤝 Contributor Wanted!
 
 > For the **eHack** project, we are looking for a developer who can help with the software implementation for the **PN532 NFC module**. The goal is to add full tag reading, writing, and emulation capabilities.
@@ -36,14 +26,41 @@ Learn more in the dedicated repository: [eHack Radio](https://github.com/kelv1n9
 
 | &nbsp; | Bands&nbsp;/&nbsp;Tech | What you can do |
 |---|---|---|
-| **Sub‑GHz (315 – 915 MHz)** | CC1101 | • Live spectrum and activity scan<br>• Capture & replay OOK/ASK packets <br>• Gate / Barrier toolkit (capture, replay, brute‑force **CAME** & **NICE** codes)<br>• **Tesla** charge‑port opener<br>• Wide‑band noise jammer |
+| **Sub‑GHz (315 – 915 MHz)** | CC1101 | • Live spectrum and activity scan<br>• Capture & replay OOK/ASK packets <br>• **RAW** capture & replay<br>• **HF Monitor** (live log + quick resend)<br>• Gate / Barrier toolkit (capture, replay, brute‑force **CAME** & **NICE** codes)<br>• **Tesla** charge‑port opener<br>• Wide‑band noise jammer |
 | **2.4 GHz** | NRF24L01+ | • Channel‑map spectrum viewer<br>• Jammers: All / Wi‑Fi / BT / BLE / USB / VIDEO / RC  <br> |
 | **BLE Spam** | ESP32 C3 | • BLE Spam (iOS) |
 | **Infra‑Red** | IR LED + receiver | • Capture & replay<br>• Built‑in brute‑force tables for TVs & projectors |
-| **RFID / NFC** | rdm6300 + PN532 | • Read, emulate (only RFID) tags |
-| **FM Radio** (***Not embedded***) | Si4713 | • Transmit FM signals with RDS<br>|
+| **RFID / NFC** | rdm6300 + PN532 | • Read, emulate (125 kHz RFID)<br>• Basic NFC read/detect (Mifare Classic / Ultralight)<br>• Write mode placeholder (WIP) |
+| **FM Radio** (***Not embedded***) | Si4713 | • FM frequency control from main device (76–108 MHz)<br>• Remote input level indicator <br>|
 | **Games** | — | • Falling Dots, Snake, Flappy Bird |
-| **Quality‑of‑Life** | — | • OLED UI with 3‑button navigation<br> • Vibration feedback<br> • Battery monitor<br> • Auto‑dimming<br> • Settings saved to EEPROM |
+| **Quality‑of‑Life** | — | • OLED UI with 3‑button navigation<br> • Vibration feedback<br> • Battery monitor<br> • Auto‑dimming<br> • Connection Telemetry page<br> • Settings saved to EEPROM |
+
+---
+ ## 🎮 Controls
+
+- `UP` / `DOWN` — menu navigation, frequency/slot selection, parameter adjustment
+- `OK` (click) — confirm / start-stop action
+- `OK` (hold) — back / exit current screen
+- `UP + DOWN` (hold) — lock / unlock controls
+- Hold `OK` during boot — toggle startup mode `eHack` / `eGames`
+
+---
+
+## 🔌 Pinout & Wiring
+
+### Raspberry Pi Pico Pins Used
+
+| Module | Pico pins | Note |
+|---|---|---|
+| I2C bus (OLED + PN532) | `SDA=GP0`, `SCL=GP1` | Shared I2C bus |
+| NRF24L01+ (SPI) | `SCK=GP6`, `MOSI=GP7`, `MISO=GP4`, `CE=GP21`, `CSN=GP20` | 2.4 GHz module |
+| CC1101 (SPI1) | `SCK=GP10`, `MOSI=GP11`, `MISO=GP12`, `CSN=GP13`, `GDO0=GP19` | Sub‑GHz module |
+| Buttons | `UP=GP5`, `OK=GP8`, `DOWN=GP9` | Buttons to GND (`INPUT_PULLUP` in code) |
+| IR | `TX=GP2`, `RX=GP3` | IR LED + IR receiver |
+| RFID 125 kHz | `COIL=GP14`, `RDM6300_RX=GP15`, `RFID_POWER=GP27` | Power/enable controlled by GPIO |
+| BLE trigger | `BLE_PIN=GP18` | Control pin for external BLE/ESP32 module |
+| Vibro | `VIBRO=GP16` | Use transistor/driver stage |
+| Battery monitor | `A3` | Battery voltage divider measurement |
 
 ---
 
@@ -55,9 +72,13 @@ Main
 │   ├─ Air Scan
 │   │   ├─ Spectrum
 │   │   └─ Activity
-│   ├─ Common
+│   ├─ Raw Scan
 │   │   ├─ Capture
 │   │   └─ Replay
+│   ├─ Common
+│   │   ├─ Capture
+│   │   ├─ Replay
+│   │   └─ Monitor
 │   ├─ Barriers
 │   │   ├─ Capture
 │   │   ├─ Replay
@@ -90,7 +111,8 @@ Main
 │   └─ Flappy Bird
 ├─ Torch
 ├─ Connect
-└─ Settings
+├─ Settings
+└─ Telemetry
 ```
 ---
 
