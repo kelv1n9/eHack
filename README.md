@@ -31,7 +31,7 @@ More details about the portable module are available in its own repository: [eHa
 | **BLE Spam** | ESP32 C3 | • BLE Spam (iOS) |
 | **Infra‑Red** | IR LED + receiver | • Capture & replay<br>• Built‑in brute‑force tables for TVs & projectors |
 | **RFID / NFC** | rdm6300 + PN532 | • Read, emulate (125 kHz RFID)<br>• Basic NFC read/detect (Mifare Classic / Ultralight)<br>• Write mode placeholder (WIP) |
-| **FM Radio** (***Not embedded***) | Si4713 | • FM frequency control from main device (76–108 MHz)<br>• Remote input level indicator <br>|
+| **FM Radio** (***eHack Portable***) | Si4713 | • FM frequency control from main device (76–108 MHz)<br>• Remote input level indicator <br>|
 | **Games** | — | • Falling Dots, Snake, Flappy Bird |
 | **Quality‑of‑Life** | — | • OLED UI with 3‑button navigation<br> • Vibration feedback<br> • Battery monitor<br> • Auto‑dimming<br> • Connection Telemetry page<br> • Settings saved to EEPROM |
 
