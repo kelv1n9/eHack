@@ -1,7 +1,9 @@
 ![Platform](https://img.shields.io/badge/platform-Raspberry%20Pi%20Pico-blue?logo=raspberry-pi)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-# 🚀 eHack Project
+# 🚀 eHack
+
+![eHack](pics/project.jpg)
 
 **eHack** is a versatile, all-in-one tool built on the **Raspberry Pi Pico**, designed for radio frequency analysis, penetration testing, and hardware research enthusiasts. The project integrates a wide array of tools for interacting with various wireless technologies, all housed in a compact form factor with a user-friendly OLED interface.
 
