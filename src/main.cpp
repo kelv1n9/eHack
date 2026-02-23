@@ -2882,7 +2882,7 @@ void loop()
         // {
         // isPortableInited = true;
         // }
-        else if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == 0x19)
+        else if (recievedData[0] == PROTOCOL_HEADER && recievedData[1] == COMMAND_FM_RADIO)
         {
           int8_t fmLevel;
           memcpy(&fmLevel, &recievedData[2], sizeof(fmLevel));

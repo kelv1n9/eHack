@@ -1007,6 +1007,8 @@ void sendTeslaSignal_v2()
 //======================= EEPROM ============================*/
 /************************** HF *******************************/
 
+void findLastUsedSlotRA();
+
 SimpleRAData readRAData(uint8_t slot)
 {
   int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
@@ -1037,16 +1039,6 @@ void clearAllRAData()
   lastUsedSlotBarrier = 0;
 }
 
-void clearRAData(uint8_t slot)
-{
-  SimpleRAData empty = {0, 0, 0, 0};
-  int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
-  EEPROM.put(addr, empty);
-  EEPROM.commit();
-
-  lastUsedSlotRA = slot;
-}
-
 void findLastUsedSlotRA()
 {
   for (uint8_t slot = 0; slot < MAX_RA_SIGNALS; slot++)
@@ -1059,6 +1051,23 @@ void findLastUsedSlotRA()
     }
   }
   lastUsedSlotRA = 0;
+}
+
+void clearRAData(uint8_t slot)
+{
+  for (uint8_t i = slot; i + 1 < MAX_RA_SIGNALS; i++)
+  {
+    SimpleRAData data = readRAData(i + 1);
+    int addr = EEPROM_RA_ADDR + i * SLOT_RA_SIZE;
+    EEPROM.put(addr, data);
+  }
+
+  SimpleRAData empty = {0, 0, 0, 0};
+  int addr = EEPROM_RA_ADDR + (MAX_RA_SIGNALS - 1) * SLOT_RA_SIZE;
+  EEPROM.put(addr, empty);
+  EEPROM.commit();
+
+  findLastUsedSlotRA();
 }
 
 bool isDuplicateRA(const SimpleRAData &newData)
