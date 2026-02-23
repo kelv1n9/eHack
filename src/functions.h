@@ -1007,8 +1007,6 @@ void sendTeslaSignal_v2()
 //======================= EEPROM ============================*/
 /************************** HF *******************************/
 
-void findLastUsedSlotRA();
-
 SimpleRAData readRAData(uint8_t slot)
 {
   int addr = EEPROM_RA_ADDR + slot * SLOT_RA_SIZE;
