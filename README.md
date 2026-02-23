@@ -3,7 +3,7 @@
 
 # 🚀 eHack
 
-![eHack](pics/eHack_and_Portable.JPG)
+![eHack](pics/eHack.PNG)
 
 **eHack** is a versatile, all-in-one tool built on the **Raspberry Pi Pico**, designed for radio frequency analysis, penetration testing, and hardware research enthusiasts. The project integrates a wide array of tools for interacting with various wireless technologies, all housed in a compact form factor with a user-friendly OLED interface.
 
