@@ -3,6 +3,7 @@
 #define NFC_INTERFACE_I2C
 
 // #define DEBUG_eHack
+#define VERSION "v5.4.4"
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
@@ -36,9 +37,9 @@
 #include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
-#define APP_VERSION "v5.4.4 DEBUG"
+#define APP_VERSION VERSION " DEBUG"
 #else
-#define APP_VERSION "v5.4.4"
+#define APP_VERSION VERSION
 #endif
 const char *APP_NAME = "eHack";
 
