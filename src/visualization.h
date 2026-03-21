@@ -1093,7 +1093,7 @@ void DrawRAWOscillogram_HF()
       recDot = !recDot;
     }
     const char *rec = "REC";
-    int recX = 128 - getTextWidth(rec);
+    int recX = (successfullyConnected ? 110 : 128) - getTextWidth(rec);
     if (recDot)
       oled.circle(recX - 5, 3, 2, 1);
     oled.setCursorXY(recX, 0);
