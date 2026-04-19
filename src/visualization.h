@@ -1836,6 +1836,11 @@ void showConnectionStatus(uint8_t menuIndex)
   oled.invertText(successfullyConnected && menuIndex == 0);
   oled.print(buf);
 
+  char ChannelText[20];
+  sprintf(ChannelText, "Ch: %d", RADIO_CHANNEL);
+  oled.setCursorXY((128 - getTextWidth(ChannelText)) / 2, 0);
+  oled.print(ChannelText);
+
   const char *txt;
   if (!startConnection)
     txt = "Click OK to enable";
