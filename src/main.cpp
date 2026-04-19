@@ -1469,6 +1469,12 @@ void loop1()
     static uint8_t channel = 0;
     if (!initialized)
     {
+      if (successfullyConnected)
+      {
+        outgoingDataLen = communication.buildPacket(COMMAND_UHF_SPECTRUM, 0, 0, outgoingData);
+        communication.sendPacket(outgoingData, outgoingDataLen);
+      }
+
       initRadioScanner();
       initialized = true;
     }
@@ -1798,6 +1804,10 @@ void loop()
       communication.init();
       connectionInited = true;
       initialized = false;
+      if (successfullyConnected)
+      {
+        sendStopCommandToSlave(6);
+      }
       // isPortableInited = false;
       vibro(255, 50);
       break;
