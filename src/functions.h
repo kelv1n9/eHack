@@ -33,8 +33,8 @@
 #include "hardware/adc.h"
 #include "RF24.h"
 #include <rdm6300.h>
+#include "CC1101.h"
 #include "DataTransmission.h"
-#include "ELECHOUSE_CC1101_SRC_DRV.h"
 
 #ifdef DEBUG_eHack
 #define APP_VERSION VERSION " DEBUG"
@@ -878,22 +878,22 @@ void resetSpectrum_HF()
 
 void cc1101Init()
 {
-  ELECHOUSE_cc1101.setSpiPin(SCK_PIN_CC, MISO_PIN_CC, MOSI_PIN_CC, CSN_PIN_CC);
+  cc1101.setSpiPin(SCK_PIN_CC, MISO_PIN_CC, MOSI_PIN_CC, CSN_PIN_CC);
 
-  ELECHOUSE_cc1101.setClb(1, 1, 1);
-  ELECHOUSE_cc1101.setClb(2, 1, 1);
-  ELECHOUSE_cc1101.setClb(3, 2, 2);
-  ELECHOUSE_cc1101.setClb(4, 2, 1);
+  cc1101.setClb(1, 1, 1);
+  cc1101.setClb(2, 1, 1);
+  cc1101.setClb(3, 2, 2);
+  cc1101.setClb(4, 2, 1);
 
-  ELECHOUSE_cc1101.Init(&SPI1);
-  ELECHOUSE_cc1101.setGDO0(GD0_PIN_CC);
-  ELECHOUSE_cc1101.setDcFilterOff(0);
-  ELECHOUSE_cc1101.setRxBW(135);
-  ELECHOUSE_cc1101.setPA(12);
-  ELECHOUSE_cc1101.setModulation(2);
-  ELECHOUSE_cc1101.setCCMode(0);
-  ELECHOUSE_cc1101.setSyncMode(0);
-  ELECHOUSE_cc1101.setCrc(0);
+  cc1101.Init(&SPI1);
+  cc1101.setGDO0(GD0_PIN_CC);
+  cc1101.setDcFilterOff(0);
+  cc1101.setRxBW(135);
+  cc1101.setPA(12);
+  cc1101.setModulation(2);
+  cc1101.setCCMode(0);
+  cc1101.setSyncMode(0);
+  cc1101.setCrc(0);
 }
 
 //================================== TESLA ======================================*/

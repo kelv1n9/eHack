@@ -117,7 +117,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -130,7 +130,7 @@ void loop1()
 
     if (checkFreqButtons())
     {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_SCAN, &currentFreqIndex, 1, outgoingData);
@@ -149,7 +149,7 @@ void loop1()
 
       signalCaptured_433MHZ = true;
 
-      currentRssi = ELECHOUSE_cc1101.getRssi();
+      currentRssi = cc1101.getRssi();
       capturedCode = mySwitch.getReceivedValue();
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
@@ -199,7 +199,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, OUTPUT);
       mySwitch.enableTransmit(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -232,7 +232,7 @@ void loop1()
     {
       if (checkFreqButtons())
       {
-        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+        cc1101.SetTx(raFrequencies[currentFreqIndex]);
         if (successfullyConnected)
         {
           outgoingDataLen = communication.buildPacket(COMMAND_HF_REPLAY, &currentFreqIndex, 1, outgoingData);
@@ -261,7 +261,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), captureBarrierCode, CHANGE);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -274,7 +274,7 @@ void loop1()
 
     if (checkFreqButtons())
     {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_SCAN, &currentFreqIndex, 1, outgoingData);
@@ -285,7 +285,7 @@ void loop1()
     if (barrierCaptured)
     {
       signalCaptured_433MHZ = true;
-      currentRssi = ELECHOUSE_cc1101.getRssi();
+      currentRssi = cc1101.getRssi();
 
       SimpleBarrierData data;
       data.codeMain = barrierCodeMain;
@@ -322,7 +322,7 @@ void loop1()
     {
       ok.reset();
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -358,7 +358,7 @@ void loop1()
     {
       if (checkFreqButtons())
       {
-        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+        cc1101.SetTx(raFrequencies[currentFreqIndex]);
         if (successfullyConnected)
         {
           outgoingDataLen = communication.buildPacket(COMMAND_HF_BARRIER_REPLAY, &currentFreqIndex, 1, outgoingData);
@@ -413,7 +413,7 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, OUTPUT);
-        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+        cc1101.SetTx(raFrequencies[currentFreqIndex]);
       }
       initialized = true;
     }
@@ -507,7 +507,7 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, OUTPUT);
-        ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+        cc1101.SetTx(raFrequencies[currentFreqIndex]);
       }
       initialized = true;
     }
@@ -599,7 +599,7 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -612,7 +612,7 @@ void loop1()
 
     if (checkFreqButtons())
     {
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_JAMMER, &currentFreqIndex, 1, outgoingData);
@@ -634,7 +634,7 @@ void loop1()
     if (!initialized)
     {
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -649,7 +649,7 @@ void loop1()
     {
       static bool toggleFreq = false;
       float freq = toggleFreq ? 315.0 : 433.92;
-      ELECHOUSE_cc1101.SetTx(freq);
+      cc1101.SetTx(freq);
       toggleFreq = !toggleFreq;
 
       sendTeslaSignal_v1();
@@ -673,7 +673,7 @@ void loop1()
       if (!successfullyConnected)
       {
         pinMode(GD0_PIN_CC, INPUT);
-        ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
+        cc1101.SetRx(raFrequencies[currentScanFreq]);
         currentScanFreq = 0;
         spectrumTimer = millis();
         waitingForSettle = true;
@@ -710,7 +710,7 @@ void loop1()
     {
       if (millis() - spectrumTimer >= RSSI_STEP_MS)
       {
-        currentRssi = ELECHOUSE_cc1101.getRssi();
+        currentRssi = cc1101.getRssi();
 
         if (currentRssi > rssiMaxPeak[currentScanFreq])
         {
@@ -732,7 +732,7 @@ void loop1()
         }
 
         currentScanFreq = (currentScanFreq + 1) % raFreqCount;
-        ELECHOUSE_cc1101.SetRx(raFrequencies[currentScanFreq]);
+        cc1101.SetRx(raFrequencies[currentScanFreq]);
         spectrumTimer = millis();
         waitingForSettle = true;
       }
@@ -793,7 +793,7 @@ void loop1()
         {
           mySwitch.enableReceive(GD0_PIN_CC);
         }
-        ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+        cc1101.SetRx(raFrequencies[currentFreqIndex]);
       }
       else
       {
@@ -825,7 +825,7 @@ void loop1()
 
     if (checkFreqButtons())
     {
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
       if (successfullyConnected)
       {
         outgoingDataLen = communication.buildPacket(COMMAND_HF_ACTIVITY, &currentFreqIndex, 1, outgoingData);
@@ -854,7 +854,7 @@ void loop1()
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
       capturedDelay = mySwitch.getReceivedDelay();
-      currentRssi = ELECHOUSE_cc1101.getRssi();
+      currentRssi = cc1101.getRssi();
 
       SimpleRAData data;
       data.code = capturedCode;
@@ -884,7 +884,7 @@ void loop1()
 
     if (!successfullyConnected && millis() - lastStepMs >= RSSI_STEP_MS)
     {
-      currentRssi = ELECHOUSE_cc1101.getRssi();
+      currentRssi = cc1101.getRssi();
       rssiBuffer[rssiIndex++] = currentRssi;
       if (rssiIndex >= RSSI_BUFFER_SIZE)
         rssiIndex = 0;
@@ -919,7 +919,7 @@ void loop1()
     {
       pinMode(GD0_PIN_CC, INPUT);
       mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       if (successfullyConnected)
       {
@@ -939,7 +939,7 @@ void loop1()
         break;
       }
 
-      currentRssi = ELECHOUSE_cc1101.getRssi();
+      currentRssi = cc1101.getRssi();
       capturedCode = mySwitch.getReceivedValue();
       capturedLength = mySwitch.getReceivedBitlength();
       capturedProtocol = mySwitch.getReceivedProtocol();
@@ -978,7 +978,7 @@ void loop1()
       mySwitch.disableReceive();
       pinMode(GD0_PIN_CC, OUTPUT);
       mySwitch.enableTransmit(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       mySwitch.setProtocol(capturedProtocol);
       mySwitch.send(capturedCode, capturedLength);
@@ -986,7 +986,7 @@ void loop1()
       mySwitch.disableTransmit();
       pinMode(GD0_PIN_CC, INPUT);
       mySwitch.enableReceive(GD0_PIN_CC);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       hfMonitorSendRequested = false;
     }
@@ -1012,7 +1012,7 @@ void loop1()
 
       pinMode(GD0_PIN_CC, INPUT);
       attachInterrupt(digitalPinToInterrupt(GD0_PIN_CC), rawSignalISR, CHANGE);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       rawStartCapture();
 
@@ -1030,7 +1030,7 @@ void loop1()
       static uint32_t rawLastStepMs = 0;
       if (millis() - rawLastStepMs >= RSSI_STEP_MS)
       {
-        currentRssi = ELECHOUSE_cc1101.getRssi();
+        currentRssi = cc1101.getRssi();
         rssiBuffer[rssiIndex++] = currentRssi;
         if (rssiIndex >= RSSI_BUFFER_SIZE)
           rssiIndex = 0;
@@ -1050,7 +1050,7 @@ void loop1()
       rawRecorded = false;
 
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
 
       initialized = true;
     }
@@ -1061,7 +1061,7 @@ void loop1()
       rawReplaying = true;
 
       pinMode(GD0_PIN_CC, OUTPUT);
-      ELECHOUSE_cc1101.SetTx(raFrequencies[currentFreqIndex]);
+      cc1101.SetTx(raFrequencies[currentFreqIndex]);
 
       bool pinState = true;
       for (uint16_t i = 0; i < rawRecordedCount; i++)
@@ -1077,7 +1077,7 @@ void loop1()
 
       // Switch back to RX
       pinMode(GD0_PIN_CC, INPUT);
-      ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+      cc1101.SetRx(raFrequencies[currentFreqIndex]);
     }
 
     break;
@@ -2336,7 +2336,7 @@ void loop()
     {
       if (checkFreqButtons())
       {
-        ELECHOUSE_cc1101.SetRx(raFrequencies[currentFreqIndex]);
+        cc1101.SetRx(raFrequencies[currentFreqIndex]);
       }
     }
 

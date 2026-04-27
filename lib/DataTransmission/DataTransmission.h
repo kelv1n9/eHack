@@ -17,7 +17,6 @@
 
 #include <Arduino.h>
 #include "RF24.h"
-#include <ELECHOUSE_CC1101_SRC_DRV.h>
 
 #ifndef MASTER_DEVICE
 #define MASTER_DEVICE 0
