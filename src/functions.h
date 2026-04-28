@@ -3,7 +3,7 @@
 #define NFC_INTERFACE_I2C
 
 // #define DEBUG_eHack
-#define VERSION "v5.4.4"
+#define VERSION "v5.5.0"
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \

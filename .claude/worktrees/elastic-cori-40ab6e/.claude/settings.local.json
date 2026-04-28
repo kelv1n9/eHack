@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:\\\\Users\\\\ElvinGadirov\\\\Documents\\\\OwnProjects\\\\eHack\" worktree list)",
+      "Bash(git -C \"C:\\\\Users\\\\ElvinGadirov\\\\Documents\\\\OwnProjects\\\\eHack\" show HEAD~1:lib/ELECHOUSE_CC1101/ELECHOUSE_CC1101_SRC_DRV.cpp)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Read(//c/Users/ElvinGadirov/Documents/OwnProjects/eHack/**)",
+      "Bash(pio run *)",
+      "Bash(git -C \"C:\\\\Users\\\\ElvinGadirov\\\\Documents\\\\OwnProjects\\\\eHack\" add src/functions.h src/visualization.h src/main.cpp)",
+      "Bash(git -C \"C:\\\\Users\\\\ElvinGadirov\\\\Documents\\\\OwnProjects\\\\eHack\" commit -m \"Add CC1101 band calibration with OLED UI and EEPROM save\")"
+    ]
+  }
+}

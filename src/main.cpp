@@ -6,6 +6,17 @@ void setup()
 {
   EEPROM.begin(8192);
 
+  //! REMOVE THIS IN PRODUCTION
+  calibrationData.clb[0][0] = 1;
+  calibrationData.clb[0][1] = 1;
+  calibrationData.clb[1][0] = 1;
+  calibrationData.clb[1][1] = 1;
+  calibrationData.clb[2][0] = 2;
+  calibrationData.clb[2][1] = 2;
+  calibrationData.clb[3][0] = 2;
+  calibrationData.clb[3][1] = 1;
+  saveCalibration();
+
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
