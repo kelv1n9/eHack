@@ -177,14 +177,13 @@ void CC1101::Reset(void) {
     delayMicroseconds(10);
     digitalWrite(SS_PIN, HIGH);
     delayMicroseconds(40);
+    _spi->beginTransaction(CC1101_SPI_SETTINGS);
     digitalWrite(SS_PIN, LOW);
-    if(WaitMiso()) {
-        SpiStart();
-        _spi->transfer(CC1101_SRES);
-        SpiEnd();
-    }
-    WaitMiso();
+    WaitMiso();                      // wait MISO=LOW with CS=LOW (chip ready)
+    _spi->transfer(CC1101_SRES);
+    WaitMiso();                      // wait MISO=LOW with CS=LOW (reset complete)
     digitalWrite(SS_PIN, HIGH);
+    _spi->endTransaction();
 }
 
 void CC1101::Calibrate(void) {
