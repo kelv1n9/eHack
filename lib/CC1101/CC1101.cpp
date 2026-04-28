@@ -35,6 +35,9 @@ bool CC1101::WaitMiso(uint16_t timeout_ms) {
 
 void CC1101::SpiStart(void) {
     _spi->beginTransaction(CC1101_SPI_SETTINGS);
+    #ifdef ARDUINO_ARCH_RP2040
+    _spi->begin();
+    #endif
     digitalWrite(SS_PIN, LOW);
 }
 
@@ -177,13 +180,14 @@ void CC1101::Reset(void) {
     delayMicroseconds(10);
     digitalWrite(SS_PIN, HIGH);
     delayMicroseconds(40);
-    _spi->beginTransaction(CC1101_SPI_SETTINGS);
     digitalWrite(SS_PIN, LOW);
-    WaitMiso();                      // wait MISO=LOW with CS=LOW (chip ready)
-    _spi->transfer(CC1101_SRES);
-    WaitMiso();                      // wait MISO=LOW with CS=LOW (reset complete)
+    if(WaitMiso()) {
+        SpiStart();
+        SPI.transfer(CC1101_SRES);
+        SpiEnd();
+    }
+    WaitMiso();
     digitalWrite(SS_PIN, HIGH);
-    _spi->endTransaction();
 }
 
 void CC1101::Calibrate(void) {
