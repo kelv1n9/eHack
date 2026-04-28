@@ -1082,6 +1082,29 @@ void loop1()
 
     break;
   }
+  /*============================= CC1101 Calibration =================================*/
+  case HF_CALIBRATE:
+  {
+    if (!initialized)
+    {
+      cc1101.setCCMode(1);
+      cc1101.setModulation(2);
+      cc1101.setPA(10);
+      float freq = (calibStep == 0) ? calibFreqLow[calibBandIndex] : calibFreqHigh[calibBandIndex];
+      cc1101.setMHZ(freq);
+      calibTxTimer = millis();
+      initialized = true;
+    }
+
+    if (calibStep < 2 && millis() - calibTxTimer > 2000)
+    {
+      calibTxTimer = millis();
+      byte pkt[60];
+      memset(pkt, 0xAA, sizeof(pkt));
+      cc1101.SendData(pkt, sizeof(pkt));
+    }
+    break;
+  }
   /*============================= InfraRed Protocol =================================*/
   /********************************** SCANNING **************************************/
   case IR_SCAN:
@@ -1732,6 +1755,17 @@ void loop()
       isSimpleMenuExit = true;
       break;
     }
+    case HF_CALIBRATE_MENU:
+    {
+      isSimpleMenuExit = true;
+      break;
+    }
+    case HF_CALIBRATE:
+    {
+      cc1101Init();
+      isSimpleMenuExit = true;
+      break;
+    }
     case HF_SPECTRUM:
     case HF_ACTIVITY:
     {
@@ -1918,6 +1952,63 @@ void loop()
       currentMenu = static_cast<MenuState>(HF_AIR_MENU + HFmenuIndex);
       vibro(255, 50);
     }
+    break;
+  }
+  case HF_CALIBRATE_MENU:
+  {
+    menuButtons(calibBandIndex, 4);
+    drawMenu(calibBandItems, 4, calibBandIndex);
+
+    if (!locked && ok.click())
+    {
+      ok.reset();
+      grandParentMenu = parentMenu;
+      parentMenu = currentMenu;
+      calibStep = 0;
+      calibMeasured = calibFreqLow[calibBandIndex];
+      initialized = false;
+      currentMenu = HF_CALIBRATE;
+      vibro(255, 50);
+    }
+    break;
+  }
+  case HF_CALIBRATE:
+  {
+    if (calibStep < 2)
+    {
+      if (!locked && up.click())
+        calibMeasured += 0.010f;
+      if (!locked && up.step())
+        calibMeasured += 0.100f;
+      if (!locked && down.click())
+        calibMeasured -= 0.010f;
+      if (!locked && down.step())
+        calibMeasured -= 0.100f;
+
+      if (!locked && ok.click())
+      {
+        ok.reset();
+        float targetFreq = (calibStep == 0) ? calibFreqLow[calibBandIndex] : calibFreqHigh[calibBandIndex];
+        if (calibStep == 0)
+        {
+          calibClbLow = calculateFSCTRL0(targetFreq, calibMeasured);
+          calibMeasured = calibFreqHigh[calibBandIndex];
+          calibStep = 1;
+          initialized = false;
+        }
+        else
+        {
+          calibClbHigh = calculateFSCTRL0(targetFreq, calibMeasured);
+          calibrationData.clb[calibBandIndex][0] = calibClbLow;
+          calibrationData.clb[calibBandIndex][1] = calibClbHigh;
+          saveCalibration();
+          calibStep = 2;
+        }
+        vibro(255, 50);
+      }
+    }
+
+    DrawCalibrate();
     break;
   }
   case IR_MENU:

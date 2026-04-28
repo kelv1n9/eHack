@@ -62,7 +62,7 @@ volatile bool initialized = false;
 volatile bool locked = false;
 
 uint8_t mainMenuCount = 10;
-uint8_t hfMenuCount = 6;
+uint8_t hfMenuCount = 7;
 uint8_t irMenuCount = 4;
 uint8_t rawMenuCount = 2;
 uint8_t uhfMenuCount = 9;
@@ -226,6 +226,22 @@ bool RANameEdit;
 
 const char PROGMEM nameChars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_ ";
 char slotName[NAME_MAX_LEN + 1];
+
+/* ================== SubGHz Calibration ================== */
+
+struct CalibrationData
+{
+  uint8_t clb[4][2];
+} calibrationData;
+
+const float calibFreqLow[4] = {300.0f, 378.0f, 779.0f, 900.0f};
+const float calibFreqHigh[4] = {348.0f, 464.0f, 899.0f, 928.0f};
+uint8_t calibBandIndex = 0;
+uint8_t calibStep = 0;
+uint8_t calibClbLow = 0;
+uint8_t calibClbHigh = 0;
+uint32_t calibTxTimer = 0;
+float calibMeasured = 0.0f;
 
 /* ================ RAW Signal =================== */
 #define RAW_SIGNAL_MAX_SAMPLES 1024
@@ -428,6 +444,7 @@ bool gamesOnlyMode;
 #define SLOT_STARTCONN_SIZE sizeof(bool)
 #define SLOT_START_MODE_SIZE sizeof(gamesOnlyMode)
 #define SLOT_RAW_SIZE sizeof(RawSignalSlot)
+#define SLOT_CALIB_SIZE sizeof(CalibrationData)
 
 #define EEPROM_IR_ADDR 0
 #define EEPROM_RA_ADDR (EEPROM_IR_ADDR + MAX_IR_SIGNALS * SLOT_IR_SIZE)
@@ -438,6 +455,7 @@ bool gamesOnlyMode;
 #define EEPROM_STARTCONN_ADDR (EEPROM_RFID_ADDR + MAX_RFID * SLOT_RFID_SIZE)
 #define EEPROM_START_MODE_ADDR (EEPROM_STARTCONN_ADDR + SLOT_STARTCONN_SIZE)
 #define EEPROM_RAW_ADDR (EEPROM_START_MODE_ADDR + SLOT_START_MODE_SIZE)
+#define EEPROM_CALIB_ADDR (EEPROM_RAW_ADDR + MAX_RAW_SIGNALS * SLOT_RAW_SIZE)
 
 /*=================== SETTINGS ==========================*/
 struct Settings
@@ -876,14 +894,38 @@ void resetSpectrum_HF()
   }
 }
 
+void loadCalibration()
+{
+  EEPROM.get(EEPROM_CALIB_ADDR, calibrationData);
+}
+
+void saveCalibration()
+{
+  EEPROM.put(EEPROM_CALIB_ADDR, calibrationData);
+  EEPROM.commit();
+}
+
+uint8_t calculateFSCTRL0(float targetFreq, float measuredFreq)
+{
+  int8_t cur = (int8_t)cc1101.SpiReadReg(CC1101_FSCTRL0);
+  int ticks = (int)roundf((targetFreq - measuredFreq) / (26.0f / 16384.0f));
+  int newVal = (int)cur + ticks;
+  if (newVal > 127)
+    newVal = 127;
+  if (newVal < -128)
+    newVal = -128;
+  return (uint8_t)(int8_t)newVal;
+}
+
 void cc1101Init()
 {
   cc1101.setSpiPin(SCK_PIN_CC, MISO_PIN_CC, MOSI_PIN_CC, CSN_PIN_CC);
 
-  cc1101.setClb(1, 1, 1);
-  cc1101.setClb(2, 1, 1);
-  cc1101.setClb(3, 2, 2);
-  cc1101.setClb(4, 2, 1);
+  loadCalibration();
+  for (uint8_t i = 0; i < 4; i++)
+  {
+    cc1101.setClb(i + 1, calibrationData.clb[i][0], calibrationData.clb[i][1]);
+  }
 
   cc1101.Init(&SPI1);
   cc1101.setGDO0(GD0_PIN_CC);
