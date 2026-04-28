@@ -6,17 +6,6 @@ void setup()
 {
   EEPROM.begin(8192);
 
-  //! REMOVE THIS IN PRODUCTION
-  calibrationData.clb[0][0] = 1;
-  calibrationData.clb[0][1] = 1;
-  calibrationData.clb[1][0] = 1;
-  calibrationData.clb[1][1] = 1;
-  calibrationData.clb[2][0] = 2;
-  calibrationData.clb[2][1] = 2;
-  calibrationData.clb[3][0] = 2;
-  calibrationData.clb[3][1] = 1;
-  saveCalibration();
-
   // I2C
   Wire.setSDA(0);
   Wire.setSCL(1);
@@ -1098,21 +1087,14 @@ void loop1()
   {
     if (!initialized)
     {
-      cc1101.setCCMode(1);
+      float freq = (calibStep == 0) ? calibFreqLow[calibBandIndex] : calibFreqHigh[calibBandIndex];
+      cc1101.setCCMode(0);
       cc1101.setModulation(2);
       cc1101.setPA(10);
-      float freq = (calibStep == 0) ? calibFreqLow[calibBandIndex] : calibFreqHigh[calibBandIndex];
-      cc1101.setMHZ(freq);
-      calibTxTimer = millis();
+      cc1101.SetTx(freq);
+      pinMode(GD0_PIN_CC, OUTPUT);
+      digitalWrite(GD0_PIN_CC, HIGH);
       initialized = true;
-    }
-
-    if (calibStep < 2 && millis() - calibTxTimer > 2000)
-    {
-      calibTxTimer = millis();
-      byte pkt[60];
-      memset(pkt, 0xAA, sizeof(pkt));
-      cc1101.SendData(pkt, sizeof(pkt));
     }
     break;
   }
@@ -2014,9 +1996,18 @@ void loop()
           calibrationData.clb[calibBandIndex][1] = calibClbHigh;
           saveCalibration();
           calibStep = 2;
+          calibSavedTimer = millis();
         }
         vibro(255, 50);
       }
+    }
+
+    if (calibStep == 2 && millis() - calibSavedTimer > 2000)
+    {
+      cc1101Init();
+      currentMenu = parentMenu;
+      initialized = false;
+      return;
     }
 
     DrawCalibrate();

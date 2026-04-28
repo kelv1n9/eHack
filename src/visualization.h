@@ -1987,38 +1987,23 @@ void DrawCalibrate()
   if (calibStep == 2)
   {
     oled.setScale(2);
-    oled.setCursorXY((128 - getTextWidth("Saved!") * 2) / 2, 4);
+    oled.setCursorXY((128 - getTextWidth("Saved!") * 2) / 2 + 3, 26);
     oled.print("Saved!");
-
-    char buf[24];
-    oled.setScale(1);
-    oled.setCursorXY(4, 32);
-    oled.print(calibBandItems[calibBandIndex]);
-
-    sprintf(buf, "LOW:%3d HIGH:%3d", calibClbLow, calibClbHigh);
-    oled.setCursorXY(4, 44);
-    oled.print(buf);
-
-    oled.setCursorXY((128 - getTextWidth("Hold OK: exit")) / 2, 56);
-    oled.print("Hold OK: exit");
     return;
   }
 
-  // Header: band name + step
   char header[20];
-  sprintf(header, "%s | %s", calibBandItems[calibBandIndex], calibStep == 0 ? "LOWER" : "UPPER");
+  sprintf(header, "%s | %s", calibBandItems[calibBandIndex], calibStep == 0 ? "LOW" : "HIGH");
   oled.setScale(1);
-  oled.setCursorXY((128 - getTextWidth(header)) / 2, 0);
+  oled.setCursorXY((128 - getTextWidth(header)) / 2, 13);
   oled.print(header);
 
-  // Target frequency
   char targetBuf[20];
   float targetFreq = calibStep == 0 ? calibFreqLow[calibBandIndex] : calibFreqHigh[calibBandIndex];
   sprintf(targetBuf, "TX: %.3f MHz", targetFreq);
-  oled.setCursorXY((128 - getTextWidth(targetBuf)) / 2, 12);
+  oled.setCursorXY((128 - getTextWidth(targetBuf)) / 2, 29);
   oled.print(targetBuf);
 
-  // SDR measured value — large
   char mBuf[12];
   int mInt  = (int)calibMeasured;
   int mFrac = (int)roundf((calibMeasured - mInt) * 1000);
@@ -2026,13 +2011,9 @@ void DrawCalibrate()
   sprintf(mBuf, "%d.%03d", mInt, mFrac);
   oled.setScale(2);
   int mw = getTextWidth(mBuf) * 2;
-  oled.setCursorXY((128 - mw - 14) / 2, 26);
+  oled.setCursorXY((128 - mw - 14) / 2, 45);
   oled.print(mBuf);
   oled.setScale(1);
-  oled.setCursorXY((128 - mw - 14) / 2 + mw + 2, 32);
+  oled.setCursorXY((128 - mw - 14) / 2 + mw + 2, 51);
   oled.print("MHz");
-
-  // Hint
-  oled.setCursorXY(2, 55);
-  oled.print("U/D:0.01  OK:confirm");
 }

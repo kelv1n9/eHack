@@ -241,6 +241,7 @@ uint8_t calibStep = 0;
 uint8_t calibClbLow = 0;
 uint8_t calibClbHigh = 0;
 uint32_t calibTxTimer = 0;
+uint32_t calibSavedTimer = 0;
 float calibMeasured = 0.0f;
 
 /* ================ RAW Signal =================== */
