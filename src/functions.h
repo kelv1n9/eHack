@@ -3,7 +3,7 @@
 #define NFC_INTERFACE_I2C
 
 // #define DEBUG_eHack
-#define VERSION "v5.5.0"
+#define VERSION "v5.5.1"
 
 #ifdef DEBUG_eHack
 #define DBG(...)                \
@@ -1278,12 +1278,20 @@ RFID readRFIDData(uint8_t slot)
 
 void clearRFIDData(uint8_t slot)
 {
+  // Shift subsequent cards left to avoid gaps
+  for (uint8_t i = slot; i + 1 < MAX_RFID; i++)
+  {
+    RFID next = readRFIDData(i + 1);
+    int addr = EEPROM_RFID_ADDR + i * SLOT_RFID_SIZE;
+    EEPROM.put(addr, next);
+  }
   RFID empty = {0};
-  int addr = EEPROM_RFID_ADDR + slot * SLOT_RFID_SIZE;
+  int addr = EEPROM_RFID_ADDR + (MAX_RFID - 1) * SLOT_RFID_SIZE;
   EEPROM.put(addr, empty);
   EEPROM.commit();
 
-  lastUsedSlotRFID = slot;
+  if (lastUsedSlotRFID > 0)
+    lastUsedSlotRFID--;
 }
 
 void findLastUsedSlotRFID()
@@ -1297,15 +1305,15 @@ void findLastUsedSlotRFID()
       return;
     }
   }
-  lastUsedSlotRFID = 0;
+  lastUsedSlotRFID = MAX_RFID; // all slots full
 }
 
 bool isDuplicateRFID(const RFID &newData)
 {
-  for (uint8_t i = 0; i < lastUsedSlotRFID; i++)
+  for (uint8_t i = 0; i < MAX_RFID; i++)
   {
     RFID existingData = readRFIDData(i);
-    if (newData.tagID == existingData.tagID)
+    if (existingData.tagID != 0 && newData.tagID == existingData.tagID)
     {
       return true;
     }

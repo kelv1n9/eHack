@@ -1532,14 +1532,13 @@ void loop1()
           RFID data;
           data.tagID = tagID_125kHz;
 
-          // Check for duplicates
-          if (isDuplicateRFID(data))
+          if (lastUsedSlotRFID >= MAX_RFID || isDuplicateRFID(data))
           {
             break;
           }
 
           writeRFIDData(lastUsedSlotRFID, data);
-          lastUsedSlotRFID = (lastUsedSlotRFID + 1) % MAX_RFID;
+          lastUsedSlotRFID++;
         }
       }
     }
@@ -1876,6 +1875,7 @@ void loop()
       rdm6300.end();
       digitalWrite(RFID_COIL_PIN, LOW);
       digitalWrite(RFID_POWER_PIN, HIGH);
+      initialized = false;
       vibro(255, 50);
       break;
     }
