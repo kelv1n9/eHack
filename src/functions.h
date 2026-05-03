@@ -288,14 +288,11 @@ void rawSignalISR()
   if (duration < 10)
     return;
 
-  if (rawCapturing && rawSignalCount < RAW_SIGNAL_MAX_SAMPLES)
+  if (rawCapturing)
   {
-    rawSignalBuffer[rawSignalCount++] = (uint16_t)duration;
-  }
-  else if (rawCapturing && rawSignalCount >= RAW_SIGNAL_MAX_SAMPLES)
-  {
-    rawOverflow = true;
-    rawCapturing = false;
+    rawSignalBuffer[rawSignalCount % RAW_SIGNAL_MAX_SAMPLES] = (uint16_t)duration;
+    if (rawSignalCount < 0xFFFE)
+      rawSignalCount++;
   }
 }
 
@@ -314,9 +311,48 @@ void rawStopCapture()
 {
   noInterrupts();
   rawCapturing = false;
-  rawRecorded = true;
-  rawRecordedCount = rawSignalCount;
+  uint16_t total = rawSignalCount;
   interrupts();
+
+  if (total > RAW_SIGNAL_MAX_SAMPLES)
+  {
+    uint16_t offset = total % RAW_SIGNAL_MAX_SAMPLES;
+    if (offset != 0)
+    {
+      uint16_t lo, hi;
+      lo = 0;
+      hi = offset - 1;
+      while (lo < hi)
+      {
+        uint16_t t = rawSignalBuffer[lo];
+        rawSignalBuffer[lo++] = rawSignalBuffer[hi];
+        rawSignalBuffer[hi--] = t;
+      }
+      lo = offset;
+      hi = RAW_SIGNAL_MAX_SAMPLES - 1;
+      while (lo < hi)
+      {
+        uint16_t t = rawSignalBuffer[lo];
+        rawSignalBuffer[lo++] = rawSignalBuffer[hi];
+        rawSignalBuffer[hi--] = t;
+      }
+      lo = 0;
+      hi = RAW_SIGNAL_MAX_SAMPLES - 1;
+      while (lo < hi)
+      {
+        uint16_t t = rawSignalBuffer[lo];
+        rawSignalBuffer[lo++] = rawSignalBuffer[hi];
+        rawSignalBuffer[hi--] = t;
+      }
+    }
+    rawRecordedCount = RAW_SIGNAL_MAX_SAMPLES;
+  }
+  else
+  {
+    rawRecordedCount = total;
+  }
+
+  rawRecorded = true;
 }
 
 /* ================ Barrier =================== */

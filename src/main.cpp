@@ -1019,13 +1019,6 @@ void loop1()
       initialized = true;
     }
 
-    if (rawOverflow)
-    {
-      rawOverflow = false;
-      rawRecorded = true;
-      rawRecordedCount = rawSignalCount;
-    }
-
     {
       static uint32_t rawLastStepMs = 0;
       if (millis() - rawLastStepMs >= RSSI_STEP_MS)

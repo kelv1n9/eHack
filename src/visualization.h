@@ -564,8 +564,8 @@ void showCharging()
 
   const uint8_t bx = 93;
   const uint8_t by = 1;
-  const uint8_t bw = 9;  
-  const uint8_t bh = 5;  
+  const uint8_t bw = 9;
+  const uint8_t bh = 5;
 
   oled.rect(bx, by, bx + bw, by + bh, OLED_STROKE);
   oled.rect(bx + bw + 1, by + 1, bx + bw + 2, by + bh - 1, OLED_FILL);
@@ -1015,7 +1015,7 @@ void DrawRAWReplay()
   oled.textMode(BUF_ADD);
   oled.setScale(1);
 
-  oled.setCursorXY(35, 0);
+  oled.setCursorXY(38, 0);
   oled.print("RAW Replay");
 
   const uint8_t ROW_H = 11;
@@ -1079,13 +1079,17 @@ void DrawRAWReplay()
 
 void DrawRAWOscillogram_HF()
 {
-  const uint8_t headerH = 9;
-  const uint8_t plotTop = headerH + 2;
-  const uint8_t plotBottom = 60;
-  const uint8_t plotH = plotBottom - plotTop;
-  const uint8_t centerY = plotTop + plotH / 2;
-  const uint8_t halfH = plotH / 2 - 1;
+  const uint8_t plotTop = 11;
+  const uint8_t plotBot = 54;
+  const uint8_t highY = plotTop + 3;
+  const uint8_t lowY = plotBot - 3;
+  const uint8_t axisX = 0;
+  const uint8_t plotLeft = axisX + 1;
+  const uint8_t plotRight = 127;
+  const uint8_t plotW = plotRight - plotLeft;
   const uint8_t footerY = 56;
+
+  uint16_t totalCount = rawCapturing ? (uint16_t)rawSignalCount : rawRecordedCount;
 
   oled.textMode(BUF_ADD);
   oled.setScale(1);
@@ -1118,83 +1122,62 @@ void DrawRAWOscillogram_HF()
     oled.print(st);
   }
 
-  if (rawCapturing && rawSignalCount >= 2)
+  oled.line(axisX, plotTop, axisX, plotBot);
+  oled.line(axisX, plotBot, plotRight, plotBot);
+  oled.line(axisX, highY, axisX + 2, highY);
+  oled.line(axisX, lowY, axisX + 2, lowY);
+
+  if (totalCount < 2)
   {
-    char sc[12];
-    sprintf(sc, "S:%d", rawSignalCount);
-    oled.setCursorXY(68, 0);
-    oled.print(sc);
-  }
-
-  if (!rawRecorded)
-  {
-    const uint8_t axisX = 0;
-    const uint8_t axisEndX = 127;
-
-    oled.line(axisX, plotTop, axisX, plotBottom);
-    oled.line(axisX, plotBottom, axisEndX, plotBottom);
-
-    oled.line(axisX, plotTop, axisX + 2, plotTop);
-    oled.line(axisX, centerY, axisX + 2, centerY);
-
-    for (uint8_t tx = 25; tx < 127; tx += 25)
-      oled.line(tx, plotBottom, tx, plotBottom - 2);
-
-    for (uint8_t x = 3; x < 127; x += 3)
-      oled.dot(x, centerY);
-
-    if (rawCapturing)
-    {
-      const uint8_t plotW = 126;
-      int prevH = 0;
-
-      for (int px = 0; px < plotW; px++)
-      {
-        int bufIdx = (int)((long)px * RSSI_BUFFER_SIZE / plotW);
-        if (bufIdx >= RSSI_BUFFER_SIZE)
-          bufIdx = RSSI_BUFFER_SIZE - 1;
-
-        int rssiValue = rssiBuffer[(rssiIndex + bufIdx) % RSSI_BUFFER_SIZE];
-        int h = constrain(map(rssiValue, -100, -20, 0, halfH), 0, halfH);
-        int x = 1 + px;
-
-        if (h > 0)
-        {
-          oled.line(x, centerY - h, x, centerY - 1);
-          oled.line(x, centerY + 1, x, centerY + h);
-        }
-
-        if (px > 0)
-        {
-          int ph = (prevH == 0) ? 0 : prevH;
-          int ch = (h == 0) ? 0 : h;
-          if (ph > 0 || ch > 0)
-          {
-            oled.line(x - 1, centerY - ph, x, centerY - ch);
-            oled.line(x - 1, centerY + ph, x, centerY + ch);
-          }
-        }
-
-        prevH = h;
-      }
-    }
+    for (uint8_t x = plotLeft + 2; x < plotRight; x += 3)
+      oled.dot(x, lowY);
   }
   else
   {
-    oled.setScale(2);
-    const char *msg = "Captured!";
-    oled.setCursorXY((128 - getTextWidth(msg) * 2) / 2, 16);
-    oled.print(msg);
-    oled.setScale(1);
+    const uint16_t VISIBLE = 40;
+    uint16_t visCount = (totalCount < VISIBLE) ? totalCount : VISIBLE;
+    uint16_t startIdx = totalCount - visCount;
 
-    char info[20];
-    sprintf(info, "%d samples", rawRecordedCount);
-    oled.setCursorXY((128 - getTextWidth(info)) / 2, 36);
-    oled.print(info);
+    uint32_t totalUs = 0;
+    for (uint16_t i = startIdx; i < startIdx + visCount; i++)
+      totalUs += rawSignalBuffer[i % RAW_SIGNAL_MAX_SAMPLES];
 
+    if (totalUs > 0)
+    {
+      uint32_t pxAcc = 0;
+      uint8_t prevPx = 0;
+      bool curHigh = (startIdx % 2 == 0);
+
+      for (uint16_t i = startIdx; i < startIdx + visCount; i++)
+      {
+        pxAcc += (uint32_t)rawSignalBuffer[i % RAW_SIGNAL_MAX_SAMPLES] * plotW;
+        uint8_t curPx = (uint8_t)(pxAcc / totalUs);
+        if (curPx > plotW)
+          curPx = plotW;
+
+        uint8_t x0 = plotLeft + prevPx;
+        uint8_t x1 = plotLeft + curPx;
+        uint8_t lvlY = curHigh ? highY : lowY;
+
+        if (x0 < x1)
+          oled.line(x0, lvlY, x1 - 1, lvlY);
+
+        if (curPx < plotW && i + 1 < startIdx + visCount)
+        {
+          uint8_t nextY = curHigh ? lowY : highY;
+          oled.line(x1, lvlY, x1, nextY);
+        }
+
+        curHigh = !curHigh;
+        prevPx = curPx;
+      }
+    }
+  }
+
+  if (rawRecorded)
+  {
     oled.setCursorXY(2, footerY);
     oled.print("<< SAVE");
-
     const char *decl = "DROP >>";
     oled.setCursorXY(128 - getTextWidth(decl) - 2, footerY);
     oled.print(decl);
@@ -2005,9 +1988,12 @@ void DrawCalibrate()
   oled.print(targetBuf);
 
   char mBuf[12];
-  int mInt  = (int)calibMeasured;
+  int mInt = (int)calibMeasured;
   int mFrac = (int)roundf((calibMeasured - mInt) * 1000);
-  if (mFrac < 0) { mFrac = -mFrac; }
+  if (mFrac < 0)
+  {
+    mFrac = -mFrac;
+  }
   sprintf(mBuf, "%d.%03d", mInt, mFrac);
   oled.setScale(2);
   int mw = getTextWidth(mBuf) * 2;
